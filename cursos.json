@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "Navegación Costera",
+    "price": 120,
+    "category": "Náutica",
+    "image": "https://wallpapers.com/images/hd/old-sailing-ship-xoh2cnq9sibipqy2.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Navegación Astronómica",
+    "price": 150,
+    "category": "Astronomía",
+    "image": "https://images.wallpaperscraft.com/image/single/starry_sky_boat_reflection_125803_1920x1080.jpg"
+  }
+]
