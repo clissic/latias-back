@@ -22,7 +22,7 @@
     "difficulty": "Principiante"
   },
   {
-    "id": 2,
+    "id": 3,
     "name": "Introducción a la Navegación Astronómica",
     "price": 150,
     "category": "Astronomía",
@@ -33,7 +33,7 @@
     "difficulty": "Principiante"
   },
   {
-    "id": 2,
+    "id": 4,
     "name": "Introducción a la Navegación Astronómica",
     "price": 150,
     "category": "Astronomía",
@@ -44,7 +44,7 @@
     "difficulty": "Principiante"
   },
   {
-    "id": 2,
+    "id": 5,
     "name": "Introducción a la Navegación Astronómica",
     "price": 150,
     "category": "Astronomía",
