@@ -20,5 +20,38 @@
     "longDescritpion": "En este curso aprenderás a navegar utilizando las estrellas como referencia. Aprenderás a utilizar un sextante y a calcular tu posición en el mar.",
     "duration": "3 semanas",
     "difficulty": "Principiante"
+  },
+  {
+    "id": 2,
+    "name": "Introducción a la Navegación Astronómica",
+    "price": 150,
+    "category": "Astronomía",
+    "image": "https://images.wallpaperscraft.com/image/single/starry_sky_boat_reflection_125803_1920x1080.jpg",
+    "shortDescription": "Aprende a navegar con las estrellas",
+    "longDescritpion": "En este curso aprenderás a navegar utilizando las estrellas como referencia. Aprenderás a utilizar un sextante y a calcular tu posición en el mar.",
+    "duration": "3 semanas",
+    "difficulty": "Principiante"
+  },
+  {
+    "id": 2,
+    "name": "Introducción a la Navegación Astronómica",
+    "price": 150,
+    "category": "Astronomía",
+    "image": "https://images.wallpaperscraft.com/image/single/starry_sky_boat_reflection_125803_1920x1080.jpg",
+    "shortDescription": "Aprende a navegar con las estrellas",
+    "longDescritpion": "En este curso aprenderás a navegar utilizando las estrellas como referencia. Aprenderás a utilizar un sextante y a calcular tu posición en el mar.",
+    "duration": "3 semanas",
+    "difficulty": "Principiante"
+  },
+  {
+    "id": 2,
+    "name": "Introducción a la Navegación Astronómica",
+    "price": 150,
+    "category": "Astronomía",
+    "image": "https://images.wallpaperscraft.com/image/single/starry_sky_boat_reflection_125803_1920x1080.jpg",
+    "shortDescription": "Aprende a navegar con las estrellas",
+    "longDescritpion": "En este curso aprenderás a navegar utilizando las estrellas como referencia. Aprenderás a utilizar un sextante y a calcular tu posición en el mar.",
+    "duration": "3 semanas",
+    "difficulty": "Principiante"
   }
 ]
