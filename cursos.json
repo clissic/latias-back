@@ -2,6 +2,7 @@
   {
     "id": 1,
     "name": "Navegación Costera - Introducción",
+    "currency": "U$D",
     "price": 120,
     "category": "Costera",
     "image": "https://wallpapercave.com/wp/wp2485810.jpg",
@@ -13,6 +14,7 @@
   {
     "id": 2,
     "name": "Navegación Costera - Intermedio",
+    "currency": "U$D",
     "price": 250,
     "category": "Costera",
     "image": "https://images2.alphacoders.com/109/1091353.jpg",
@@ -24,6 +26,7 @@
   {
     "id": 3,
     "name": "Navegación Costera - Avanzado",
+    "currency": "U$D",
     "price": 300,
     "category": "Costera",
     "image": "https://www.wallpapergap.com/cdn/24/123/old-world-map-wallpapers-1920x1080.jpg",
@@ -35,6 +38,7 @@
   {
     "id": 4,
     "name": "Navegación Astronómica - Introducción",
+    "currency": "U$D",
     "price": 150,
     "category": "Astronómica",
     "image": "https://cdnb.artstation.com/p/assets/images/images/073/952/107/large/melina-wild-4-sextant-00.jpg?1710868025",
@@ -46,6 +50,7 @@
   {
     "id": 5,
     "name": "Navegación Astronómica - Intermedio",
+    "currency": "U$D",
     "price": 250,
     "category": "Astronómica",
     "image": "https://prod-webveloper-images.bizwise.com/6c872f79ec1dd7c2672efdfc2c5f5d89.jpg",
@@ -57,6 +62,7 @@
   {
     "id": 6,
     "name": "Navegación Astronómica - Avanzado",
+    "currency": "U$D",
     "price": 350,
     "category": "Astronómica",
     "image": "https://cas.stthomas.edu/_media-library/_images/history/1920x1080/stthomas-history-time.jpg",
@@ -68,6 +74,7 @@
   {
     "id": 7,
     "name": "Maquinaria Naval - Introducción",
+    "currency": "U$D",
     "price": 150,
     "category": "Maquinaria",
     "image": "https://cdn.yachtbroker.org/images/highdef/2809101_8bab7f5e_50.jpg",
@@ -79,6 +86,7 @@
   {
     "id": 8,
     "name": "Nudos Marineros - Introducción",
+    "currency": "U$D",
     "price": 150,
     "category": "Marinería",
     "image": "https://nauticalchannel.com/img/news/1730900160_3_785.jpg",
@@ -90,6 +98,7 @@
   {
     "id": 9,
     "name": "Terminología Marinera - Introducción",
+    "currency": "U$D",
     "price": 150,
     "category": "Marinería",
     "image": "https://img1.wallspic.com/crops/8/2/6/9/3/139628/139628-bloc-la_publicacin_de-e_libro-1920x1080.jpg",
