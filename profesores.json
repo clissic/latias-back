@@ -1,0 +1,133 @@
+[
+  {
+    "id": 1,
+    "firstName": "Carlos",
+    "lastName": "Gutiérrez",
+    "age": 45,
+    "profileImage": "https://example.com/profiles/carlos.jpg",
+    "profession": "Capitán de la Marina Mercante",
+    "experience": "20 años de experiencia en navegación costera y transatlántica.",
+    "bio": "Apasionado por la navegación y la enseñanza, he dedicado mi carrera a formar marinos expertos en navegación costera y astronómica.",
+    "certifications": [
+      "Instructor Certificado en Navegación Astronómica",
+      "Licencia Internacional de Capitán de Yate"
+    ],
+    "achievements": [
+      "Ex comandante de buque de carga",
+      "Autor del libro 'Manual de Navegación Costera'"
+    ],
+    "courses": [1, 2, 3],
+    "contact": {
+      "email": "carlos.gutierrez@example.com",
+      "phone": "+598 1234 5678"
+    },
+    "socialMedia": {
+      "linkedin": "https://linkedin.com/in/carlosgutierrez",
+      "twitter": "https://twitter.com/cgutierrez"
+    }
+  },
+  {
+    "id": 2,
+    "firstName": "Mariana",
+    "lastName": "Fernández",
+    "age": 38,
+    "profileImage": "https://example.com/profiles/mariana.jpg",
+    "profession": "Ingeniera Naval",
+    "experience": "15 años en el diseño y mantenimiento de embarcaciones.",
+    "bio": "Experta en maquinaria naval y diseño de sistemas de propulsión para embarcaciones comerciales y deportivas.",
+    "certifications": [
+      "Máster en Ingeniería Naval",
+      "Certificación en Mantenimiento de Motores Marinos"
+    ],
+    "achievements": [
+      "Diseñó sistemas de propulsión para la flota pesquera nacional",
+      "Conferencista en congresos internacionales de ingeniería naval"
+    ],
+    "courses": [7],
+    "contact": {
+      "email": "mariana.fernandez@example.com",
+      "phone": "+598 8765 4321"
+    },
+    "socialMedia": {
+      "linkedin": "https://linkedin.com/in/marianafernandez"
+    }
+  },
+  {
+    "id": 3,
+    "firstName": "Ricardo",
+    "lastName": "Pérez",
+    "age": 50,
+    "profileImage": "https://example.com/profiles/ricardo.jpg",
+    "profession": "Astrónomo y Navegante",
+    "experience": "25 años de experiencia en navegación astronómica.",
+    "bio": "Especialista en orientación mediante astros, con amplia experiencia en expediciones oceánicas.",
+    "certifications": [
+      "Doctorado en Astronomía",
+      "Certificación Internacional en Navegación Astronómica"
+    ],
+    "achievements": [
+      "Lideró expediciones científicas en el Atlántico",
+      "Instructor de navegación en la academia naval"
+    ],
+    "courses": [4, 5, 6],
+    "contact": {
+      "email": "ricardo.perez@example.com",
+      "phone": "+598 2468 1357"
+    },
+    "socialMedia": {
+      "linkedin": "https://linkedin.com/in/ricardoperez"
+    }
+  },
+  {
+    "id": 4,
+    "firstName": "Sofía",
+    "lastName": "López",
+    "age": 35,
+    "profileImage": "https://example.com/profiles/sofia.jpg",
+    "profession": "Instructora de Supervivencia y Marinería",
+    "experience": "10 años formando tripulaciones en técnicas marineras.",
+    "bio": "Apasionada por la vida en el mar y la enseñanza de técnicas fundamentales para la seguridad y eficacia a bordo.",
+    "certifications": [
+      "Certificación en Técnicas de Supervivencia en el Mar",
+      "Especialización en Nudos y Maniobras Marineras"
+    ],
+    "achievements": [
+      "Ha formado a más de 500 marineros en técnicas de seguridad",
+      "Creadora de cursos de formación para navegantes deportivos"
+    ],
+    "courses": [8, 9],
+    "contact": {
+      "email": "sofia.lopez@example.com",
+      "phone": "+598 3698 7412"
+    },
+    "socialMedia": {
+      "linkedin": "https://linkedin.com/in/sofialopez"
+    }
+  },
+  {
+    "id": 5,
+    "firstName": "Javier",
+    "lastName": "Rodríguez",
+    "age": 42,
+    "profileImage": "https://example.com/profiles/javier.jpg",
+    "profession": "Oficial de la Armada y Experto en Navegación",
+    "experience": "18 años de servicio en la Armada Nacional.",
+    "bio": "Con amplia experiencia en navegación táctica y estrategias de operación en alta mar.",
+    "certifications": [
+      "Especialización en Navegación Táctica",
+      "Instructor de Maniobras y Estrategias Navales"
+    ],
+    "achievements": [
+      "Participó en misiones internacionales de patrullaje",
+      "Condecorado por excelencia en formación naval"
+    ],
+    "courses": [1, 2, 3, 6],
+    "contact": {
+      "email": "javier.rodriguez@example.com",
+      "phone": "+598 1478 3692"
+    },
+    "socialMedia": {
+      "linkedin": "https://linkedin.com/in/javierrodriguez"
+    }
+  }
+]

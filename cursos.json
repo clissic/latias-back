@@ -9,7 +9,34 @@
     "shortDescription": "Aprende los fundamentos de la navegación costera.",
     "longDescription": "Este curso introductorio te enseñará los fundamentos de la navegación costera. Aprenderás a utilizar un compás, leer cartas náuticas y calcular tu posición en el mar de manera precisa.",
     "duration": "2 semanas",
-    "difficulty": "Principiante"
+    "difficulty": "Principiante",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 2,
@@ -21,7 +48,34 @@
     "shortDescription": "Profundiza en técnicas de navegación costera.",
     "longDescription": "En este curso intermedio, aprenderás técnicas avanzadas de navegación costera. Incluye el uso de herramientas como el compás y la navegación mediante estrellas y otras referencias naturales.",
     "duration": "2 semanas",
-    "difficulty": "Intermedio"
+    "difficulty": "Intermedio",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 3,
@@ -33,7 +87,34 @@
     "shortDescription": "Domina la navegación costera en condiciones complejas.",
     "longDescription": "Este curso avanzado te prepara para navegar en condiciones complejas. Aprenderás a optimizar rutas, interpretar cartas náuticas detalladas y realizar cálculos precisos para navegación prolongada.",
     "duration": "3 semanas",
-    "difficulty": "Avanzado"
+    "difficulty": "Avanzado",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 4,
@@ -45,7 +126,34 @@
     "shortDescription": "Descubre los principios básicos de la navegación astronómica.",
     "longDescription": "Aprenderás los fundamentos de la navegación astronómica, incluyendo el uso de sextantes y cómo calcular tu posición mediante observación de astros.",
     "duration": "3 semanas",
-    "difficulty": "Principiante"
+    "difficulty": "Principiante",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 5,
@@ -57,7 +165,34 @@
     "shortDescription": "Refina tus habilidades en navegación astronómica.",
     "longDescription": "En este curso intermedio, aprenderás a calcular tu posición con mayor precisión usando herramientas avanzadas de navegación astronómica.",
     "duration": "4 semanas",
-    "difficulty": "Intermedio"
+    "difficulty": "Intermedio",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 6,
@@ -69,7 +204,34 @@
     "shortDescription": "Perfecciona la navegación astronómica en alta mar.",
     "longDescription": "Domina la navegación astronómica avanzada en este curso. Aprenderás técnicas complejas para navegar en alta mar utilizando astros como referencia.",
     "duration": "2 semanas",
-    "difficulty": "Avanzado"
+    "difficulty": "Avanzado",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 7,
@@ -81,7 +243,34 @@
     "shortDescription": "Aprende los conceptos básicos de maquinaria naval.",
     "longDescription": "Conoce los principios fundamentales de maquinaria naval, incluyendo mantenimiento básico, funcionamiento de motores y sistemas comunes en embarcaciones.",
     "duration": "2 semanas",
-    "difficulty": "Principiante"
+    "difficulty": "Principiante",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 8,
@@ -93,7 +282,34 @@
     "shortDescription": "Domina los nudos esenciales para la navegación.",
     "longDescription": "Este curso te enseñará los nudos básicos utilizados en navegación. Aprenderás técnicas para asegurar embarcaciones, manipular cuerdas y crear nudos duraderos.",
     "duration": "2 semanas",
-    "difficulty": "Principiante"
+    "difficulty": "Principiante",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   },
   {
     "id": 9,
@@ -105,6 +321,33 @@
     "shortDescription": "Familiarízate con los términos marineros esenciales.",
     "longDescription": "Este curso introductorio te ayudará a comprender los términos y conceptos básicos utilizados en navegación y operaciones marítimas.",
     "duration": "2 semanas",
-    "difficulty": "Principiante"
+    "difficulty": "Principiante",
+    "modules": [
+      { "name": "Módulo 1", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 2", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 3", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 4", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 5", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 6", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 7", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 8", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 9", "completed": false, "attempts": 0, "lastAttemptDate": null },
+      { "name": "Módulo 10", "completed": false, "attempts": 0, "lastAttemptDate": null }
+    ],
+    "questions": [
+      "Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5",
+      "Pregunta 6", "Pregunta 7", "Pregunta 8", "Pregunta 9", "Pregunta 10",
+      "Pregunta 11", "Pregunta 12", "Pregunta 13", "Pregunta 14", "Pregunta 15",
+      "Pregunta 16", "Pregunta 17", "Pregunta 18", "Pregunta 19", "Pregunta 20",
+      "Pregunta 21", "Pregunta 22", "Pregunta 23", "Pregunta 24", "Pregunta 25",
+      "Pregunta 26", "Pregunta 27", "Pregunta 28", "Pregunta 29", "Pregunta 30",
+      "Pregunta 31", "Pregunta 32", "Pregunta 33", "Pregunta 34", "Pregunta 35",
+      "Pregunta 36", "Pregunta 37", "Pregunta 38", "Pregunta 39", "Pregunta 40",
+      "Pregunta 41", "Pregunta 42", "Pregunta 43", "Pregunta 44", "Pregunta 45",
+      "Pregunta 46", "Pregunta 47", "Pregunta 48", "Pregunta 49", "Pregunta 50"
+    ],
+    "timeSpent": 0,
+    "progress": 0,
+    "status": "No iniciado"
   }
 ]
