@@ -88,7 +88,7 @@
       },
       {
         "id": 4,
-        "name": "Posicionamiento y Coordenadas Geográficas",
+        "name": "Posicionamiento",
         "lessons": [
           {
             "id": 1,
@@ -148,7 +148,7 @@
       },
       {
         "id": 6,
-        "name": "Correcciones de Rumbo: Deriva y Abatimiento",
+        "name": "Correcciones de Rumbo",
         "lessons": [
           {
             "id": 1,
@@ -178,7 +178,7 @@
       },
       {
         "id": 7,
-        "name": "Mareas, Corrientes y Factores Ambientales",
+        "name": "Factores Ambientales",
         "lessons": [
           {
             "id": 1,
@@ -208,7 +208,7 @@
       },
       {
         "id": 8,
-        "name": "Navegación con Ayudas Electrónicas (GPS, RADAR, AIS)",
+        "name": "Navegación con Ayudas Electrónicas",
         "lessons": [
           {
             "id": 1,
@@ -238,7 +238,7 @@
       },
       {
         "id": 9,
-        "name": "Normativa Marítima y Seguridad en la Navegación",
+        "name": "Normativa y Seguridad",
         "lessons": [
           {
             "id": 1,
@@ -268,7 +268,7 @@
       },
       {
         "id": 10,
-        "name": "Ejercicios Prácticos y Evaluación Final",
+        "name": "Ejercicios Evaluación Final",
         "lessons": [
           {
             "id": 1,
