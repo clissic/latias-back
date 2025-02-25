@@ -14,14 +14,44 @@
     "modules": [
       {
         "id": 1,
-        "name": "Introducción a la Navegación Costera",
+        "name": "Introducción",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Presentación docente",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Metodología y objetivos",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "¿Qué aprenderás? ",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
       },
       {
         "id": 2,
-        "name": "Cartas Náuticas y Simbología",
+        "name": "Cartas Náuticas",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "La carta náutica",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Simbología",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Errores comunes al interpretar la carta",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -29,6 +59,29 @@
       {
         "id": 3,
         "name": "Instrumentos de Navegación",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "El compás de punta seca",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Las reglas paralelas",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "El correcaminos",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "La pínula",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "El ecosonda y la corredera",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -36,6 +89,29 @@
       {
         "id": 4,
         "name": "Posicionamiento y Coordenadas Geográficas",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Latitud y longitud",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Uso de las coordenadas",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Marcaciones a la costa",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Posicionamiento GPS",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Cuidados a la hora de posicionarse",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -43,6 +119,29 @@
       {
         "id": 5,
         "name": "Rumbos, Distancias y Estimaciones",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Trazando un rumbo",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Medición de distancias",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Velocidad y tiempo estimado",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Corrección por corrientes",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Rumbo verdadero VS rumbo magnético",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -50,6 +149,29 @@
       {
         "id": 6,
         "name": "Correcciones de Rumbo: Deriva y Abatimiento",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Estimación visual de deriva",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Correcciones utilizando la costa",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Errores típicos al corregir",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Ejercicio: Corrección por deriva",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Ejercicio: Corrección por abatimiento",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -57,6 +179,29 @@
       {
         "id": 7,
         "name": "Mareas, Corrientes y Factores Ambientales",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Ciclo y tablas de mareas",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Efectos de corrientes costeras",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Corrientes en desembocaduras",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Clima: Señales de cambio",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Niebla: navegación cautelosa",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -64,6 +209,29 @@
       {
         "id": 8,
         "name": "Navegación con Ayudas Electrónicas (GPS, RADAR, AIS)",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Navegación electrónica",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Uso del GPS",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Interpretación del RADAR",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Uso del AIS",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Combinando GPS, RADAR y AIS",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -71,6 +239,29 @@
       {
         "id": 9,
         "name": "Normativa Marítima y Seguridad en la Navegación",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Normativa marítima en Uruguay",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Seguridad a bordo",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Procedimientos de emergencia",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Señalización y balizamiento",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Prevención de accidentes marítimos",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
@@ -78,6 +269,29 @@
       {
         "id": 10,
         "name": "Ejercicios Prácticos y Evaluación Final",
+        "lessons": [
+          {
+            "id": 1,
+            "name": "Ejercicio: Navegación costera completa",
+            "completed": false
+          },{
+            "id": 2,
+            "name": "Ejercicio: Resolución de problemas",
+            "completed": false
+          },{
+            "id": 3,
+            "name": "Ejercicio: Posicionamiento con la costa",
+            "completed": false
+          },{
+            "id": 4,
+            "name": "Ejercicio: Elementos de seguridad",
+            "completed": false
+          },{
+            "id": 5,
+            "name": "Examen final y retroalimentación",
+            "completed": false
+          }
+        ],
         "completed": false,
         "attempts": 0,
         "lastAttemptDate": null
