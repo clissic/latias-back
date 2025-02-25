@@ -118,7 +118,7 @@
       },
       {
         "id": 5,
-        "name": "Rumbos, Distancias y Estimaciones",
+        "name": "El rumbo",
         "lessons": [
           {
             "id": 1,
@@ -134,11 +134,11 @@
             "completed": false
           },{
             "id": 4,
-            "name": "Corrección por corrientes",
+            "name": "Rumbo verdadero VS rumbo magnético",
             "completed": false
           },{
             "id": 5,
-            "name": "Rumbo verdadero VS rumbo magnético",
+            "name": "La derrota completa",
             "completed": false
           }
         ],
@@ -208,7 +208,7 @@
       },
       {
         "id": 8,
-        "name": "Navegación con Ayudas Electrónicas",
+        "name": "Ayudas Electrónicas",
         "lessons": [
           {
             "id": 1,
