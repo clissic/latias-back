@@ -1,0 +1,95 @@
+[
+    {
+        "id": 12345,
+        "firstName": "Joaquín",
+        "lastName": "Pérez",
+        "email": "joaquin.perez.coria@gmail.com",
+        "password": "123456",
+        "phone": "098511770",
+        "status": "Student",
+        "rank": "Beginner",
+        "address": {
+            "street": "Asunción 1285",
+            "city": "Montevideo",
+            "state": "Montevideo",
+            "zipCode": "11800"
+        },
+        "preferences": {
+            "language": "es",
+            "notifications": true
+        },
+        "statistics": {
+            "eventsAttended": 0,
+            "timeConnected": 0
+        },
+        "settings": {
+            "theme": "dark",
+            "twoStepVerification": true
+        },
+        "purchasedCourses": [
+            {
+                "courseId": 1,
+                "courseName": "Navegación Costera - Introducción",
+                "dateEnrolled": "2023-09-30",
+                "status": "Completed",
+                "dateCompleted": "2023-10-15",
+                "certificate": {
+                    "credentialNumber": "CERT-12345-67890",
+                    "certificateLink": "https://example.com/certificates/CERT-12345-67890"
+                },
+                "modulesCompleted": [
+                    {
+                        "moduleId": 1,
+                        "moduleName": "Introducción",
+                        "lessons": [
+                            {
+                                "lessonId": 1,
+                                "lessonName": "Presentación docente",
+                                "completed": true,
+                                "videoUrl": ""
+                            },
+                            {
+                                "lessonId": 2,
+                                "lessonName": "Metodología y objetivos",
+                                "completed": true,
+                                "videoUrl": ""
+                            },
+                            {
+                                "lessonId": 3,
+                                "lessonName": "¿Qué aprenderás?",
+                                "completed": true,
+                                "videoUrl": ""
+                            }
+                        ],
+                        "progress": 100
+                    },{
+                        "moduleId": 2,
+                        "moduleName": "Cartas Náuticas",
+                        "lessons": [
+                            {
+                                "lessonId": 1,
+                                "lessonName": "La carta náutica",
+                                "completed": true,
+                                "videoUrl": ""
+                            },
+                            {
+                                "lessonId": 2,
+                                "lessonName": "Simbología",
+                                "completed": true,
+                                "videoUrl": ""
+                            },
+                            {
+                                "lessonId": 3,
+                                "lessonName": "Errores comunes al interpretar la carta",
+                                "completed": true,
+                                "videoUrl": ""
+                            }
+                        ],
+                        "progress": 100
+                    }
+                ],
+                "finished": true
+            }
+        ]
+    }
+]

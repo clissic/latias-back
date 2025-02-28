@@ -19,15 +19,18 @@
           {
             "id": 1,
             "name": "Presentación docente",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Metodología y objetivos",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
-            "name": "¿Qué aprenderás? ",
-            "completed": false
+            "name": "¿Qué aprenderás?",
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -41,15 +44,18 @@
           {
             "id": 1,
             "name": "La carta náutica",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Simbología",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Errores comunes al interpretar la carta",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -63,23 +69,28 @@
           {
             "id": 1,
             "name": "El compás de punta seca",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Las reglas paralelas",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "El correcaminos",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "La pínula",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "El ecosonda y la corredera",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -93,23 +104,28 @@
           {
             "id": 1,
             "name": "Latitud y longitud",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Uso de las coordenadas",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Marcaciones a la costa",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Posicionamiento GPS",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "Cuidados a la hora de posicionarse",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -123,23 +139,28 @@
           {
             "id": 1,
             "name": "Trazando un rumbo",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Medición de distancias",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Velocidad y tiempo estimado",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Rumbo verdadero VS rumbo magnético",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "La derrota completa",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -153,23 +174,28 @@
           {
             "id": 1,
             "name": "Estimación visual de deriva",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Correcciones utilizando la costa",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Errores típicos al corregir",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Ejercicio: Corrección por deriva",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "Ejercicio: Corrección por abatimiento",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -183,23 +209,28 @@
           {
             "id": 1,
             "name": "Ciclo y tablas de mareas",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Efectos de corrientes costeras",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Corrientes en desembocaduras",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Clima: Señales de cambio",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "Niebla: navegación cautelosa",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -213,23 +244,28 @@
           {
             "id": 1,
             "name": "Navegación electrónica",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Uso del GPS",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Interpretación del RADAR",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Uso del AIS",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "Combinando GPS, RADAR y AIS",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -243,23 +279,28 @@
           {
             "id": 1,
             "name": "Normativa marítima en Uruguay",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Seguridad a bordo",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Procedimientos de emergencia",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Señalización y balizamiento",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "Prevención de accidentes marítimos",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
@@ -273,23 +314,28 @@
           {
             "id": 1,
             "name": "Ejercicio: Navegación costera completa",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 2,
             "name": "Ejercicio: Resolución de problemas",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 3,
             "name": "Ejercicio: Posicionamiento con la costa",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 4,
             "name": "Ejercicio: Elementos de seguridad",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           },{
             "id": 5,
             "name": "Examen final y retroalimentación",
-            "completed": false
+            "completed": false,
+            "videoUrl": ""
           }
         ],
         "completed": false,
