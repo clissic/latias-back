@@ -6,8 +6,11 @@
         "email": "joaquin.perez.coria@gmail.com",
         "password": "123456",
         "phone": "098511770",
-        "status": "Student",
-        "rank": "Beginner",
+        "status": "Estudiante",
+        "rank": {
+            "title": "grumete",
+            "description": "Recién embarcado en la travesía del aprendizaje, aprendiendo lo básico."
+        },
         "address": {
             "street": "Asunción 1285",
             "city": "Montevideo",
@@ -30,6 +33,7 @@
             {
                 "courseId": 1,
                 "courseName": "Navegación Costera - Introducción",
+                "bannerUrl": "https://wallpapercave.com/wp/wp2485810.jpg",
                 "dateEnrolled": "2023-09-30",
                 "status": "Completed",
                 "dateCompleted": "2023-10-15",
@@ -88,7 +92,22 @@
                         "progress": 100
                     }
                 ],
+                "progress": 100,
                 "finished": true
+            }
+        ],
+        "finishedCourses": [
+            {
+                "courseId": 1,
+                "courseName": "Navegación Costera - Avanzado",
+                "bannerUrl": "https://wallpapercave.com/wp/wp2485810.jpg",
+                "dateEnrolled": "2023-10-15",
+                "status": "Completed",
+                "dateCompleted": "2023-11-01",
+                "certificate": {
+                    "credentialNumber": "CERT-54321-09876",
+                    "certificateLink": "https://example.com/certificates/CERT-54321-09876"
+                }
             }
         ]
     }
