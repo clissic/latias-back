@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "Navegación Costera - Introducción",
+    "name": "Navegación Costera I",
     "currency": "U$D",
     "price": 120,
     "category": "Costera",
@@ -401,7 +401,7 @@
   },
   {
     "id": 2,
-    "name": "Navegación Costera - Intermedio",
+    "name": "Navegación Costera II",
     "currency": "U$D",
     "price": 250,
     "category": "Costera",
@@ -531,7 +531,7 @@
   },
   {
     "id": 3,
-    "name": "Navegación Costera - Avanzado",
+    "name": "Navegación Costera III",
     "currency": "U$D",
     "price": 300,
     "category": "Costera",
@@ -661,7 +661,7 @@
   },
   {
     "id": 4,
-    "name": "Navegación Astronómica - Introducción",
+    "name": "Navegación Astronómica I",
     "currency": "U$D",
     "price": 150,
     "category": "Astronómica",
@@ -791,7 +791,7 @@
   },
   {
     "id": 5,
-    "name": "Navegación Astronómica - Intermedio",
+    "name": "Navegación Astronómica II",
     "currency": "U$D",
     "price": 250,
     "category": "Astronómica",
@@ -921,7 +921,7 @@
   },
   {
     "id": 6,
-    "name": "Navegación Astronómica - Avanzado",
+    "name": "Navegación Astronómica III",
     "currency": "U$D",
     "price": 350,
     "category": "Astronómica",
@@ -1051,7 +1051,7 @@
   },
   {
     "id": 7,
-    "name": "Maquinaria Naval - Introducción",
+    "name": "Maquinaria Naval I",
     "currency": "U$D",
     "price": 150,
     "category": "Maquinaria",
@@ -1181,7 +1181,7 @@
   },
   {
     "id": 8,
-    "name": "Nudos Marineros - Introducción",
+    "name": "Nudos Marineros I",
     "currency": "U$D",
     "price": 150,
     "category": "Marinería",
@@ -1311,7 +1311,7 @@
   },
   {
     "id": 9,
-    "name": "Terminología Marinera - Introducción",
+    "name": "Terminología Marinera I",
     "currency": "U$D",
     "price": 150,
     "category": "Marinería",
