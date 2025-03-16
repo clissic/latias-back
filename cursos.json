@@ -1,8 +1,9 @@
 [
   {
     "id": 1,
+    "sku": "NAV-COS-001",
     "name": "Navegación Costera I",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 120,
     "category": "Costera",
     "image": "https://wallpapercave.com/wp/wp2485810.jpg",
@@ -406,8 +407,9 @@
   },
   {
     "id": 2,
+    "sku": "NAV-COS-002",
     "name": "Navegación Costera II",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 250,
     "category": "Costera",
     "image": "https://images2.alphacoders.com/109/1091353.jpg",
@@ -541,8 +543,9 @@
   },
   {
     "id": 3,
+    "sku": "NAV-COS-003",
     "name": "Navegación Costera III",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 300,
     "category": "Costera",
     "image": "https://www.wallpapergap.com/cdn/24/123/old-world-map-wallpapers-1920x1080.jpg",
@@ -676,8 +679,9 @@
   },
   {
     "id": 4,
+    "sku": "NAV-AST-001",
     "name": "Navegación Astronómica I",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 150,
     "category": "Astronómica",
     "image": "https://cdnb.artstation.com/p/assets/images/images/073/952/107/large/melina-wild-4-sextant-00.jpg?1710868025",
@@ -811,8 +815,9 @@
   },
   {
     "id": 5,
+    "sku": "NAV-AST-002",
     "name": "Navegación Astronómica II",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 250,
     "category": "Astronómica",
     "image": "https://prod-webveloper-images.bizwise.com/6c872f79ec1dd7c2672efdfc2c5f5d89.jpg",
@@ -946,8 +951,9 @@
   },
   {
     "id": 6,
+    "sku": "NAV-AST-003",
     "name": "Navegación Astronómica III",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 350,
     "category": "Astronómica",
     "image": "https://cas.stthomas.edu/_media-library/_images/history/1920x1080/stthomas-history-time.jpg",
@@ -1081,8 +1087,9 @@
   },
   {
     "id": 7,
+    "sku": "MAQ-NAV-001",
     "name": "Maquinaria Naval I",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 150,
     "category": "Maquinaria",
     "image": "https://cdn.yachtbroker.org/images/highdef/2809101_8bab7f5e_50.jpg",
@@ -1216,8 +1223,9 @@
   },
   {
     "id": 8,
+    "sku": "NUD-MAR-001",
     "name": "Nudos Marineros I",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 150,
     "category": "Marinería",
     "image": "https://nauticalchannel.com/img/news/1730900160_3_785.jpg",
@@ -1351,8 +1359,9 @@
   },
   {
     "id": 9,
+    "sku": "TER-MAR-001",
     "name": "Terminología Marinera I",
-    "currency": "U$D",
+    "currency": "USD",
     "price": 150,
     "category": "Marinería",
     "image": "https://img1.wallspic.com/crops/8/2/6/9/3/139628/139628-bloc-la_publicacin_de-e_libro-1920x1080.jpg",
