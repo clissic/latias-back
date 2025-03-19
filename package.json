@@ -1,0 +1,35 @@
+{
+  "name": "latias-back",
+  "version": "1.0.0",
+  "description": "Backend de Latias Academia",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon -e yaml,js ./src/app.js --mode DEVELOPMENT"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clissic/latias-back.git"
+  },
+  "keywords": [
+    "latias",
+    "academia",
+    "backend",
+    "nodejs",
+    "express"
+  ],
+  "author": "JPC.dev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/clissic/latias-back/issues"
+  },
+  "homepage": "https://github.com/clissic/latias-back#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mongoose": "^8.12.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
