@@ -12,20 +12,24 @@ export function iniPassport() {
     "login",
     new LocalStrategy(
       { usernameField: "email" },
-      async (username, password, done) => {
+      async (email, password, done) => {
         try {
-          const user = await UserMongoose.findOne({ email: username });
+          const user = await UserMongoose.findOne({ email });
+
           if (!user) {
-            logger.info("User not found with username (email) " + username);
-            return done(null, false);
+            logger.info(`User not found: ${email}`);
+            return done(null, false, { message: "Usuario no encontrado." });
           }
+
           if (!isValidPassword(password, user.password)) {
-            logger.info("Invalid password");
-            return done(null, false);
+            logger.info(`Invalid password for user: ${email}`);
+            return done(null, false, { message: "Contraseña incorrecta." });
           }
-          logger.info(`${user.firstName} ${user.lastName} is logged as ${user.status}`);
+
+          logger.info(`User logged in: ${user.firstName} ${user.lastName} (${user.email})`);
           return done(null, user);
         } catch (err) {
+          logger.error("Error in login process:", err);
           return done(err);
         }
       }
@@ -34,46 +38,55 @@ export function iniPassport() {
 
   passport.use(
     "register",
-    new LocalStrategy(
-      {
-        passReqToCallback: true,
-        usernameField: "email",
-      },
-      async (req, username, password, done) => {
-        try {
-          const { firstName, lastName, ci, birth, email, password } = req.body;
-          let user = await UserMongoose.findOne({ email: username });
-          if (user) {
-            logger.info("User already exists");
-            return done(null, false);
-          }
-          const newUser = {
-            firstName,
-            lastName,
-            ci,
-            birth,
-            email,
-            password: createHash(password),
-          };
-          let userCreated = await userService.create(newUser);
-          logger.info(userCreated);
-          logger.info("User registration succesful!");
-          return done(null, userCreated);
-        } catch (e) {
-          logger.info("Error in register: " + e);
-          return done(e);
+  new LocalStrategy(
+    {
+      passReqToCallback: true,
+      usernameField: "email",
+    },
+    async (req, username, password, done) => {
+      try {
+        const { firstName, lastName, ci, birth, email, password } = req.body;
+        let user = await UserMongoose.findOne({ email: username });
+
+        if (user) {
+          logger.info(`User email (${email}) already exists.`);
+          return done(null, false, { message: "El email ya está registrado." });
         }
+
+        const newUser = {
+          firstName,
+          lastName,
+          ci,
+          birth,
+          email,
+          password: createHash(password),
+        };
+
+        let userCreated = await userService.create(newUser);
+        logger.info("User registration successful!");
+        return done(null, userCreated);
+      } catch (e) {
+        logger.error("Error in register: " + e);
+        return done(e);
       }
-    )
-  );
+    }
+  )
+);
 
   passport.serializeUser((user, done) => {
     done(null, user.id);
-});
+  });
 
   passport.deserializeUser(async (id, done) => {
-    let user = await userService.findById(id);
-
-    done(null, user);
+    try {
+      const user = await userService.findById(id);
+      if (!user) {
+        return done(null, false, { message: "Usuario no encontrado en la sesión." });
+      }
+      done(null, user);
+    } catch (err) {
+      logger.error("Error in deserializeUser:", err);
+      done(err);
+    }
   });
 }
