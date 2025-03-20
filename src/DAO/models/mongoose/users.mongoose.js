@@ -7,7 +7,7 @@ const schema = new Schema({
   email: { type: String, required: true, max: 100, unique: true },
   ci: { type: String, required: true, max: 20 },
   password: { type: String, required: true, max: 100 },
-  phone: { type: String, max: 20 },
+  phone: { type: String, max: 20, default: "" },
   birth: { type: Date, required: true },
   status: { type: String, default: "Estudiante" },
   rank: {
@@ -15,10 +15,10 @@ const schema = new Schema({
     description: { type: String, default: "Recién embarcado en la travesía del aprendizaje, aprendiendo lo básico." },
   },
   address: {
-    street: { type: String, max: 100 },
-    city: { type: String, max: 100 },
-    state: { type: String, max: 100 },
-    zipCode: { type: Number, max: 10 },
+    street: { type: String, max: 100, default: "" },
+    city: { type: String, max: 100, default: "" },
+    state: { type: String, max: 100, default: "" },
+    zipCode: { type: Number, max: 10, default: null },
   },
   preferences: {
     language: { type: String, default: "es" },

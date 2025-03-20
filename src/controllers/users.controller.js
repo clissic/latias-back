@@ -46,7 +46,6 @@ class UsersController {
   async create(req, res) {
     try {
       const { firstName, lastName, email, ci, birth, password } = req.body;
-
       if (!firstName || !lastName || !email || !birth || !password) {
         return res.status(400).json({
           status: "error",

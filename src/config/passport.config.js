@@ -1,7 +1,7 @@
 import passport from "passport";
 import local from "passport-local";
 import { UserMongoose } from "../DAO/models/mongoose/users.mongoose.js";
-import { usersController } from "../controllers/users.controller.js";
+import { userService } from "../services/users.service.js";
 import { createHash, isValidPassword } from "../utils/Bcrypt.js";
 import { logger } from "../utils/logger.js";
 
@@ -41,7 +41,7 @@ export function iniPassport() {
       },
       async (req, username, password, done) => {
         try {
-          const { firstName, lastName, email, birth, ci, password } = req.body;
+          const { firstName, lastName, ci, birth, email, password } = req.body;
           let user = await UserMongoose.findOne({ email: username });
           if (user) {
             logger.info("User already exists");
@@ -50,14 +50,14 @@ export function iniPassport() {
           const newUser = {
             firstName,
             lastName,
-            email,
-            birth,
             ci,
+            birth,
+            email,
             password: createHash(password),
           };
-          let userCreated = await usersController.create(newUser);
+          let userCreated = await userService.create(newUser);
           logger.info(userCreated);
-          logger.info("User registration succesful");
+          logger.info("User registration succesful!");
           return done(null, userCreated);
         } catch (e) {
           logger.info("Error in register: " + e);
