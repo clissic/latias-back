@@ -53,7 +53,7 @@ class RecoverTokensService {
                     <p>Tu token de recuperación de contraseña es:</p>
                     <h3>${token}</h3>
                     <p>Ten en cuenta que este token caducará pasada 1 (una) hora desde su generación.</p>
-                    <strong>Para continuar con la recuperación de contraseña, por favor haga click <a href="${API_URL}/api/tokens/recoverPassword?token=${token}&email=${email}">en este link</a>.</strong>
+                    <strong>Para continuar con la recuperación de contraseña, por favor haga click <a href="${API_URL}/reset-password?token=${token}&email=${email}">en este link</a>.</strong>
                     <p>Si no solicitaste la recuperación de tu contraseña, no hagas caso a este email.</p>
                 </div>
             `,

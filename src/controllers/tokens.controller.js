@@ -7,10 +7,10 @@ class TokensController {
     try {
       if (newPassword === confirmPassword) {
         await recoverTokensService.recoverPass(email, newPassword);
-        logger.info(email + " actualizó su contraseña con éxito");
-        res.json({ success: true, message: "CONTRASEÑA ACTUALIZADA CORRECTAMENTE" });
+        logger.info(email + " actualizó su contraseña con éxito!");
+        res.json({ success: true, message: "Contraseña actualizada correctamente." });
       } else {
-        res.json({ success: false, message: "LAS CONTRASEÑAS DEBEN COINCIDIR" });
+        res.json({ success: false, message: "Las contraseñas deben coincidir." });
       }
     } catch (error) {
       logger.error("Error recovering password in tokens.controller: " + error);
