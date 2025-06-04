@@ -76,6 +76,14 @@ class UserService {
       }
     }
   
+    async findByCi(ci) {
+      try {
+        return await usersModel.findByCi(ci);
+      } catch (error) {
+        throw new Error("Failed to find user by email: " + error);
+      }
+    }
+  
     async updatePassword({ email, newPassword }) {
       try {
         const userUpdated = await usersModel.updatePassword({ email, password: newPassword });

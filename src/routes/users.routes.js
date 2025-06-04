@@ -8,3 +8,5 @@ usersRouter.get("/", usersController.getAll);
 usersRouter.post("/create", usersController.create);
 
 usersRouter.get("/findByEmail", usersController.findByEmail);
+
+usersRouter.get("/findByCi", usersController.findByCi);

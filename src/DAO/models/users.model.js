@@ -88,6 +88,32 @@ class UsersModel {
     return user;
   }
 
+    async findByCi(ci) {
+    const user = await UserMongoose.findOne(
+      { ci: ci },
+      {
+        _id: true,
+        password: true,
+        avatar: true,
+        firstName: true,
+        lastName: true,
+        status: true,
+        email: true,
+        ci: true,
+        phone: true,
+        birth: true,
+        address: true,
+        statistics: true,
+        settings: true,
+        preferences: true,
+        rank: true,
+        purchasedCourses: true,
+        finishedCourses: true,
+      }
+    );
+    return user;
+  }
+
   async create({ firstName, lastName, birth, ci, email, password }) {
     const userCreated = await UserMongoose.create({
       firstName,

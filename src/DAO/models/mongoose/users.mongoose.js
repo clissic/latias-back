@@ -15,9 +15,11 @@ const schema = new Schema({
     description: { type: String, default: "Recién embarcado en la travesía del aprendizaje, aprendiendo lo básico." },
   },
   address: {
-    street: { type: String, max: 100, default: "" },
-    city: { type: String, max: 100, default: "" },
-    state: { type: String, max: 100, default: "" },
+    street: { type: String, max: 100, default: "No definido" },
+    city: { type: String, max: 100, default: "No definido" },
+    state: { type: String, max: 100, default: "No definido" },
+    country: { type: String, max: 100, default: "No definido"},
+    number: { type: Number, max: 10, default: null},
     zipCode: { type: Number, max: 10, default: null },
   },
   preferences: {
@@ -28,6 +30,7 @@ const schema = new Schema({
   statistics: {
     eventsAttended: { type: Number, default: 0 },
     timeConnected: { type: Number, default: 0 },
+    certificatesQuantity: { type: Number, default: 0},
   },
   settings: {
       theme: { type: String, default: "light" },
