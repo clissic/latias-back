@@ -1,5 +1,7 @@
 import { logger } from "../utils/logger.js";
 import passport from "passport";
+import { differenceInMinutes } from "date-fns";
+import { UserMongoose } from "../DAO/models/mongoose/users.mongoose.js";
 
 class SessionsController {
   async signup(req, res) {
@@ -29,7 +31,7 @@ class SessionsController {
       return res.status(201).json({ msg: "Registro exitoso" });
     } catch (err) {
       logger.error("Signup error:", err);
-      return res.status(500).json({ msg: "Internal Server Error" });
+      return res.status(500).json({ msg: "Internal Server Error!" });
     }
   }
 
@@ -41,8 +43,11 @@ class SessionsController {
         return res.status(401).json({ msg: info?.message || "Credenciales inválidas" });
       }
 
-      req.login(user, (err) => {
+      req.login(user, async (err) => {
         if (err) return next(err);
+
+        user.lastLogin = new Date();
+        await user.save();
 
         req.session.user = {
           _id: user._id,
@@ -67,20 +72,36 @@ class SessionsController {
     })(req, res, next);
   }
 
-  logout(req, res) {
+  async logout(req, res) {
     if (!req.session.user) {
       return res.status(400).json({ msg: "No active session found." });
     }
 
-    const { status, firstName, lastName } = req.session.user; // Guardar datos antes de destruir sesión
+  try {
+    const userId = req.session.user._id;
+    const user = await UserMongoose.findById(userId);
 
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ msg: "Logout error." });
+      if (user && user.lastLogin) {
+        const minutos = differenceInMinutes(new Date(), user.lastLogin);
+        console.log(minutos)
+        user.statistics.timeConnected += minutos;
+        user.lastLogin = null;
+        await user.save();
       }
-      logger.info(`${status} ${firstName} ${lastName} logged out`);
-      res.status(200).json({ msg: "Logout successful." });
-    });
+
+      const { status, firstName, lastName, email } = req.session.user;
+
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ msg: "Logout error." });
+        }
+        logger.info(`${status} ${firstName} ${lastName} (${email}) logged out`);
+        res.status(200).json({ msg: "Logout successful." });
+      });
+    } catch (err) {
+      logger.error("Logout error:", err);
+      res.status(500).json({ msg: "Error al cerrar sesión" });
+    }
   }
 }
 

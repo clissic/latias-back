@@ -8,4 +8,4 @@ sessionsRouter.post("/signup", passport.authenticate("register", { session: fals
 
 sessionsRouter.post("/login", sessionsController.login);
 
-sessionsRouter.get("/logout", sessionsController.logout);
+sessionsRouter.post("/logout", sessionsController.logout);

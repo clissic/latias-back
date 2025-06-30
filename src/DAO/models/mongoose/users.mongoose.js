@@ -38,6 +38,7 @@ const schema = new Schema({
   },
   purchasedCourses: { type: Array, default: [] },
   finishedCourses: { type: Array, default: [] },
+  lastLogin: { type: Date }
 });
 
 schema.plugin(mongoosePaginate);

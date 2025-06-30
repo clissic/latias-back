@@ -22,6 +22,7 @@ class UsersModel {
         rank: true,
         purchasedCourses: true,
         finishedCourses: true,
+        lastLogin: true,
       }
     );
     return users;
@@ -53,6 +54,7 @@ class UsersModel {
         rank: true,
         purchasedCourses: true,
         finishedCourses: true,
+        lastLogin: true,
       }
     );
     if (user && isValidPassword(password, user.password)) {
@@ -83,6 +85,7 @@ class UsersModel {
         rank: true,
         purchasedCourses: true,
         finishedCourses: true,
+        lastLogin: true,
       }
     );
     return user;
@@ -109,6 +112,7 @@ class UsersModel {
         rank: true,
         purchasedCourses: true,
         finishedCourses: true,
+        lastLogin: true,
       }
     );
     return user;
