@@ -1492,5 +1492,87 @@
     "timeSpent": 0,
     "progress": 0,
     "status": "No iniciado"
+  },
+  {
+    "courseId": "string",
+    "sku": "string",
+    "courseName": "string",
+    "bannerUrl": "string",
+    "image": "string",
+    "shortImage": "string",
+    "currency": "string",
+    "shortDescription": "string",
+    "longDescription": "string",
+    "duration": "string",
+    "price": 0,
+    "difficulty": "string",
+    "category": "string",
+    "enrolledDate": null,
+    "completed": false,
+    "isFinished": false,
+    "finishedDate": null,
+    "progress": 0,
+    "attempts": [
+      {
+        "date": null,
+        "score": null
+      }
+    ],
+    "score": null,
+    "certificate": {
+      "certificateId": "string",
+      "certificateUrl": "string",
+      "credentialNumber": "string"
+    },
+    "professor": [
+      {
+        "firstName": "string",
+        "lastName": "string",
+        "profession": "string"
+      }
+    ],
+    "modules": [
+      {
+        "moduleId": "string",
+        "moduleName": "string",
+        "moduleDescription": "string",
+        "locked": false,
+        "completed": false,
+        "isFinished": false,
+        "finishedDate": null,
+        "progress": 0,
+        "attempts": [
+          {
+            "date": null,
+            "score": null
+          }
+        ],
+        "testCompleted": false,
+        "score": null,
+        "lessons": [
+          {
+            "lessonId": "string",
+            "lessonName": "string",
+            "lessonDescription": "string",
+            "videoUrl": "string",
+            "completed": false
+          }
+        ],
+        "questionBank": [
+          {
+            "questionId": "string",
+            "questionText": "string",
+            "options": [
+              { "optionId": "string", "optionText": "string", "isCorrect": true }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalExam": {
+      "questionCount": 40,
+      "testCompleted": false,
+      "score": null
+    }
   }
 ]
