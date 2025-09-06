@@ -1,6 +1,6 @@
-import { Schenma, model } from "mongoose";
+import { Schema, model } from "mongoose";
 
-const schema = new Schenma({
+const schema = new Schema({
   courseId: { type: String },
   sku: { type: String },
   courseName: { type: String },

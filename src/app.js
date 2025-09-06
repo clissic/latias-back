@@ -12,6 +12,7 @@ import session from "express-session";
 import { usersRouter } from "./routes/users.routes.js";
 import { sessionsRouter } from "./routes/sessions.routes.js";
 import { tokensRouter } from "./routes/tokens.routes.js";
+import { coursesRouter } from "./routes/courses.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +55,7 @@ app.use(passport.session());
 app.use("/api/users", usersRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/tokens", tokensRouter);
+app.use("/api/courses", coursesRouter);
 
 // Servir archivos estáticos desde la carpeta dist
 app.use(serveStatic(join(__dirname, "../../latias-front/dist")));
