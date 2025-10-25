@@ -9,7 +9,11 @@ const schema = new Schema({
   password: { type: String, required: true, max: 100 },
   phone: { type: String, max: 20, default: "" },
   birth: { type: Date, required: true },
-  status: { type: String, default: "Estudiante" },
+  category: { 
+    type: String, 
+    enum: ["Cadete", "Instructor", "Administrador"], 
+    default: "Cadete" 
+  },
   rank: {
     title: { type: String, default: "Grumete" },
     description: { type: String, default: "Recién embarcado en la travesía del aprendizaje, aprendiendo lo básico." },
@@ -38,6 +42,7 @@ const schema = new Schema({
   },
   purchasedCourses: { type: Array, default: [] },
   finishedCourses: { type: Array, default: [] },
+  paymentMethods: { type: Array, default: [] },
   lastLogin: { type: Date }
 });
 

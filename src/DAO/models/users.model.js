@@ -10,7 +10,6 @@ class UsersModel {
         avatar: true,
         firstName: true,
         lastName: true,
-        status: true,
         email: true,
         ci: true,
         phone: true,
@@ -20,8 +19,10 @@ class UsersModel {
         settings: true,
         preferences: true,
         rank: true,
+        category: true,
         purchasedCourses: true,
         finishedCourses: true,
+        paymentMethods: true,
         lastLogin: true,
       }
     );
@@ -29,7 +30,29 @@ class UsersModel {
   }
 
   async findById(id) {
-    const userFound = await UserMongoose.findById(id);
+    const userFound = await UserMongoose.findById(
+      id,
+      {
+        _id: true,
+        avatar: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        ci: true,
+        phone: true,
+        birth: true,
+        address: true,
+        statistics: true,
+        settings: true,
+        preferences: true,
+        rank: true,
+        category: true,
+        purchasedCourses: true,
+        finishedCourses: true,
+        paymentMethods: true,
+        lastLogin: true,
+      }
+    );
     return userFound;
   }
 
@@ -42,7 +65,6 @@ class UsersModel {
         avatar: true,
         firstName: true,
         lastName: true,
-        status: true,
         email: true,
         ci: true,
         phone: true,
@@ -52,8 +74,10 @@ class UsersModel {
         settings: true,
         preferences: true,
         rank: true,
+        category: true,
         purchasedCourses: true,
         finishedCourses: true,
+        paymentMethods: true,
         lastLogin: true,
       }
     );
@@ -73,7 +97,6 @@ class UsersModel {
         avatar: true,
         firstName: true,
         lastName: true,
-        status: true,
         email: true,
         ci: true,
         phone: true,
@@ -83,8 +106,10 @@ class UsersModel {
         settings: true,
         preferences: true,
         rank: true,
+        category: true,
         purchasedCourses: true,
         finishedCourses: true,
+        paymentMethods: true,
         lastLogin: true,
       }
     );
@@ -100,7 +125,6 @@ class UsersModel {
         avatar: true,
         firstName: true,
         lastName: true,
-        status: true,
         email: true,
         ci: true,
         phone: true,
@@ -110,8 +134,10 @@ class UsersModel {
         settings: true,
         preferences: true,
         rank: true,
+        category: true,
         purchasedCourses: true,
         finishedCourses: true,
+        paymentMethods: true,
         lastLogin: true,
       }
     );
@@ -136,7 +162,6 @@ class UsersModel {
     avatar,
     firstName,
     lastName,
-    status,
     email,
     ci,
     phone,
@@ -146,8 +171,10 @@ class UsersModel {
     settings,
     preferences,
     rank,
+    category,
     purchasedCourses,
     finishedCourses,
+    paymentMethods,
   }) {
     const userUpdated = await UserMongoose.updateOne(
       {
@@ -158,7 +185,6 @@ class UsersModel {
         avatar,
         firstName,
         lastName,
-        status,
         email,
         ci,
         phone,
@@ -168,8 +194,10 @@ class UsersModel {
         settings,
         preferences,
         rank,
+        category,
         purchasedCourses,
         finishedCourses,
+        paymentMethods,
       }
     );
     return userUpdated;

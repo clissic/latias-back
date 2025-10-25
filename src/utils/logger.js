@@ -58,5 +58,20 @@ switch (LOGGER_ENV) {
     });
     break;
   default:
+    logger = winston.createLogger({
+      levels: customLevelsOptions.levels,
+      transports: [
+        new winston.transports.Console({
+          level: "debug",
+          format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.timestamp(),
+            winston.format.printf((info) => {
+              return `[${info.timestamp}] ${info.level}: ${info.message}`;
+            })
+          ),
+        }),
+      ],
+    });
     break;
 }

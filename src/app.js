@@ -2,18 +2,13 @@ import express, { json, static as serveStatic } from "express";
 import { join } from "path";
 import { __dirname } from "./config.js";
 import { connectMongo } from "./utils/db-connection.js";
-import { iniPassport } from "./config/passport.config.js";
-import passport from "passport";
-import MongoStore from "connect-mongo";
 import cors from "cors";
-import session from "express-session";
 
 // Importar rutas
 import { usersRouter } from "./routes/users.routes.js";
-import { sessionsRouter } from "./routes/sessions.routes.js";
 import { tokensRouter } from "./routes/tokens.routes.js";
 import { coursesRouter } from "./routes/courses.routes.js";
-import { stripeRouter } from "./routes/stripe.routes.js";
+import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,32 +27,11 @@ const httpServer = app.listen(PORT, () => {
 // Conectar a la base de datos
 connectMongo();
 
-// Configuración de la sesión
-app.use(
-  session({
-    secret: "A98dB973kWpfsdq99Kmo",
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: `mongodb+srv://joaquinperezcoria:${MONGODB_PASSWORD}@cluster0.zye6fyd.mongodb.net/${dbName}?retryWrites=true&w=majority`,
-    }),
-    cookie: {
-      maxAge: 86400000,
-    },
-  })
-);
-
-// Configuración de Passport
-iniPassport();
-app.use(passport.initialize());
-app.use(passport.session());
-
 // ENDPOINTS
 app.use("/api/users", usersRouter);
-app.use("/api/sessions", sessionsRouter);
 app.use("/api/tokens", tokensRouter);
 app.use("/api/courses", coursesRouter);
-app.use("/api/stripe", stripeRouter);
+app.use("/api/mercadopago", mercadoPagoRouter);
 
 // Servir archivos estáticos desde la carpeta dist
 app.use(serveStatic(join(__dirname, "../../latias-front/dist")));

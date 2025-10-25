@@ -1,6 +1,7 @@
 import { userService } from "../services/users.service.js";
 import { createHash } from "../utils/Bcrypt.js";
 import { logger } from "../utils/logger.js";
+import { jwtService } from "../services/jwt.service.js";
 import UserDTO from "./DTO/users.dto.js";
 
 class UsersController {
@@ -201,9 +202,10 @@ class UsersController {
 
   async deleteOne(req, res) {
     try {
-      const { _id } = req.params;
+      const { id } = req.params;
+      console.log('DeleteOne ID:', id);
 
-      const result = await userService.deleteOne({ _id });
+      const result = await userService.deleteOne({ _id: id });
 
       if (result?.deletedCount > 0) {
         return res.status(200).json({
@@ -230,7 +232,7 @@ class UsersController {
 
   async updatePassword(req, res) {
     try {
-      const email = req.session.user.email;
+      const email = req.user.email;
       const password = req.body;
       const userUpdated = await userService.updatePassword({ email, password });
       if (userUpdated) {
@@ -247,7 +249,7 @@ class UsersController {
         });
       }
     } catch (error) {
-      logger.info(e);
+      logger.error("Error updating password:", error);
       return res.status(500).json({
         status: "error",
         msg: "Something went wrong " + error,
@@ -256,47 +258,6 @@ class UsersController {
     }
   }
 
-  /* async updatePasswordAndRender(req, res) {
-    try {
-      const user = req.session.user;
-      const email = req.session.user.email;
-      const { newPassword, confirmPassword } = req.body;
-      if (newPassword == confirmPassword) {
-        const userUpdated = await userService.updatePassword({
-          email,
-          newPassword: createHash(newPassword),
-        });
-        if (userUpdated.acknowledged == true) {
-          logger.info(email + " actualizó su contraseña con éxito");
-          return res
-            .status(200)
-            .render("success", { msg: "Contraseña actualizada con éxito." });
-        } else {
-          logger.error(email + " NO logró actualizar su contraseña con éxito");
-          return res
-            .status(400)
-            .render("errorPage", {
-              msg: "La contraseña no ha podido ser actualizada.",
-            });
-        }
-      } else {
-        return res
-          .status(400)
-          .render("updatePasswordForm", {
-            email,
-            user,
-            msg: "LAS CONTRASEÑAS DEBEN COINCIDIR",
-          });
-      }
-    } catch (error) {
-      logger.error("Error de servidor: " + error);
-      return res.status(500).json({
-        status: "error",
-        msg: "Something went wrong " + error,
-        payload: {},
-      });
-    }
-  } */
 
   async createAndSendEmail(req, res) {
     try {
@@ -346,59 +307,9 @@ class UsersController {
     }
   }
 
-/*   async findByIdAndRenderForUpdate(req, res) {
-    try {
-      const { id } = req.query;
-      const user = req.session.user;
-      if (
-        user.role !== "admin" &&
-        user.role !== "superAdmin" &&
-        user.role !== "contable"
-      ) {
-        res
-          .status(200)
-          .render("updateUser", {
-            user,
-            msg: `Su rol "${user.role}" no cuenta con autorización para modificar usuarios. Si entiende necesaria una modificación deberá solicitarla a un administrador o deberá solicitar un cambio de rol desde el panel de control del usuario.`,
-          });
-      } else {
-        const userFound = await userService.findById(id);
-        if (userFound) {
-          return res
-            .status(200)
-            .render("updateUser", {
-              msg: `MODIFICAR USUARIO ${userFound.rank} ${userFound.firstName} ${userFound.lastName}:`,
-              user,
-              userFound,
-              _id: userFound._id,
-              firstName: userFound.firstName,
-              lastName: userFound.lastName,
-              rank: userFound.rank,
-              email: userFound.email,
-              role: userFound.role,
-              avatar: userFound.avatar,
-            });
-        } else {
-          return res
-            .status(200)
-            .render("updateUser", {
-              user,
-              msg: "Usuario no encontrado. Verifique nuevamente el ID y vuelva a intentarlo.",
-            });
-        }
-      }
-    } catch (e) {
-      logger.error("Error on userController.findByIdAndRenderForUpdate: " + e);
-      return res
-        .status(500)
-        .render("errorPage", {
-          msg: "Error del servidor al actualizar usuario.",
-        });
-    }
-  } */
 
   async findByIdAndUpdate(req, res) {
-    const user = req.session.user;
+    const user = req.user;
     const { id } = req.params;
     const updatedUser = req.query;
     updatedUser._id = id;
@@ -441,55 +352,9 @@ class UsersController {
     }
   }
 
-/*   async findByIdAndRenderForDelete(req, res) {
-    try {
-      const { id } = req.query;
-      const user = req.session.user;
-      if (user.role !== "admin" && user.role !== "superAdmin") {
-        res
-          .status(200)
-          .render("deleteUser", {
-            user,
-            msg: `Su rol "${user.role}" no cuenta con autorización para eliminar usuarios. Si entiende necesaria la eliminación de una multa deberá solicitarla a un administrador o deberá solicitar un cambio de rol desde el panel de control del usuario.`,
-          });
-      } else {
-        const userFound = await userService.findById(id);
-        if (userFound) {
-          return res
-            .status(200)
-            .render("deleteUser", {
-              msg: `ELIMINAR USUARIO ${userFound.rank} ${userFound.firstName} ${userFound.lastName}:`,
-              user,
-              userFound,
-              _id: userFound._id,
-              firstName: userFound.firstName,
-              lastName: userFound.lastName,
-              rank: userFound.rank,
-              email: userFound.email,
-              role: userFound.role,
-              avatar: userFound.avatar,
-            });
-        } else {
-          return res
-            .status(200)
-            .render("deleteUser", {
-              user,
-              msg: "Usuario no encontrado. Verifique nuevamente el ID y vuelva a intentarlo.",
-            });
-        }
-      }
-    } catch (e) {
-      logger.error("Error on userController.findByIdAndRenderForDelete: " + e);
-      return res
-        .status(500)
-        .render("errorPage", {
-          msg: "Error del servidor al eliminar usuario.",
-        });
-    }
-  } */
 
   async findByIdAndDelete (req, res) {
-    const user = req.session.user
+    const user = req.user
     const { id } = req.params;
     try {
       const userFound = await userService.findById(id);
@@ -506,6 +371,219 @@ class UsersController {
     } catch (error) {
       logger.error(`Error de servidor al eliminar el usuario con ID: ${id} en la base de datos:`, error);
       res.status(200).render("errorPage", { msg: `El usuario con ID: ${id} no pudo ser eliminado por un error del servidor.`})
+    }
+  }
+
+  // Login con JWT
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      // Validar datos requeridos
+      if (!email || !password) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Email y contraseña son requeridos",
+          payload: {},
+        });
+      }
+
+      // Buscar usuario por email
+      const user = await userService.findUser(email, password);
+      
+      if (!user) {
+        return res.status(401).json({
+          status: "error",
+          msg: "Credenciales inválidas",
+          payload: {},
+        });
+      }
+
+      // Generar tokens JWT
+      const tokens = jwtService.generateTokens({
+        userId: user._id,
+        email: user.email,
+        category: user.category
+      });
+
+      // Actualizar último login
+      await userService.updateOne({
+        _id: user._id,
+        lastLogin: new Date()
+      });
+
+      logger.info(`Usuario ${user.email} inició sesión exitosamente`);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Login exitoso",
+        payload: {
+          user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            category: user.category,
+            rank: user.rank,
+            avatar: user.avatar,
+            phone: user.phone,
+            birth: user.birth,
+            ci: user.ci,
+            address: user.address,
+            statistics: user.statistics,
+            settings: user.settings,
+            preferences: user.preferences,
+            purchasedCourses: user.purchasedCourses,
+            finishedCourses: user.finishedCourses,
+            approvedCourses: user.approvedCourses || [],
+            status: user.status || "Estudiante"
+          },
+          tokens: {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: tokens.expiresIn
+          }
+        },
+      });
+    } catch (error) {
+      logger.error("Error en login:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  // Refresh token
+  async refreshToken(req, res) {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Refresh token requerido",
+          payload: {},
+        });
+      }
+
+      // Verificar refresh token
+      const decoded = jwtService.verifyToken(refreshToken);
+      
+      if (decoded.type !== 'refresh') {
+        return res.status(401).json({
+          status: "error",
+          msg: "Token de refresh inválido",
+          payload: {},
+        });
+      }
+
+      // Buscar usuario
+      const user = await userService.findById(decoded.userId);
+      if (!user) {
+        return res.status(401).json({
+          status: "error",
+          msg: "Usuario no encontrado",
+          payload: {},
+        });
+      }
+
+      // Generar nuevo access token
+      const newTokens = jwtService.generateTokens({
+        userId: user._id,
+        email: user.email,
+        category: user.category
+      });
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Token renovado exitosamente",
+        payload: {
+          accessToken: newTokens.accessToken,
+          expiresIn: newTokens.expiresIn
+        },
+      });
+    } catch (error) {
+      logger.error("Error en refresh token:", error);
+      return res.status(401).json({
+        status: "error",
+        msg: "Token de refresh inválido o expirado",
+        payload: {},
+      });
+    }
+  }
+
+  // Obtener perfil completo del usuario autenticado
+  async getProfile(req, res) {
+    try {
+      const userId = req.user.userId;
+      const user = await userService.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario no encontrado",
+          payload: {},
+        });
+      }
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Perfil obtenido exitosamente",
+        payload: {
+          user: {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            category: user.category,
+            rank: user.rank,
+            avatar: user.avatar,
+            phone: user.phone,
+            birth: user.birth,
+            ci: user.ci,
+            address: user.address,
+            statistics: user.statistics,
+            settings: user.settings,
+            preferences: user.preferences,
+            purchasedCourses: user.purchasedCourses,
+            finishedCourses: user.finishedCourses,
+            approvedCourses: user.approvedCourses || [],
+            status: user.status || "Estudiante"
+          }
+        },
+      });
+    } catch (error) {
+      logger.error("Error al obtener perfil:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  // Logout (opcional, ya que JWT es stateless)
+  async logout(req, res) {
+    try {
+      // En un sistema stateless, el logout se maneja en el frontend
+      // eliminando el token del almacenamiento local
+      
+      logger.info(`Usuario ${req.user?.email} cerró sesión`);
+      
+      return res.status(200).json({
+        status: "success",
+        msg: "Logout exitoso",
+        payload: {},
+      });
+    } catch (error) {
+      logger.error("Error en logout:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
     }
   }
 }

@@ -1,6 +1,7 @@
 import { usersModel } from "../DAO/models/users.model.js";
 import { transport } from "../utils/nodemailer.js";
 import { logger } from "../utils/logger.js";
+import { isValidPassword } from "../utils/Bcrypt.js";
 
 class UserService {
     async getAll() {
@@ -68,13 +69,31 @@ class UserService {
       }
     }
   
-    async findByEmail(email) {
-      try {
-        return await usersModel.findByEmail(email);
-      } catch (error) {
-        throw new Error("Failed to find user by email: " + error);
-      }
+  async findByEmail(email) {
+    try {
+      return await usersModel.findByEmail(email);
+    } catch (error) {
+      throw new Error("Failed to find user by email: " + error);
     }
+  }
+
+  async findUser(email, password) {
+    try {
+      const user = await usersModel.findByEmail(email);
+      if (!user) {
+        return null;
+      }
+      
+      // Verificar contraseña usando bcrypt
+      if (!isValidPassword(password, user.password)) {
+        return null;
+      }
+      
+      return user;
+    } catch (error) {
+      throw new Error("Failed to authenticate user: " + error);
+    }
+  }
   
     async findByCi(ci) {
       try {
