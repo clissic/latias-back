@@ -1,6 +1,6 @@
 # LATIAS Academia
 
-**Descripción**  
+**Descripción:**  
 LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de náutica y supervivencia, entre otros. La aplicación permite a los cadetes acceder a cursos desarrollados por profesionales del mar, utilizando herramientas de inteligencia artíficial para la generación de videos y diálogos, evaluaciones profesionales y académicas en conjunto con exámenes finales para la obtención de certificados oficiales, generados automáticamente al completar los cursos. En cuanto a los aspéctos técnicos, la plataforma está desarrollada con el stack MERN y utiliza Bootstrap para la interfaz gráfica para mantener un diseño responsive y prolijo.
 
 ---
@@ -66,21 +66,21 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ❌ 35. Testear interfaz y experiencia de usuario.  
 
 ### Integración de videos y control (36-50)
-❌ 36. Seleccionar plataforma de videos externa segura (ej. YouTube privado, Vimeo, etc.).
-❌ 37. Definir flujo para que los instructores generen y editen videos externamente.
-❌ 38. Al crear un curso, permitir que el instructor ingrese la URL del video externo.
-❌ 39. Configurar permisos para que solo cadetes inscritos puedan acceder al video.
-❌ 40. Crear endpoints para obtener las URLs de los videos por curso.
-❌ 41. Mostrar videos en reproductor seguro dentro de la app.
-❌ 42. Implementar control de progreso de visualización por cadete.
-❌ 43. Guardar el progreso de reproducción en la base de datos interna de la app.
-❌ 44. Mostrar avance de los cadetes en el dashboard.
-❌ 45. Probar flujo completo de publicación de curso con videos externos.
-❌ 46. Documentar cómo se integran los videos externos en la plataforma.
-❌ 47. Establecer pautas para que los instructores mantengan sus videos privados.
-❌ 48. Validar que los videos sean compatibles con la app y reproducibles en todos los dispositivos.
-❌ 49. Asegurar consistencia entre videos, módulos y evaluaciones en la app.
-❌ 50. Mantener seguridad y privacidad de los enlaces de video frente a distribución no autorizada. 
+❌ 36. Seleccionar plataforma de videos externa segura (ej. YouTube privado, Vimeo, etc.).  
+❌ 37. Definir flujo para que los instructores generen y editen videos externamente.  
+❌ 38. Al crear un curso, permitir que el instructor ingrese la URL del video externo.  
+❌ 39. Configurar permisos para que solo cadetes inscritos puedan acceder al video.  
+❌ 40. Crear endpoints para obtener las URLs de los videos por curso.  
+❌ 41. Mostrar videos en reproductor seguro dentro de la app.  
+❌ 42. Implementar control de progreso de visualización por cadete.  
+❌ 43. Guardar el progreso de reproducción en la base de datos interna de la app.  
+❌ 44. Mostrar avance de los cadetes en el dashboard.  
+❌ 45. Probar flujo completo de publicación de curso con videos externos.  
+❌ 46. Documentar cómo se integran los videos externos en la plataforma.  
+❌ 47. Establecer pautas para que los instructores mantengan sus videos privados.  
+❌ 48. Validar que los videos sean compatibles con la app y reproducibles en todos los dispositivos.  
+❌ 49. Asegurar consistencia entre videos, módulos y evaluaciones en la app.  
+❌ 50. Mantener seguridad y privacidad de los enlaces de video frente a distribución no autorizada.  
 
 ### Evaluaciones y corrección automática (51-65)
 ❌ 51. Crear modelo de evaluación (preguntas tipo test).  
