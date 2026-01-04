@@ -27,25 +27,25 @@ coursesRouter.get("/difficulty/:difficulty", coursesController.getByDifficulty);
 // ========== RUTAS PROTEGIDAS PARA ADMINISTRADORES ==========
 
 // Crear nuevo curso
-coursesRouter.post("/create", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.create);
+coursesRouter.post("/create", authenticateToken, authorizeByCategory(['Administrador']), coursesController.create);
 
 // Actualizar curso
-coursesRouter.put("/update/:id", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.updateOne);
+coursesRouter.put("/update/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateOne);
 
 // Eliminar curso
-coursesRouter.delete("/delete/:id", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.deleteOne);
+coursesRouter.delete("/delete/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.deleteOne);
 
 // Actualizar progreso de curso
-coursesRouter.put("/progress/:id", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.updateProgress);
+coursesRouter.put("/progress/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateProgress);
 
 // Actualizar estado de finalización
-coursesRouter.put("/finished/:id", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.updateFinishedStatus);
+coursesRouter.put("/finished/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateFinishedStatus);
 
 // Agregar intento de examen
-coursesRouter.put("/attempt/:id", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.addAttempt);
+coursesRouter.put("/attempt/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.addAttempt);
 
 // Actualizar certificado
-coursesRouter.put("/certificate/:id", authenticateToken, authorizeByCategory(['admin', 'superAdmin']), coursesController.updateCertificate);
+coursesRouter.put("/certificate/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
 
 // ========== RUTAS PROTEGIDAS PARA USUARIOS ==========
 

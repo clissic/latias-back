@@ -39,8 +39,8 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ### Autenticación y roles (11-20)
 ✔️ 11. Crear modelo de usuario en MongoDB.  
 ✔️ 12. Implementar registro de cadetes.  
-❌ 13. Implementar login con JWT.  
-❌ 14. Crear middleware de autenticación.  
+✔️ 13. Implementar login con JWT.  
+✔️ 14. Crear middleware de autenticación.  
 ❌ 15. Crear roles: cadete, instructor, administrador.  
 ❌ 16. Crear middleware de autorización según rol.  
 ❌ 17. Probar endpoints de autenticación con Postman.  
@@ -146,7 +146,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ## Contacto del desarrollador
 
-**Nombre:** Joaquín Pérez Coria 
+**Nombre:** Joaquín Pérez Coria  
 **LinkedIn:** [https://www.linkedin.com/in/joaquin-perez-coria](https://www.linkedin.com/in/joaquin-perez-coria)  
 **Sitio web / Portafolio:** [https://jpc-dev.uy](https://jpc-dev.uy)  
 
@@ -154,7 +154,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ## Licencia
 
-Copyright (c) 2025 Joaquín Pérez
+Copyright (c) 2025 JPC Dev  
 
-Este proyecto está bajo la Licencia MIT.
+Este proyecto está bajo la Licencia MIT.  
 Se permite usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar y/o vender copias del software. 
