@@ -9,6 +9,7 @@ import { usersRouter } from "./routes/users.routes.js";
 import { tokensRouter } from "./routes/tokens.routes.js";
 import { coursesRouter } from "./routes/courses.routes.js";
 import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
+import { uploadRouter } from "./routes/upload.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,11 +28,15 @@ const httpServer = app.listen(PORT, () => {
 // Conectar a la base de datos
 connectMongo();
 
+// Servir archivos estáticos desde public (para imágenes subidas)
+app.use(serveStatic(join(__dirname, "../public")));
+
 // ENDPOINTS
 app.use("/api/users", usersRouter);
 app.use("/api/tokens", tokensRouter);
 app.use("/api/courses", coursesRouter);
 app.use("/api/mercadopago", mercadoPagoRouter);
+app.use("/api/upload", uploadRouter);
 
 // Servir archivos estáticos desde la carpeta dist
 app.use(serveStatic(join(__dirname, "../../latias-front/dist")));

@@ -1,19 +1,19 @@
 import { Schema, model } from "mongoose";
 
 const schema = new Schema({
-  courseId: { type: String },
-  sku: { type: String },
-  courseName: { type: String },
+  courseId: { type: String, required: true },
+  sku: { type: String, required: true },
+  courseName: { type: String, required: true },
   bannerUrl: { type: String },
   image: { type: String },
   shortImage: { type: String },
-  currency: { type: String },
+  currency: { type: String, default: "UYU" },
   shortDescription: { type: String },
   longDescription: { type: String },
-  duration: { type: String },
-  price: { type: Number , default: 0},
-  difficulty: { type: String},
-  category: { type: String},
+  duration: { type: Number, min: 0 },
+  price: { type: Number, required: true, min: 0 },
+  difficulty: { type: String },
+  category: { type: String, required: true },
   enrolledDate: { type: Date, default: Date.now },
   isFinished: { type: Boolean, default: false},
   finishedDate: { type: Date, default: null },
@@ -38,8 +38,8 @@ const schema = new Schema({
   ],
   modules: [
     {
-      moduleId: { type: String },
-      moduleName: { type: String },
+      moduleId: { type: String, required: true },
+      moduleName: { type: String, required: true },
       moduleDescription: { type: String },
       locked: { type: Boolean, default: false },
       isFinished: { type: Boolean, default: false },
@@ -55,19 +55,23 @@ const schema = new Schema({
       score: { type: Number, default: null },
       lessons: [
         {
-          lessonId: { type: String},
-          lessonName: { type: String},
-          lessonDescription: { type: String},
-          videoUrl: { type: String},
+          lessonId: { type: String, required: true },
+          lessonName: { type: String, required: true },
+          lessonDescription: { type: String },
+          videoUrl: { type: String },
           completed: { type: Boolean, default: false }
         }
       ],
       questionBank: [
         {
-          questionId: { type: String, default: null },
-          questionText: { type: String, default: null },
+          questionId: { type: String, required: true },
+          questionText: { type: String, required: true },
           options: [
-            { optionId: { type: String, default: null }, optionText: { type: String, default: null }, isCorrect: { type: Boolean, default: false} }
+            { 
+              optionId: { type: String, required: true }, 
+              optionText: { type: String, required: true }, 
+              isCorrect: { type: Boolean, default: false } 
+            }
           ]
         }
       ]

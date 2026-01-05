@@ -41,20 +41,20 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 12. Implementar registro de cadetes.  
 ✔️ 13. Implementar login con JWT.  
 ✔️ 14. Crear middleware de autenticación.  
-❌ 15. Crear roles: cadete, instructor, administrador.  
-❌ 16. Crear middleware de autorización según rol.  
+🟡 15. Crear roles: cadete, instructor, administrador.  
+🟡 16. Crear middleware de autorización según rol.  
 ❌ 17. Probar endpoints de autenticación con Postman.  
 ✔️ 18. Configurar frontend para login y registro.  
-❌ 19. Crear páginas protegidas según rol.  
+🟡 19. Crear páginas protegidas según rol.  
 ❌ 20. Testear flujo completo de autenticación y roles.  
 
 ### Gestión de cursos (21-35)
 ✔️ 21. Crear modelo de curso en MongoDB.  
 ✔️ 22. Definir campos: título, descripción, categoría, videos, recursos.  
 🟡 23. Crear endpoints para CRUD de cursos.  
-❌ 24. Crear interfaz de instructor para crear cursos.  
-❌ 25. Crear formulario de creación de curso en frontend.  
-❌ 26. Implementar subida de archivos (miniaturas y PDFs).  
+🟡 24. Crear interfaz de Administrador para crear cursos.  
+✔️ 25. Crear formulario de creación de curso en frontend.  
+🟡 26. Implementar subida de archivos (miniaturas y PDFs).  
 ❌ 27. Integrar edición de curso existente.  
 ❌ 28. Implementar eliminación de curso.  
 ❌ 29. Crear endpoint para listar cursos.  
