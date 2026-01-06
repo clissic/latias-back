@@ -43,7 +43,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 14. Crear middleware de autenticación.  
 🟡 15. Crear roles: cadete, instructor, administrador.  
 🟡 16. Crear middleware de autorización según rol.  
-❌ 17. Probar endpoints de autenticación con Postman.  
+✔️ 17. Probar endpoints de autenticación con Postman.  
 ✔️ 18. Configurar frontend para login y registro.  
 🟡 19. Crear páginas protegidas según rol.  
 ❌ 20. Testear flujo completo de autenticación y roles.  

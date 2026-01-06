@@ -30,22 +30,22 @@ coursesRouter.get("/difficulty/:difficulty", coursesController.getByDifficulty);
 coursesRouter.post("/create", authenticateToken, authorizeByCategory(['Administrador']), coursesController.create);
 
 // Actualizar curso
-coursesRouter.put("/update/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateOne);
+coursesRouter.put("/update/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateOne);
 
 // Eliminar curso
-coursesRouter.delete("/delete/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.deleteOne);
+coursesRouter.delete("/delete/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.deleteOne);
 
 // Actualizar progreso de curso
-coursesRouter.put("/progress/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateProgress);
+coursesRouter.put("/progress/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateProgress);
 
 // Actualizar estado de finalización
-coursesRouter.put("/finished/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateFinishedStatus);
+coursesRouter.put("/finished/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateFinishedStatus);
 
 // Agregar intento de examen
-coursesRouter.put("/attempt/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.addAttempt);
+coursesRouter.put("/attempt/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.addAttempt);
 
 // Actualizar certificado
-coursesRouter.put("/certificate/:id", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
+coursesRouter.put("/certificate/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
 
 // ========== RUTAS PROTEGIDAS PARA USUARIOS ==========
 

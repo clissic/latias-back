@@ -173,10 +173,20 @@ class CoursesController {
   // Actualizar curso (solo administradores)
   async updateOne(req, res) {
     try {
-      const { _id } = req.params;
+      const { courseId } = req.params;
       const courseData = req.body;
-      courseData._id = _id;
 
+      // Buscar el curso por courseId para obtener su _id
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
+      courseData._id = course._id;
       const courseUpdated = await coursesService.updateOne(courseData);
 
       if (courseUpdated.matchedCount > 0) {
@@ -205,9 +215,19 @@ class CoursesController {
   // Eliminar curso (solo administradores)
   async deleteOne(req, res) {
     try {
-      const { _id } = req.params;
+      const { courseId } = req.params;
 
-      const result = await coursesService.deleteOne(_id);
+      // Buscar el curso por courseId para obtener su _id
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
+      const result = await coursesService.deleteOne(course._id);
 
       if (result?.deletedCount > 0) {
         return res.status(200).json({
@@ -424,7 +444,7 @@ class CoursesController {
   // Actualizar progreso de un curso (para administradores)
   async updateProgress(req, res) {
     try {
-      const { _id } = req.params;
+      const { courseId } = req.params;
       const { progress } = req.body;
 
       if (progress === undefined || progress < 0 || progress > 100) {
@@ -435,7 +455,17 @@ class CoursesController {
         });
       }
 
-      const courseUpdated = await coursesService.updateProgress({ _id, progress });
+      // Buscar el curso por courseId para obtener su _id
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
+      const courseUpdated = await coursesService.updateProgress({ _id: course._id, progress });
 
       if (courseUpdated.matchedCount > 0) {
         return res.status(200).json({
@@ -463,11 +493,21 @@ class CoursesController {
   // Actualizar estado de finalización del curso (para administradores)
   async updateFinishedStatus(req, res) {
     try {
-      const { _id } = req.params;
+      const { courseId } = req.params;
       const { isFinished, finishedDate } = req.body;
 
+      // Buscar el curso por courseId para obtener su _id
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
       const courseUpdated = await coursesService.updateFinishedStatus({
-        _id,
+        _id: course._id,
         isFinished,
         finishedDate,
       });
@@ -498,7 +538,7 @@ class CoursesController {
   // Agregar intento de examen al curso (para administradores)
   async addAttempt(req, res) {
     try {
-      const { _id } = req.params;
+      const { courseId } = req.params;
       const { attempt } = req.body;
 
       if (!attempt) {
@@ -509,7 +549,17 @@ class CoursesController {
         });
       }
 
-      const courseUpdated = await coursesService.addAttempt({ _id, attempt });
+      // Buscar el curso por courseId para obtener su _id
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
+      const courseUpdated = await coursesService.addAttempt({ _id: course._id, attempt });
 
       if (courseUpdated.matchedCount > 0) {
         return res.status(200).json({
@@ -537,7 +587,7 @@ class CoursesController {
   // Actualizar certificado del curso (para administradores)
   async updateCertificate(req, res) {
     try {
-      const { _id } = req.params;
+      const { courseId } = req.params;
       const { certificate } = req.body;
 
       if (!certificate) {
@@ -548,7 +598,17 @@ class CoursesController {
         });
       }
 
-      const courseUpdated = await coursesService.updateCertificate({ _id, certificate });
+      // Buscar el curso por courseId para obtener su _id
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
+      const courseUpdated = await coursesService.updateCertificate({ _id: course._id, certificate });
 
       if (courseUpdated.matchedCount > 0) {
         return res.status(200).json({
