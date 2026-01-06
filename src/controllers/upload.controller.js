@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger.js';
 import { join } from 'path';
 import { __dirname } from '../config.js';
+import { existsSync } from 'fs';
 
 class UploadController {
   // Subir una imagen de curso
@@ -40,29 +41,61 @@ class UploadController {
   // Subir múltiples imágenes de curso (banner, image, shortImage)
   async uploadCourseImages(req, res) {
     try {
+      logger.info('Iniciando subida de imágenes. req.files:', JSON.stringify(req.files));
+      logger.info('req.body:', JSON.stringify(req.body));
+      
       const images = {};
+      // __dirname es latias-back/src, entonces ../public es latias-back/public
+      const uploadsDir = join(__dirname, '../public/uploads/courses');
+      logger.info(`[Upload Controller] Verificando archivos en: ${uploadsDir}`);
       
       if (req.files) {
-        if (req.files.bannerUrl) {
-          images.bannerUrl = `/uploads/courses/${req.files.bannerUrl[0].filename}`;
+        logger.info('Archivos recibidos:', Object.keys(req.files));
+        
+        if (req.files.bannerUrl && req.files.bannerUrl.length > 0) {
+          const file = req.files.bannerUrl[0];
+          const filePath = join(uploadsDir, file.filename);
+          const fileExists = existsSync(filePath);
+          logger.info(`Banner subido: ${file.filename}, ruta: ${filePath}, existe: ${fileExists}`);
+          if (!fileExists) {
+            logger.error(`[ERROR] El archivo banner NO existe en el disco: ${filePath}`);
+          }
+          images.bannerUrl = `/uploads/courses/${file.filename}`;
         }
-        if (req.files.image) {
-          images.image = `/uploads/courses/${req.files.image[0].filename}`;
+        if (req.files.image && req.files.image.length > 0) {
+          const file = req.files.image[0];
+          const filePath = join(uploadsDir, file.filename);
+          const fileExists = existsSync(filePath);
+          logger.info(`Imagen subida: ${file.filename}, ruta: ${filePath}, existe: ${fileExists}`);
+          if (!fileExists) {
+            logger.error(`[ERROR] El archivo image NO existe en el disco: ${filePath}`);
+          }
+          images.image = `/uploads/courses/${file.filename}`;
         }
-        if (req.files.shortImage) {
-          images.shortImage = `/uploads/courses/${req.files.shortImage[0].filename}`;
+        if (req.files.shortImage && req.files.shortImage.length > 0) {
+          const file = req.files.shortImage[0];
+          const filePath = join(uploadsDir, file.filename);
+          const fileExists = existsSync(filePath);
+          logger.info(`Imagen corta subida: ${file.filename}, ruta: ${filePath}, existe: ${fileExists}`);
+          if (!fileExists) {
+            logger.error(`[ERROR] El archivo shortImage NO existe en el disco: ${filePath}`);
+          }
+          images.shortImage = `/uploads/courses/${file.filename}`;
         }
+      } else {
+        logger.warning('No se recibieron archivos en req.files');
       }
 
       if (Object.keys(images).length === 0) {
+        logger.warning('No se procesaron imágenes. req.files:', req.files);
         return res.status(400).json({
           status: "error",
-          msg: "No se proporcionaron archivos",
-          payload: {},
+          msg: "No se proporcionaron archivos o no se pudieron procesar",
+          payload: { receivedFiles: req.files ? Object.keys(req.files) : 'none' },
         });
       }
 
-      logger.info(`Imágenes subidas: ${JSON.stringify(images)}`);
+      logger.info(`Imágenes subidas exitosamente: ${JSON.stringify(images)}`);
 
       return res.status(200).json({
         status: "success",
@@ -73,7 +106,7 @@ class UploadController {
       logger.error("Error al subir imágenes:", error);
       return res.status(500).json({
         status: "error",
-        msg: "Error al subir las imágenes",
+        msg: "Error al subir las imágenes: " + error.message,
         payload: {},
       });
     }

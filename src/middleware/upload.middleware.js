@@ -1,24 +1,61 @@
 import multer from 'multer';
 import { join } from 'path';
 import { __dirname } from '../config.js';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, access, constants } from 'fs';
+import { logger } from '../utils/logger.js';
 
 // Crear directorio de uploads si no existe
-const uploadsDir = join(__dirname, '../../public/uploads/courses');
+// __dirname es latias-back/src, entonces ../public es latias-back/public
+const uploadsDir = join(__dirname, '../public/uploads/courses');
+logger.info(`[Upload Middleware] Ruta del directorio: ${uploadsDir}`);
+
 if (!existsSync(uploadsDir)) {
-  mkdirSync(uploadsDir, { recursive: true });
+  try {
+    mkdirSync(uploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads creado: ${uploadsDir}`);
+  } catch (error) {
+    logger.error(`[Upload Middleware] Error al crear directorio: ${error.message}`);
+    throw error;
+  }
+} else {
+  logger.info(`[Upload Middleware] Directorio de uploads existe: ${uploadsDir}`);
 }
+
+// Verificar permisos de escritura
+access(uploadsDir, constants.W_OK, (err) => {
+  if (err) {
+    logger.error(`[Upload Middleware] No hay permisos de escritura en: ${uploadsDir}`);
+  } else {
+    logger.info(`[Upload Middleware] Permisos de escritura OK en: ${uploadsDir}`);
+  }
+});
 
 // Configuración de almacenamiento
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    logger.info(`[Multer] destination llamado para archivo: ${file.originalname}`);
+    logger.info(`[Multer] Guardando en: ${uploadsDir}`);
+    
+    // Asegurar que el directorio existe antes de guardar
+    if (!existsSync(uploadsDir)) {
+      try {
+        mkdirSync(uploadsDir, { recursive: true });
+        logger.info(`[Multer] Directorio creado en destination: ${uploadsDir}`);
+      } catch (error) {
+        logger.error(`[Multer] Error al crear directorio en destination: ${error.message}`);
+        return cb(error);
+      }
+    }
+    
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     // Generar nombre único: timestamp + nombre original
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = file.originalname.split('.').pop();
-    cb(null, `course-${uniqueSuffix}.${ext}`);
+    const filename = `course-${uniqueSuffix}.${ext}`;
+    logger.info(`[Multer] Generando nombre de archivo: ${filename}`);
+    cb(null, filename);
   }
 });
 

@@ -78,10 +78,10 @@ class JWTService {
       return decoded;
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        logger.warn('Token expirado');
+        logger.warning('Token expirado');
         throw new Error('Token expirado');
       } else if (error.name === 'JsonWebTokenError') {
-        logger.warn('Token inválido');
+        logger.warning('Token inválido');
         throw new Error('Token inválido');
       } else {
         logger.error('Error al verificar token:', error);

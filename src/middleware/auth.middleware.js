@@ -81,7 +81,7 @@ export const authorizeByCategory = (allowedCategories) => {
       const userCategory = req.user.category;
       
       if (!allowedCategories.includes(userCategory)) {
-        logger.warn(`Usuario ${req.user.userId} con categoría ${userCategory} intentó acceder a recurso restringido`);
+        logger.warning(`Usuario ${req.user.userId} con categoría ${userCategory} intentó acceder a recurso restringido`);
         return res.status(403).json({
           status: "error",
           msg: "No tienes permisos para acceder a este recurso",
