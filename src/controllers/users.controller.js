@@ -124,7 +124,8 @@ class UsersController {
 
   async updateOne(req, res) {
     try {
-      const { _id } = req.params;
+      // Si viene _id en params, usarlo (para rutas con :id), sino usar el usuario autenticado
+      const _id = req.params._id || req.user._id || req.user.userId;
       const { password,
         avatar,
         firstName,
@@ -233,8 +234,19 @@ class UsersController {
   async updatePassword(req, res) {
     try {
       const email = req.user.email;
-      const password = req.body;
-      const userUpdated = await userService.updatePassword({ email, password });
+      const { newPassword } = req.body;
+      
+      if (!newPassword) {
+        return res.status(400).json({
+          status: "error",
+          msg: "New password is required",
+          payload: {},
+        });
+      }
+
+      // Hashear la contraseña antes de guardarla
+      const hashedPassword = createHash(newPassword);
+      const userUpdated = await userService.updatePassword({ email, newPassword: hashedPassword });
       if (userUpdated) {
         return res.status(200).json({
           status: "success",

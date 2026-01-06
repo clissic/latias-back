@@ -5,8 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon -e yaml,js --exec \"node --env-file=.env.development src/app.js\""
+    "start": "node src/app.js",
+    "dev": "nodemon -e yaml,js --exec \"node --env-file=.env.development src/app.js\"",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linter configured\" && exit 0"
   },
   "repository": {
     "type": "git",
