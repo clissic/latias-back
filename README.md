@@ -28,7 +28,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 1. Crear el repositorio en GitHub.  
 ✔️ 2. Inicializar proyecto MERN con Vite.  
 ✔️ 3. Configurar ESLint y Prettier.  
-❌ 4. Configurar GitHub Actions para CI/CD.  
+✔️ 4. Configurar GitHub Actions para CI/CD.  
 ✔️ 5. Crear estructura de carpetas (frontend, backend, assets, utils).  
 ✔️ 6. Configurar Node.js y Express en backend.  
 ✔️ 7. Configurar conexión a MongoDB Atlas.  
@@ -55,14 +55,14 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 🟡 24. Crear interfaz de Administrador para crear cursos.  
 ✔️ 25. Crear formulario de creación de curso en frontend.  
 🟡 26. Implementar subida de archivos (miniaturas y PDFs).  
-❌ 27. Integrar edición de curso existente.  
-❌ 28. Implementar eliminación de curso.  
-❌ 29. Crear endpoint para listar cursos.  
+✔️ 27. Integrar edición de curso existente.  
+✔️ 28. Implementar eliminación de curso.  
+✔️ 29. Crear endpoint para listar cursos.  
 ✔️ 30. Mostrar cursos en dashboard de cadetes.  
 ✔️ 31. Filtrar cursos por categoría.  
 ❌ 32. Crear paginación en listado de cursos.  
 ✔️ 33. Crear búsqueda por título y descripción.  
-❌ 34. Probar CRUD completo de cursos.  
+✔️ 34. Probar CRUD completo de cursos.  
 ❌ 35. Testear interfaz y experiencia de usuario.  
 
 ### Integración de videos y control (36-50)
