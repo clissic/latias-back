@@ -3,22 +3,12 @@ name: Backend CI
 on:
   push:
     branches: [ master, develop ]
-    paths:
-      - 'latias-back/**'
-      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ master, develop ]
-    paths:
-      - 'latias-back/**'
-      - '.github/workflows/backend-ci.yml'
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    defaults:
-      run:
-        working-directory: latias-back
     
     strategy:
       matrix:

@@ -3,22 +3,12 @@ name: Frontend CI
 on:
   push:
     branches: [ master, develop ]
-    paths:
-      - 'latias-front/**'
-      - '.github/workflows/frontend-ci.yml'
   pull_request:
     branches: [ master, develop ]
-    paths:
-      - 'latias-front/**'
-      - '.github/workflows/frontend-ci.yml'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
-    defaults:
-      run:
-        working-directory: latias-front
     
     strategy:
       matrix:
@@ -51,4 +41,3 @@ jobs:
             exit 1
           fi
           echo "✅ Build successful"
-
