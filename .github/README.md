@@ -2,28 +2,25 @@
 
 Este directorio contiene los workflows de CI/CD para el proyecto Latias.
 
-## Workflows Disponibles
+# GitHub Actions Workflows
 
-### 1. Frontend CI (`frontend-ci.yml`)
-- **Trigger**: Push/PR en ramas `master` o `develop` que afecten `latias-front/`
-- **Acciones**:
-  - Instala dependencias
-  - Ejecuta el linter
-  - Construye el proyecto
-  - Verifica que el build sea exitoso
+Este directorio contiene los workflows de CI/CD para el proyecto Latias Backend.
 
-### 2. Backend CI (`backend-ci.yml`)
-- **Trigger**: Push/PR en ramas `master` o `develop` que afecten `latias-back/`
+## Estructura de Repositorios
+
+Los repositorios están separados:
+- **latias-back**: Este repositorio (backend)
+- **latias-front**: Repositorio separado (frontend)
+
+## Workflow Disponible
+
+### Backend CI (`backend-ci.yml`)
+- **Ubicación**: Este repositorio (`latias-back`)
+- **Trigger**: Push/PR en ramas `master` o `develop`
 - **Acciones**:
   - Instala dependencias
   - Verifica la sintaxis del código
   - Valida que las dependencias estén instaladas correctamente
-
-### 3. Full CI (`full-ci.yml`)
-- **Trigger**: Push/PR en ramas `master` o `develop` (cualquier cambio)
-- **Acciones**:
-  - Ejecuta ambos workflows (Frontend y Backend) en paralelo
-  - Sube artefactos del build del frontend
 
 ## Scripts Multiplataforma
 
