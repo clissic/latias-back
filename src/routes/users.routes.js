@@ -14,6 +14,7 @@ usersRouter.get("/", authenticateToken, usersController.getAll);
 usersRouter.get("/profile", authenticateToken, usersController.getProfile);
 usersRouter.get("/findByEmail", authenticateToken, usersController.findByEmail);
 usersRouter.get("/findByCi", authenticateToken, usersController.findByCi);
+usersRouter.get("/:id", authenticateToken, usersController.findById);
 usersRouter.post("/logout", authenticateToken, usersController.logout);
 usersRouter.put("/update", authenticateToken, usersController.updateOne);
 usersRouter.put("/update-password", authenticateToken, usersController.updatePassword);
