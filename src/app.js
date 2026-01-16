@@ -11,6 +11,7 @@ import { tokensRouter } from "./routes/tokens.routes.js";
 import { coursesRouter } from "./routes/courses.routes.js";
 import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
 import { uploadRouter } from "./routes/upload.routes.js";
+import { professorsRouter } from "./routes/professors.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,12 +41,22 @@ if (!existsSync(uploadsDir)) {
   console.log(`Directorio de uploads ya existe: ${uploadsDir}`);
 }
 
+// Asegurar que el directorio de uploads de profesores existe
+const professorsUploadsDir = join(__dirname, "../public/uploads/professors");
+if (!existsSync(professorsUploadsDir)) {
+  mkdirSync(professorsUploadsDir, { recursive: true });
+  console.log(`Directorio de uploads de profesores creado: ${professorsUploadsDir}`);
+} else {
+  console.log(`Directorio de uploads de profesores ya existe: ${professorsUploadsDir}`);
+}
+
 // ENDPOINTS (deben ir antes de los archivos estáticos)
 app.use("/api/users", usersRouter);
 app.use("/api/tokens", tokensRouter);
 app.use("/api/courses", coursesRouter);
 app.use("/api/mercadopago", mercadoPagoRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/professors", professorsRouter);
 
 // Servir archivos estáticos desde public/uploads (para imágenes subidas)
 // Esto debe ir después de las rutas de API pero antes del catch-all de React

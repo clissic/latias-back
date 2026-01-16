@@ -90,3 +90,56 @@ export const uploadMultiple = upload.fields([
   { name: 'image', maxCount: 1 },
   { name: 'shortImage', maxCount: 1 }
 ]);
+
+// Configuración para imágenes de profesores
+const professorsUploadsDir = join(__dirname, '../public/uploads/professors');
+logger.info(`[Upload Middleware] Ruta del directorio de profesores: ${professorsUploadsDir}`);
+
+if (!existsSync(professorsUploadsDir)) {
+  try {
+    mkdirSync(professorsUploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads de profesores creado: ${professorsUploadsDir}`);
+  } catch (error) {
+    logger.error(`[Upload Middleware] Error al crear directorio de profesores: ${error.message}`);
+    throw error;
+  }
+} else {
+  logger.info(`[Upload Middleware] Directorio de uploads de profesores existe: ${professorsUploadsDir}`);
+}
+
+const professorStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    logger.info(`[Multer Professor] destination llamado para archivo: ${file.originalname}`);
+    logger.info(`[Multer Professor] Guardando en: ${professorsUploadsDir}`);
+    
+    if (!existsSync(professorsUploadsDir)) {
+      try {
+        mkdirSync(professorsUploadsDir, { recursive: true });
+        logger.info(`[Multer Professor] Directorio creado en destination: ${professorsUploadsDir}`);
+      } catch (error) {
+        logger.error(`[Multer Professor] Error al crear directorio en destination: ${error.message}`);
+        return cb(error);
+      }
+    }
+    
+    cb(null, professorsUploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = file.originalname.split('.').pop();
+    const filename = `professor-${uniqueSuffix}.${ext}`;
+    logger.info(`[Multer Professor] Generando nombre de archivo: ${filename}`);
+    cb(null, filename);
+  }
+});
+
+export const uploadProfessor = multer({
+  storage: professorStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  },
+  fileFilter: fileFilter
+});
+
+// Middleware para subir imagen de profesor
+export const uploadProfessorImage = uploadProfessor.single('profileImage');
