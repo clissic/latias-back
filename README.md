@@ -51,8 +51,8 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ### Gestión de cursos (21-35)
 ✔️ 21. Crear modelo de curso en MongoDB.  
 ✔️ 22. Definir campos: título, descripción, categoría, videos, recursos.  
-🟡 23. Crear endpoints para CRUD de cursos.  
-🟡 24. Crear interfaz de Administrador para crear cursos.  
+✔️ 23. Crear endpoints para CRUD de cursos.  
+✔️ 24. Crear interfaz de Administrador para crear cursos.  
 ✔️ 25. Crear formulario de creación de curso en frontend.  
 🟡 26. Implementar subida de archivos (miniaturas y PDFs).  
 ✔️ 27. Integrar edición de curso existente.  
@@ -68,7 +68,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ### Integración de videos y control (36-50)
 ❌ 36. Seleccionar plataforma de videos externa segura (ej. YouTube privado, Vimeo, etc.).  
 ❌ 37. Definir flujo para que los instructores generen y editen videos externamente.  
-❌ 38. Al crear un curso, permitir que el instructor ingrese la URL del video externo.  
+✔️ 38. Al crear un curso, permitir que el instructor ingrese la URL del video externo.  
 ❌ 39. Configurar permisos para que solo cadetes inscritos puedan acceder al video.  
 ❌ 40. Crear endpoints para obtener las URLs de los videos por curso.  
 ❌ 41. Mostrar videos en reproductor seguro dentro de la app.  
@@ -112,12 +112,12 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ❌ 75. Documentar flujo de pagos.  
 
 ### Panel de administración y cadetes (76-85)
-❌ 76. Crear dashboard de administrador.  
-❌ 77. Listar todos los cadetes y sus cursos.  
-❌ 78. Listar todos los instructores y cursos asignados.
-❌ 79. Permitir desactivar o eliminar usuarios.  
-❌ 80. Crear filtros por rol y estado.  
-❌ 81. Implementar búsqueda de usuarios.  
+🟡 76. Crear dashboard de administrador.  
+✔️ 77. Listar todos los cadetes y sus cursos.  
+🟡 78. Listar todos los instructores y cursos asignados.
+✔️ 79. Permitir desactivar o eliminar usuarios.  
+✔️ 80. Crear filtros por rol y estado.  
+✔️ 81. Implementar búsqueda de usuarios.  
 ❌ 82. Visualizar historial de pagos y transacciones.  
 ❌ 83. Revisar entregas de cadetes.  
 ❌ 84. Probar funcionalidades administrativas.  
