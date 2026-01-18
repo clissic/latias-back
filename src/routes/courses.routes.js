@@ -1,6 +1,6 @@
 import express from "express";
 import { coursesController } from "../controllers/courses.controller.js";
-import { authenticateToken, authorizeByCategory } from "../middleware/auth.middleware.js";
+import { authenticateToken, authorizeByCategory, validateUserOwnership } from "../middleware/auth.middleware.js";
 
 export const coursesRouter = express.Router();
 
@@ -49,17 +49,17 @@ coursesRouter.put("/certificate/:courseId", authenticateToken, authorizeByCatego
 
 // ========== RUTAS PROTEGIDAS PARA USUARIOS ==========
 
-// Comprar curso
-coursesRouter.post("/purchase/:userId", authenticateToken, coursesController.purchaseCourse);
+// Comprar curso (valida que el usuario solo compre para sí mismo, a menos que sea admin)
+coursesRouter.post("/purchase/:userId", authenticateToken, validateUserOwnership(), coursesController.purchaseCourse);
 
-// Obtener cursos comprados del usuario
-coursesRouter.get("/user/:userId/purchased", authenticateToken, coursesController.getUserPurchasedCourses);
+// Obtener cursos comprados del usuario (valida que el usuario solo vea sus propios cursos, a menos que sea admin)
+coursesRouter.get("/user/:userId/purchased", authenticateToken, validateUserOwnership(), coursesController.getUserPurchasedCourses);
 
-// Actualizar progreso del curso del usuario
-coursesRouter.put("/user/:userId/course/:courseId/progress", authenticateToken, coursesController.updateUserCourseProgress);
+// Actualizar progreso del curso del usuario (valida que el usuario solo actualice su propio progreso, a menos que sea admin)
+coursesRouter.put("/user/:userId/course/:courseId/progress", authenticateToken, validateUserOwnership(), coursesController.updateUserCourseProgress);
 
-// Agregar intento de examen al curso del usuario
-coursesRouter.put("/user/:userId/course/:courseId/attempt", authenticateToken, coursesController.addUserCourseAttempt);
+// Agregar intento de examen al curso del usuario (valida que el usuario solo agregue intentos a sus propios cursos, a menos que sea admin)
+coursesRouter.put("/user/:userId/course/:courseId/attempt", authenticateToken, validateUserOwnership(), coursesController.addUserCourseAttempt);
 
-// Actualizar certificado del curso del usuario
-coursesRouter.put("/user/:userId/course/:courseId/certificate", authenticateToken, coursesController.updateUserCourseCertificate);
+// Actualizar certificado del curso del usuario (valida que el usuario solo actualice sus propios certificados, a menos que sea admin)
+coursesRouter.put("/user/:userId/course/:courseId/certificate", authenticateToken, validateUserOwnership(), coursesController.updateUserCourseCertificate);

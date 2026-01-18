@@ -1,6 +1,6 @@
 import express from "express";
 import { mercadoPagoController } from "../controllers/mercadopago.controller.js";
-import { authenticateToken } from "../middleware/auth.middleware.js";
+import { authenticateToken, validateUserOwnership } from "../middleware/auth.middleware.js";
 
 export const mercadoPagoRouter = express.Router();
 
@@ -14,8 +14,8 @@ mercadoPagoRouter.get("/payment-methods", mercadoPagoController.getPaymentMethod
 
 // ========== RUTAS PROTEGIDAS ==========
 
-// Crear preferencia de pago
-mercadoPagoRouter.post("/create-preference", authenticateToken, mercadoPagoController.createPreference);
+// Crear preferencia de pago (valida que el usuario solo cree preferencias para sí mismo, a menos que sea admin)
+mercadoPagoRouter.post("/create-preference", authenticateToken, validateUserOwnership(), mercadoPagoController.createPreference);
 
 // Obtener preferencia
 mercadoPagoRouter.get("/preference/:preferenceId", authenticateToken, mercadoPagoController.getPreference);

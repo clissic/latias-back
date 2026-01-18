@@ -135,3 +135,63 @@ export const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Middleware para validar que el usuario solo acceda a sus propios datos
+// Permite acceso si:
+// 1. El usuario es Administrador (puede acceder a cualquier dato)
+// 2. El userId en params/body coincide con el usuario autenticado
+export const validateUserOwnership = (options = {}) => {
+  return (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          status: "error",
+          msg: "Usuario no autenticado",
+          payload: {},
+        });
+      }
+
+      // Los administradores pueden acceder a cualquier dato
+      if (req.user.category === "Administrador") {
+        return next();
+      }
+
+      // Obtener userId de params o body según las opciones
+      const userIdParam = options.userIdParam || "userId";
+      const userIdFromParams = req.params[userIdParam];
+      const userIdFromBody = req.body[userIdParam];
+      const requestedUserId = userIdFromParams || userIdFromBody;
+
+      // Convertir a string para comparación
+      const authenticatedUserId = String(req.user.userId);
+      const requestedUserIdStr = requestedUserId ? String(requestedUserId) : null;
+
+      if (!requestedUserIdStr) {
+        logger.warning(`Usuario ${authenticatedUserId} intentó acceder sin especificar userId`);
+        return res.status(400).json({
+          status: "error",
+          msg: "userId es requerido",
+          payload: {},
+        });
+      }
+
+      // Validar que el userId solicitado coincida con el usuario autenticado
+      if (authenticatedUserId !== requestedUserIdStr) {
+        logger.warning(`Usuario ${authenticatedUserId} intentó acceder a datos del usuario ${requestedUserIdStr}`);
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permisos para acceder a estos datos",
+          payload: {},
+        });
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Error en middleware de validación de propiedad:', error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  };
+};

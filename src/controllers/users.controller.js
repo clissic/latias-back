@@ -124,8 +124,19 @@ class UsersController {
 
   async updateOne(req, res) {
     try {
+      // Validar que solo administradores puedan modificar usuarios
+      // (esto es redundante con el middleware, pero es una capa adicional de seguridad)
+      if (req.user.category !== "Administrador") {
+        logger.warning(`Usuario ${req.user.userId} con categoría ${req.user.category} intentó modificar un usuario`);
+        return res.status(403).json({
+          status: "error",
+          msg: "Solo los administradores pueden modificar usuarios",
+          payload: {},
+        });
+      }
+
       // Si viene _id en params, usarlo (para rutas con :id), sino usar el usuario autenticado
-      const _id = req.params._id || req.user._id || req.user.userId;
+      const _id = req.params._id || req.body._id || req.user.userId;
       const { password,
         avatar,
         firstName,
@@ -139,8 +150,11 @@ class UsersController {
         statistics,
         settings,
         preferences,
+        rank,
+        category,
         purchasedCourses,
         finishedCourses, } = req.body;
+      
       if (!firstName || !lastName || !email || !_id) {
         logger.info(
           "Validation error: please complete firstName, lastName and email."
@@ -151,6 +165,16 @@ class UsersController {
           payload: {},
         });
       }
+
+      // Validar que el category sea uno de los valores permitidos si se proporciona
+      if (category && !["Cadete", "Instructor", "Administrador"].includes(category)) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Categoría inválida. Debe ser: Cadete, Instructor o Administrador",
+          payload: {},
+        });
+      }
+
       try {
         const userUpdated = await userService.updateOne({
             _id,
@@ -167,10 +191,12 @@ class UsersController {
             statistics,
             settings,
             preferences,
+            rank,
+            category,
             purchasedCourses,
             finishedCourses,
         });
-        logger.info(JSON.stringify(userUpdated));
+        logger.info(`Usuario ${_id} actualizado por administrador ${req.user.userId}`);
         if (userUpdated.matchedCount > 0) {
           return res.status(201).json({
             status: "success",
@@ -185,6 +211,7 @@ class UsersController {
           });
         }
       } catch (e) {
+        logger.error("Error al actualizar usuario:", e);
         return res.status(500).json({
           status: "error",
           msg: "db server error while updating user",
@@ -192,7 +219,7 @@ class UsersController {
         });
       }
     } catch (e) {
-      logger.info(e);
+      logger.error("Error en updateOne:", e);
       return res.status(500).json({
         status: "error",
         msg: "something went wrong",
