@@ -1,138 +1,244 @@
-# Configuración de Mercado Pago para Latias
+# Configuración y Pruebas de Mercado Pago
 
-## Pasos para configurar Mercado Pago
+Esta guía explica cómo configurar y probar la integración con Mercado Pago en el proyecto LATIAS Academia.
 
-### 1. Crear cuenta en Mercado Pago
-- Ve a [mercadopago.com](https://www.mercadopago.com) y crea una cuenta
-- Completa la información requerida para activar tu cuenta
-- Verifica tu identidad según los requisitos de tu país
+## 📋 Requisitos Previos
 
-### 2. Obtener las credenciales de API
-- En el dashboard de Mercado Pago, ve a "Desarrolladores" > "Tus credenciales"
-- Copia tu "Access Token" (clave de acceso)
-- Para desarrollo, usa las credenciales de "Test" (modo sandbox)
+1. Tener una cuenta de Mercado Pago (real o de prueba)
+2. Crear una aplicación en el [Panel de Desarrolladores de Mercado Pago](https://www.mercadopago.com/developers/panel/app)
+3. Obtener las credenciales de acceso (Access Token)
 
-### 3. Configurar variables de entorno
-Crea un archivo `.env` en la raíz del proyecto backend con:
+## 🔧 Configuración Inicial
+
+### 1. Crear Aplicación en Mercado Pago
+
+1. Ve al [Panel de Desarrolladores de Mercado Pago](https://www.mercadopago.com/developers/panel/app)
+2. Crea una nueva aplicación o selecciona una existente
+3. Obtén tu **Access Token** desde la sección "Credenciales de prueba"
+
+### 2. Configurar Variables de Entorno
+
+#### Backend
+
+En tu archivo `.env.development` del backend (o `.env` según tu entorno), agrega:
 
 ```env
-# Configuración de Mercado Pago
-MERCADOPAGO_ACCESS_TOKEN=TEST-tu_access_token_de_mercadopago_aqui
-MERCADOPAGO_PUBLIC_KEY=TEST-tu_public_key_de_mercadopago_aqui
-
-# URLs del frontend y backend
-FRONTEND_URL=http://localhost:3000
+MERCADOPAGO_ACCESS_TOKEN=TEST-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx
+FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:3000
-
-# Configuración de MongoDB
-MONGODB_PASSWORD=tu_password_de_mongodb_aqui
-
-# Puerto del servidor
-PORT=3000
 ```
 
-### 4. Configurar webhooks (opcional pero recomendado)
-- En el dashboard de Mercado Pago, ve a "Desarrolladores" > "Webhooks"
-- Crea un nuevo webhook con la URL: `https://tu-dominio.com/api/mercadopago/webhook`
-- Selecciona los eventos: `payment`, `merchant_order`
-- Copia el "Webhook Secret" y agrégalo a tu archivo `.env`
+**Importante:** 
+- Usa el Access Token de la cuenta **VENDEDOR** (no del comprador)
+- En producción, usa las credenciales de producción
 
-## Funcionalidades implementadas
+#### Frontend
 
-### Backend
-- ✅ Servicio de Mercado Pago (`src/services/mercadopago.service.js`)
-- ✅ Controlador de Mercado Pago (`src/controllers/mercadopago.controller.js`)
-- ✅ Rutas de Mercado Pago (`src/routes/mercadopago.routes.js`)
-- ✅ Integración con el sistema de cursos existente
+En tu archivo `.env` o `.env.local` del frontend, agrega:
 
-### Frontend
-- ✅ Componente de pasarela de pagos (`src/components/MercadoPagoPayment/`)
-- ✅ Componente de éxito de pago (`src/components/PaymentSuccess/`)
-- ✅ Integración con las rutas existentes
-- ✅ Diseño responsive y moderno
+```env
+VITE_MERCADOPAGO_PUBLIC_KEY=TEST-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx
+```
 
-## Endpoints disponibles
+**⚠️ IMPORTANTE - CRÍTICO:**
+- Esta es la **Public Key** (clave pública), no el Access Token
+- La Public Key se obtiene desde: **Tus integraciones > Detalles de aplicación > Credenciales de prueba > Public Key**
+- **DEBE ser de la MISMA aplicación y MISMA cuenta que el Access Token del backend**
+- Si el Access Token es de la aplicación "App A", la Public Key también debe ser de "App A"
+- En Vite, las variables de entorno deben empezar con `VITE_` para ser expuestas al frontend
+- En producción, usa la Public Key de producción (de la misma aplicación que el Access Token de producción)
 
-### Backend
-- `POST /api/mercadopago/create-preference` - Crear preferencia de pago
-- `GET /api/mercadopago/preference/:preferenceId` - Obtener preferencia
-- `GET /api/mercadopago/payment/:paymentId` - Obtener pago
-- `POST /api/mercadopago/webhook` - Webhook de Mercado Pago
-- `POST /api/mercadopago/process-successful-payment` - Procesar pago exitoso
-- `GET /api/mercadopago/payment-methods` - Obtener métodos de pago
-- `POST /api/mercadopago/refund/:paymentId` - Crear reembolso
+## 🧪 Configuración de Cuentas de Prueba
 
-### Frontend
-- `/course/buy/:id` - Página de compra con Mercado Pago
-- `/payment/success` - Página de éxito de pago
-- `/payment/failure` - Página de pago fallido
-- `/payment/pending` - Página de pago pendiente
+Para probar la integración correctamente, necesitas crear **cuentas de prueba** en Mercado Pago:
 
-## Flujo de pago
+### Pasos para Crear Cuentas de Prueba
 
-1. Usuario hace clic en "Enrolarte ahora" en cualquier curso
-2. Se redirige a `/course/buy/:id` (componente MercadoPagoPayment)
-3. Se muestra el resumen del curso y formulario de pago
-4. Usuario hace clic en "Pagar" y se crea una preferencia de pago
-5. Se redirige a Mercado Pago para completar el pago
-6. Mercado Pago redirige según el resultado:
-   - **Éxito**: `/payment/success`
-   - **Fallido**: `/payment/failure`
-   - **Pendiente**: `/payment/pending`
-7. Se procesa el pago y se agrega el curso al usuario
-8. Usuario puede acceder al curso desde su dashboard
+1. En el [Panel de Desarrolladores](https://www.mercadopago.com/developers/panel/app), selecciona tu aplicación
+2. Ve a la sección **"Cuentas de prueba"**
+3. Haz clic en **"Crear cuenta de prueba"**
+4. Completa el formulario:
+   - **País de operación**: Selecciona el país (ej: Uruguay, Argentina)
+     - ⚠️ **IMPORTANTE**: El país no se puede cambiar después
+     - ⚠️ **IMPORTANTE**: Vendedor y Comprador deben ser del mismo país
+   - **Descripción**: Ej: "Vendedor - LATIAS Academia" o "Comprador - Pruebas"
+   - **Tipo de cuenta**: Selecciona **Vendedor** o **Comprador**
+   - **Saldo ficticio**: Ingresa un monto para pruebas (ej: 10000)
+5. Haz clic en **"Crear cuenta de prueba"**
 
-## Métodos de pago soportados
+### Tipos de Cuentas Necesarias
 
-### Tarjetas de crédito y débito
-- Visa
-- Mastercard
-- American Express
-- Diners Club
-- Maestro
+#### Cuenta VENDEDOR
+- **Propósito**: Configurar la aplicación y credenciales
+- **Uso**: Esta es tu cuenta principal
+- **Access Token**: Usa este token en `MERCADOPAGO_ACCESS_TOKEN`
+- **Nota**: Esta cuenta recibe los pagos
 
-### Efectivo
-- Rapipago
-- Pago Fácil
-- Boleto bancario
+#### Cuenta COMPRADOR
+- **Propósito**: Probar el proceso de compra
+- **Uso**: Inicia sesión con esta cuenta para simular compras
+- **Nota**: Esta cuenta realiza los pagos de prueba
 
-### Transferencias
-- Transferencia bancaria
-- PIX (Brasil)
-- SPEI (México)
+### Información de las Cuentas de Prueba
 
-### Billeteras digitales
-- Mercado Pago
-- PayPal (según país)
+Cada cuenta de prueba tiene:
+- **User ID**: Identificación única (últimos 6 dígitos para autenticación)
+- **Usuario**: Nombre de usuario generado automáticamente
+- **Contraseña**: Contraseña generada automáticamente
+- **Saldo ficticio**: Dinero disponible para pruebas
 
-## Notas importantes
+**Nota:** Puedes crear hasta 15 cuentas de prueba simultáneamente.
 
-- **Modo de prueba**: Las credenciales que empiezan con `TEST-` son para desarrollo
-- **Modo producción**: Cambia a credenciales de producción para el entorno real
-- **Webhooks**: Son importantes para confirmar pagos de forma segura
-- **Seguridad**: Nunca expongas tu Access Token en el frontend
-- **Monedas**: Por defecto se usa ARS (peso argentino), pero puedes cambiar a USD, BRL, etc.
+## 🔐 Iniciar Sesión con Usuarios de Prueba
 
-## Próximos pasos
+Al iniciar sesión en la web de Mercado Pago con un usuario de prueba, es posible que se solicite autenticación por email.
 
-1. Configurar las credenciales de Mercado Pago
-2. Probar el flujo de pago completo en modo sandbox
-3. Configurar webhooks para producción
-4. Implementar manejo de errores más robusto
-5. Agregar notificaciones por email
-6. Implementar sistema de reembolsos
-7. Agregar soporte para múltiples monedas
+Como son usuarios ficticios, no tendrás acceso al email. En su lugar:
 
-## Diferencias con Stripe
+1. Usa los **últimos 6 dígitos del User ID** de la cuenta de prueba, O
+2. Usa los **últimos 6 dígitos del Access Token** de la cuenta
 
-### Ventajas de Mercado Pago
-- ✅ Mejor soporte para América Latina
-- ✅ Más métodos de pago locales (efectivo, transferencias)
-- ✅ Menores comisiones en algunos países
-- ✅ Mejor integración con bancos locales
+### Dónde Encontrar el User ID y Access Token
 
-### Consideraciones
-- ⚠️ Principalmente enfocado en América Latina
-- ⚠️ Menos documentación en inglés
-- ⚠️ API menos moderna que Stripe
-- ⚠️ Soporte limitado fuera de LATAM
+- **User ID**: En la tabla de "Cuentas de prueba" del Panel de Desarrolladores
+- **Access Token**: En la sección "Credenciales" de tu aplicación
+
+## 💳 Tarjetas de Prueba
+
+Mercado Pago proporciona tarjetas de prueba para simular diferentes escenarios:
+
+### Tarjetas Aprobadas
+- **Visa**: `4509 9535 6623 3704`
+- **Mastercard**: `5031 7557 3453 0604`
+- **American Express**: `3711 803032 57522`
+
+### Tarjetas Rechazadas
+- **Visa rechazada**: `4013 5406 8274 6260`
+- **Mastercard rechazada**: `5031 4332 1540 6351`
+
+### Datos de Prueba Comunes
+- **CVV**: Cualquier número de 3 dígitos (ej: 123)
+- **Fecha de vencimiento**: Cualquier fecha futura (ej: 11/25)
+- **Nombre del titular**: Cualquier nombre
+- **DNI**: Cualquier número (ej: 12345678)
+
+**Documentación completa:** [Tarjetas de Prueba de Mercado Pago](https://www.mercadopago.com/developers/es/docs/your-integrations/test/cards)
+
+## 🧪 Probar el Flujo Completo
+
+### 1. Configurar el Backend
+
+```bash
+# Asegúrate de tener las variables de entorno configuradas
+cd latias-back
+npm install
+npm run dev
+```
+
+### 2. Configurar el Frontend
+
+```bash
+cd latias-front
+npm install
+npm run dev
+```
+
+### 3. Probar el Flujo de Pago
+
+1. **Inicia sesión** en la aplicación con un usuario cadete
+2. **Navega** a un curso disponible
+3. **Haz clic** en "Comprar" o "Inscribirse"
+4. **Selecciona** "Mercado Pago" como método de pago
+5. **Haz clic** en "Pagar"
+6. **Serás redirigido** a Mercado Pago
+7. **Inicia sesión** con la cuenta COMPRADOR de prueba
+8. **Usa una tarjeta de prueba** para completar el pago
+9. **Serás redirigido** de vuelta a la aplicación
+10. **Verifica** que el curso aparezca en tu dashboard
+
+### 4. Verificar el Webhook
+
+El webhook se ejecuta automáticamente cuando Mercado Pago confirma el pago. Para verificar:
+
+1. Revisa los logs del backend
+2. Busca mensajes como: `"Notificación de pago recibida"`
+3. Verifica que el curso se agregue automáticamente al usuario
+
+## 🔍 Verificar el Estado de los Pagos
+
+Puedes verificar el estado de los pagos desde:
+
+1. **Panel de Mercado Pago**: Ve a "Tus ventas" en tu cuenta de vendedor
+2. **Logs del Backend**: Revisa los logs para ver el procesamiento
+3. **Base de Datos**: Verifica que el curso se agregue a `purchasedCourses` del usuario
+
+## ⚠️ Problemas Comunes
+
+### Error: "Token inválido"
+- **Causa**: El Access Token no es válido o está mal configurado
+- **Solución**: Verifica que `MERCADOPAGO_ACCESS_TOKEN` esté correctamente configurado en `.env.development`
+
+### Error: "Una de las partes con la que intentas hacer el pago es de prueba"
+- **Causa**: Estás usando la misma cuenta para vender y comprar, o las credenciales no coinciden
+- **Solución**: 
+  1. **Verifica que tengas DOS cuentas de prueba diferentes:**
+     - Cuenta VENDEDOR: Usa el Access Token de esta cuenta en `MERCADOPAGO_ACCESS_TOKEN` (backend)
+     - Cuenta COMPRADOR: Inicia sesión con esta cuenta en Mercado Pago para hacer el pago
+  2. **Asegúrate de que ambas cuentas sean del mismo país**
+  3. **Verifica que el Access Token en el backend sea de la cuenta VENDEDOR:**
+     - Ve a: Panel de Desarrolladores > Tu aplicación > Credenciales de prueba
+     - El Access Token debe ser de la cuenta VENDEDOR (no del comprador)
+  4. **Cuando hagas el pago:**
+     - NO inicies sesión con la cuenta VENDEDOR
+     - Inicia sesión con la cuenta COMPRADOR (diferente)
+     - O usa una tarjeta de prueba sin iniciar sesión
+- **Recurso adicional**: [Guía detallada sobre este error en sandbox](https://www.mexico.com.se/2025/03/una-de-las-partes-con-la-que-intentas-hacer-el-pago-es-de-prueba.html)
+
+### Error: "401 (Unauthorized)" o "Failed to get preference details"
+- **Causa**: La Public Key del frontend no coincide con el Access Token del backend
+- **Solución**: 
+  1. **Verifica que ambos pertenezcan a la MISMA aplicación:**
+     - Ve a: Panel de Desarrolladores > Tu aplicación > Credenciales
+     - El Access Token (backend) y la Public Key (frontend) deben ser de la **misma aplicación**
+  2. **Verifica que ambos sean de prueba o ambos de producción:**
+     - No mezcles credenciales de prueba con producción
+     - Si el Access Token es `TEST-...`, la Public Key también debe ser `TEST-...`
+  3. **Verifica que ambos sean de la misma cuenta VENDEDOR:**
+     - Ambos deben obtenerse de la misma cuenta VENDEDOR
+     - No uses Access Token de una cuenta y Public Key de otra
+
+### Error: "auto_return invalid. back_url.success must be defined"
+- **Causa**: Las URLs de redirección no están configuradas correctamente
+- **Solución**: Verifica que `FRONTEND_URL` y `BACKEND_URL` estén configuradas en `.env.development`
+
+### El botón "Pagar" está deshabilitado en Mercado Pago
+- **Causa**: El precio o la moneda no están formateados correctamente
+- **Solución**: Verifica que el precio sea un número válido y la moneda sea un código de 3 letras (USD, UYU, etc.)
+
+### El webhook no se ejecuta
+- **Causa**: La URL del webhook no es accesible públicamente (en desarrollo local)
+- **Solución**: 
+  - En desarrollo, el webhook puede no funcionar si estás usando localhost
+  - Considera usar herramientas como [ngrok](https://ngrok.com/) para exponer tu servidor local
+  - O espera a que el usuario complete el pago y se procese desde `PaymentSuccess.jsx`
+
+## 📚 Recursos Adicionales
+
+- [Documentación de Mercado Pago](https://www.mercadopago.com/developers/es/docs)
+- [Cuentas de Prueba](https://www.mercadopago.com/developers/es/docs/your-integrations/test/test-users)
+- [Tarjetas de Prueba](https://www.mercadopago.com/developers/es/docs/your-integrations/test/cards)
+- [Panel de Desarrolladores](https://www.mercadopago.com/developers/panel/app)
+
+## 🚀 Producción
+
+Cuando estés listo para producción:
+
+1. **Cambia** el Access Token por las credenciales de producción
+2. **Configura** las URLs de producción en las variables de entorno
+3. **Configura** el webhook en Mercado Pago con la URL de producción
+4. **Prueba** con montos pequeños antes de lanzar completamente
+5. **Monitorea** los logs y las transacciones regularmente
+
+---
+
+**Última actualización:** Enero 2025

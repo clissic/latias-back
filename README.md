@@ -22,7 +22,12 @@ LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de n�
 
 La siguiente lista detalla los **100 pasos** planeados para el desarrollo completo de la plataforma:
 
-✔️ CUMPLIDO - 🟡 EN DESARROLLO - ❌ INCUMPLIDO
+✔️ CUMPLIDO (1% cada uno) - 🟡 EN DESARROLLO (0.5% cada uno) - ❌ INCUMPLIDO (0%)
+
+**Progreso del proyecto: 43% completado**
+- ✔️ Completados: 38 puntos (38%)
+- 🟡 En desarrollo: 10 puntos (5%)
+- ❌ Pendientes: 52 puntos (0%)
 
 ### Preparación del proyecto (1-10)
 ✔️ 1. Crear el repositorio en GitHub.  
@@ -41,7 +46,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 12. Implementar registro de cadetes.  
 ✔️ 13. Implementar login con JWT.  
 ✔️ 14. Crear middleware de autenticación.  
-🟡 15. Crear roles: cadete, instructor, administrador.  
+✔️ 15. Crear roles: cadete, instructor, administrador.  
 🟡 16. Crear middleware de autorización según rol.  
 ✔️ 17. Probar endpoints de autenticación con Postman.  
 ✔️ 18. Configurar frontend para login y registro.  
@@ -104,12 +109,12 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 🟡 67. Crear modelo de transacción en base de datos.  
 🟡 68. Crear endpoints para pagos y verificación.  
 🟡 69. Implementar frontend para proceso de compra.  
-❌ 70. Integrar webhooks de Mercado Pago para confirmar pagos.  
-❌ 71. Marcar cursos comprados en perfil de cadete.  
+✔️ 70. Integrar webhooks de Mercado Pago para confirmar pagos.  
+✔️ 71. Marcar cursos comprados en perfil de cadete.  
 ❌ 72. Restringir acceso a cursos no comprados.  
-❌ 73. Probar pagos en modo sandbox.  
-❌ 74. Implementar confirmación visual de compra.  
-❌ 75. Documentar flujo de pagos.  
+🟡 73. Probar pagos en modo sandbox.  
+✔️ 74. Implementar confirmación visual de compra.  
+✔️ 75. Documentar flujo de pagos. (Ver MERCADOPAGO_SETUP.md)  
 
 ### Panel de administración y cadetes (76-85)
 🟡 76. Crear dashboard de administrador.  

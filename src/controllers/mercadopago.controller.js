@@ -2,6 +2,15 @@ import { mercadoPagoService } from "../services/mercadopago.service.js";
 import { coursesService } from "../services/courses.service.js";
 import { logger } from "../utils/logger.js";
 
+/**
+ * Controlador de Mercado Pago
+ * 
+ * Maneja todas las operaciones relacionadas con pagos de Mercado Pago.
+ * 
+ * Para más información sobre configuración y pruebas, consulta:
+ * - MERCADOPAGO_SETUP.md en la raíz del proyecto
+ * - Documentación oficial: https://www.mercadopago.com/developers/es/docs
+ */
 class MercadoPagoController {
   // Crear preferencia de pago
   async createPreference(req, res) {
@@ -27,13 +36,37 @@ class MercadoPagoController {
         });
       }
 
+      // Usar la moneda del curso si no se proporciona en el body
+      const finalCurrency = currency || course.currency || 'USD';
+
+      // Validar y convertir el precio a número
+      // El servicio ya valida el precio, pero validamos aquí también para dar respuesta rápida
+      const numericPrice = typeof price === 'string' ? parseFloat(price) : Number(price);
+      if (isNaN(numericPrice) || numericPrice <= 0 || !isFinite(numericPrice)) {
+        return res.status(400).json({
+          status: "error",
+          msg: "El precio debe ser un número válido mayor a 0",
+          payload: {},
+        });
+      }
+
+      // Obtener información del usuario autenticado si está disponible
+      const userEmail = req.user?.email || null;
+      const userFirstName = req.user?.firstName || null;
+      const userLastName = req.user?.lastName || null;
+
       // Crear preferencia de pago
       const preference = await mercadoPagoService.createPreference({
         courseId,
         courseName,
-        price,
-        currency,
+        price: numericPrice,
+        currency: finalCurrency,
         userId,
+        payer: userEmail ? {
+          email: userEmail,
+          name: userFirstName || undefined,
+          surname: userLastName || undefined,
+        } : undefined,
       });
 
       return res.status(200).json({
@@ -56,6 +89,8 @@ class MercadoPagoController {
   }
 
   // Obtener preferencia
+  // NOTA: Las preferencias pueden contener información sensible, considerar agregar validación
+  // de ownership si es necesario en el futuro
   async getPreference(req, res) {
     try {
       const { preferenceId } = req.params;
@@ -88,6 +123,8 @@ class MercadoPagoController {
   }
 
   // Obtener pago
+  // NOTA: Esta ruta debería tener validación de ownership similar a checkPaymentStatus
+  // Por ahora solo requiere autenticación, pero se puede mejorar
   async getPayment(req, res) {
     try {
       const { paymentId } = req.params;
@@ -101,6 +138,23 @@ class MercadoPagoController {
       }
 
       const payment = await mercadoPagoService.getPayment(paymentId);
+
+      // VALIDACIÓN DE SEGURIDAD: Verificar que el pago pertenezca al usuario autenticado
+      // o que sea Administrador
+      if (payment.external_reference) {
+        const [courseId, userId] = payment.external_reference.split('|');
+        const authenticatedUserId = String(req.user?.userId);
+        const paymentUserId = userId ? String(userId) : null;
+        
+        if (paymentUserId && req.user?.category !== 'Administrador' && authenticatedUserId !== paymentUserId) {
+          logger.warning(`Usuario ${authenticatedUserId} intentó acceder a pago del usuario ${paymentUserId}`);
+          return res.status(403).json({
+            status: "error",
+            msg: "No tienes permisos para acceder a este pago",
+            payload: {},
+          });
+        }
+      }
 
       return res.status(200).json({
         status: "success",
@@ -120,11 +174,21 @@ class MercadoPagoController {
   }
 
   // Webhook de Mercado Pago
+  // NOTA: En producción, se recomienda validar la firma del webhook usando x-signature y x-request-id
+  // Por ahora aceptamos todos los webhooks, pero se puede agregar validación de firma si es necesario
   async handleWebhook(req, res) {
     try {
       const body = req.body;
+      const signature = req.headers['x-signature'];
+      const requestId = req.headers['x-request-id'];
+
+      // Log de headers para debug (solo en desarrollo)
+      if (process.env.LOGGER_ENV === 'development') {
+        logger.info(`Webhook recibido - Signature: ${signature ? 'presente' : 'ausente'}, Request ID: ${requestId || 'ausente'}`);
+      }
 
       if (!body || !body.type) {
+        logger.warning('Webhook recibido sin tipo válido:', body);
         return res.status(400).json({
           status: "error",
           msg: "Datos de webhook inválidos",
@@ -132,8 +196,11 @@ class MercadoPagoController {
         });
       }
 
+      // Procesar el webhook
       const result = await mercadoPagoService.handleWebhook(body);
 
+      // IMPORTANTE: Siempre responder 200 a Mercado Pago, incluso si hay errores internos
+      // Mercado Pago reintentará si no recibe 200
       return res.status(200).json({
         status: "success",
         msg: "Webhook procesado exitosamente",
@@ -141,9 +208,11 @@ class MercadoPagoController {
       });
     } catch (error) {
       logger.error("Error en handleWebhook:", error);
-      return res.status(400).json({
+      // Aún así responder 200 para evitar reintentos de Mercado Pago
+      // El error ya fue logueado para revisión manual
+      return res.status(200).json({
         status: "error",
-        msg: "Error al procesar webhook",
+        msg: "Error al procesar webhook (logueado para revisión)",
         payload: {},
       });
     }
@@ -295,19 +364,61 @@ class MercadoPagoController {
         });
       }
 
-      // Agregar el curso al usuario usando el servicio existente
-      const result = await coursesService.purchaseCourse(userId, courseId);
+      // VALIDACIÓN DE SEGURIDAD: Verificar que el userId del pago coincida con el usuario autenticado
+      // O permitir si es Administrador
+      const authenticatedUserId = String(req.user?.userId);
+      const paymentUserId = String(userId);
+      
+      if (req.user?.category !== 'Administrador' && authenticatedUserId !== paymentUserId) {
+        logger.warning(`Usuario ${authenticatedUserId} intentó procesar pago del usuario ${paymentUserId}`);
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permisos para procesar este pago",
+          payload: {},
+        });
+      }
 
-      return res.status(200).json({
-        status: "success",
-        msg: "Pago procesado y curso agregado al usuario exitosamente",
-        payload: result,
-      });
+      // Agregar el curso al usuario usando el servicio existente
+      // purchaseCourse ya tiene protección contra duplicados (verifica si ya está comprado)
+      try {
+        const result = await coursesService.purchaseCourse(userId, courseId);
+        return res.status(200).json({
+          status: "success",
+          msg: "Pago procesado y curso agregado al usuario exitosamente",
+          payload: {
+            ...result,
+            paymentId: paymentId
+          },
+        });
+      } catch (error) {
+        // Si el curso ya fue comprado, no es un error crítico
+        if (error.message && error.message.includes('ya ha comprado')) {
+          return res.status(200).json({
+            status: "success",
+            msg: "El curso ya estaba asociado a este usuario",
+            payload: { 
+              alreadyPurchased: true,
+              paymentId: paymentId
+            },
+          });
+        }
+        throw error;
+      }
     } catch (error) {
       logger.error("Error en processSuccessfulPayment:", error);
+      
+      // Si el error es que el curso ya fue comprado, no es un error crítico
+      if (error.message && error.message.includes('ya ha comprado')) {
+        return res.status(200).json({
+          status: "success",
+          msg: "El curso ya estaba asociado a este usuario",
+          payload: { alreadyPurchased: true },
+        });
+      }
+      
       return res.status(500).json({
         status: "error",
-        msg: "Error interno del servidor",
+        msg: error.message || "Error interno del servidor",
         payload: {},
       });
     }
@@ -327,6 +438,24 @@ class MercadoPagoController {
       }
 
       const payment = await mercadoPagoService.getPayment(paymentId);
+
+      // VALIDACIÓN DE SEGURIDAD: Verificar que el pago pertenezca al usuario autenticado
+      // o que sea Administrador
+      if (payment.external_reference) {
+        const [courseId, userId] = payment.external_reference.split('|');
+        const authenticatedUserId = String(req.user?.userId);
+        const paymentUserId = userId ? String(userId) : null;
+        
+        // Solo validar si hay userId en el external_reference y el usuario no es Admin
+        if (paymentUserId && req.user?.category !== 'Administrador' && authenticatedUserId !== paymentUserId) {
+          logger.warning(`Usuario ${authenticatedUserId} intentó verificar pago del usuario ${paymentUserId}`);
+          return res.status(403).json({
+            status: "error",
+            msg: "No tienes permisos para verificar este pago",
+            payload: {},
+          });
+        }
+      }
 
       return res.status(200).json({
         status: "success",
