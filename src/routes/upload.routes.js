@@ -1,7 +1,7 @@
 import express from "express";
 import { uploadController } from "../controllers/upload.controller.js";
 import { authenticateToken, authorizeByCategory } from "../middleware/auth.middleware.js";
-import { uploadSingle, uploadMultiple, uploadProfessorImage } from "../middleware/upload.middleware.js";
+import { uploadSingle, uploadMultiple, uploadProfessorImage, uploadEventImage } from "../middleware/upload.middleware.js";
 import { logger } from "../utils/logger.js";
 
 export const uploadRouter = express.Router();
@@ -55,4 +55,25 @@ uploadRouter.post(
     });
   },
   uploadController.uploadProfessorImage
+);
+
+// Subir imagen de evento
+uploadRouter.post(
+  "/event-image",
+  authenticateToken,
+  authorizeByCategory(['Administrador']),
+  (req, res, next) => {
+    uploadEventImage(req, res, (err) => {
+      if (err) {
+        logger.error('Error en middleware de upload de evento:', err);
+        return res.status(400).json({
+          status: "error",
+          msg: err.message || "Error al subir la imagen",
+          payload: {},
+        });
+      }
+      next();
+    });
+  },
+  uploadController.uploadEventImage
 );

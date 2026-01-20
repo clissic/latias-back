@@ -12,6 +12,8 @@ import { coursesRouter } from "./routes/courses.routes.js";
 import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
 import { uploadRouter } from "./routes/upload.routes.js";
 import { professorsRouter } from "./routes/professors.routes.js";
+import { eventsRouter } from "./routes/events.routes.js";
+import { startEventsCron } from "./utils/events-cron.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +32,9 @@ const httpServer = app.listen(PORT, () => {
 
 // Conectar a la base de datos
 connectMongo();
+
+// Iniciar cron job para desactivar eventos vencidos
+startEventsCron();
 
 // Asegurar que el directorio de uploads existe
 // __dirname es latias-back/src, entonces ../public es latias-back/public
@@ -57,6 +62,7 @@ app.use("/api/courses", coursesRouter);
 app.use("/api/mercadopago", mercadoPagoRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/professors", professorsRouter);
+app.use("/api/events", eventsRouter);
 
 // Servir archivos estáticos desde public/uploads (para imágenes subidas)
 // Esto debe ir después de las rutas de API pero antes del catch-all de React

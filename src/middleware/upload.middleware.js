@@ -143,3 +143,56 @@ export const uploadProfessor = multer({
 
 // Middleware para subir imagen de instructor
 export const uploadProfessorImage = uploadProfessor.single('profileImage');
+
+// Configuración para imágenes de eventos
+const eventsUploadsDir = join(__dirname, '../public/uploads/events');
+logger.info(`[Upload Middleware] Ruta del directorio de eventos: ${eventsUploadsDir}`);
+
+if (!existsSync(eventsUploadsDir)) {
+  try {
+    mkdirSync(eventsUploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads de eventos creado: ${eventsUploadsDir}`);
+  } catch (error) {
+    logger.error(`[Upload Middleware] Error al crear directorio de eventos: ${error.message}`);
+    throw error;
+  }
+} else {
+  logger.info(`[Upload Middleware] Directorio de uploads de eventos existe: ${eventsUploadsDir}`);
+}
+
+const eventStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    logger.info(`[Multer Event] destination llamado para archivo: ${file.originalname}`);
+    logger.info(`[Multer Event] Guardando en: ${eventsUploadsDir}`);
+    
+    if (!existsSync(eventsUploadsDir)) {
+      try {
+        mkdirSync(eventsUploadsDir, { recursive: true });
+        logger.info(`[Multer Event] Directorio creado en destination: ${eventsUploadsDir}`);
+      } catch (error) {
+        logger.error(`[Multer Event] Error al crear directorio en destination: ${error.message}`);
+        return cb(error);
+      }
+    }
+    
+    cb(null, eventsUploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = file.originalname.split('.').pop();
+    const filename = `event-${uniqueSuffix}.${ext}`;
+    logger.info(`[Multer Event] Generando nombre de archivo: ${filename}`);
+    cb(null, filename);
+  }
+});
+
+export const uploadEvent = multer({
+  storage: eventStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  },
+  fileFilter: fileFilter
+});
+
+// Middleware para subir imagen de evento
+export const uploadEventImage = uploadEvent.single('image');

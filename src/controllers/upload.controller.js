@@ -145,6 +145,40 @@ class UploadController {
       });
     }
   }
+
+  // Subir imagen de evento
+  async uploadEventImage(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          status: "error",
+          msg: "No se proporcionó ningún archivo",
+          payload: {},
+        });
+      }
+
+      // La ruta relativa desde public
+      const imagePath = `/uploads/events/${req.file.filename}`;
+
+      logger.info(`Imagen de evento subida: ${imagePath}`);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Imagen subida exitosamente",
+        payload: {
+          image: imagePath,
+          filename: req.file.filename
+        },
+      });
+    } catch (error) {
+      logger.error("Error al subir imagen de evento:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al subir la imagen",
+        payload: {},
+      });
+    }
+  }
 }
 
 export const uploadController = new UploadController();
