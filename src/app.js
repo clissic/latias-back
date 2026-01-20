@@ -41,13 +41,13 @@ if (!existsSync(uploadsDir)) {
   console.log(`Directorio de uploads ya existe: ${uploadsDir}`);
 }
 
-// Asegurar que el directorio de uploads de profesores existe
+// Asegurar que el directorio de uploads de instructores existe
 const professorsUploadsDir = join(__dirname, "../public/uploads/professors");
 if (!existsSync(professorsUploadsDir)) {
   mkdirSync(professorsUploadsDir, { recursive: true });
-  console.log(`Directorio de uploads de profesores creado: ${professorsUploadsDir}`);
+  console.log(`Directorio de uploads de instructores creado: ${professorsUploadsDir}`);
 } else {
-  console.log(`Directorio de uploads de profesores ya existe: ${professorsUploadsDir}`);
+  console.log(`Directorio de uploads de instructores ya existe: ${professorsUploadsDir}`);
 }
 
 // ENDPOINTS (deben ir antes de los archivos estáticos)

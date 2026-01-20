@@ -14,16 +14,6 @@ const schema = new Schema({
   price: { type: Number, required: true, min: 0 },
   difficulty: { type: String },
   category: { type: String, required: true },
-  enrolledDate: { type: Date, default: Date.now },
-  isFinished: { type: Boolean, default: false},
-  finishedDate: { type: Date, default: null },
-  progress: { type: Number, default: 0},
-  attempts: [
-    {
-      date: { type: Date, default: null },
-      score: { type: Number, default: null }
-    }
-  ],
   certificate: {
     certificateId: { type: String, default: null },
     certificateUrl: { type: String, default: null },
@@ -41,25 +31,12 @@ const schema = new Schema({
       moduleId: { type: String, required: true },
       moduleName: { type: String, required: true },
       moduleDescription: { type: String },
-      locked: { type: Boolean, default: false },
-      isFinished: { type: Boolean, default: false },
-      finishedDate: { type: Date, default: null },
-      progress: { type: Number, default: 0 },
-      attempts: [
-        {
-          date: { type: Date, default: null },
-          score: { type: Number, default: null }
-        }
-      ],
-      testCompleted: { type: Boolean, default: false },
-      score: { type: Number, default: null },
       lessons: [
         {
           lessonId: { type: String, required: true },
           lessonName: { type: String, required: true },
           lessonDescription: { type: String },
-          videoUrl: { type: String },
-          completed: { type: Boolean, default: false }
+          videoUrl: { type: String }
         }
       ],
       questionBank: [
@@ -76,12 +53,7 @@ const schema = new Schema({
         }
       ]
     }
-  ],
-  finalExam: {
-    questionCount: { type: Number, default: 40},
-    testCompleted: { type: Boolean, default: false},
-    score: { type: Number, default: null}
-  }
+  ]
 });
 
 export const CoursesMongoose = model("courses", schema);

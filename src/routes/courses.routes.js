@@ -35,15 +35,6 @@ coursesRouter.put("/update/:courseId", authenticateToken, authorizeByCategory(['
 // Eliminar curso
 coursesRouter.delete("/delete/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.deleteOne);
 
-// Actualizar progreso de curso
-coursesRouter.put("/progress/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateProgress);
-
-// Actualizar estado de finalización
-coursesRouter.put("/finished/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateFinishedStatus);
-
-// Agregar intento de examen
-coursesRouter.put("/attempt/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.addAttempt);
-
 // Actualizar certificado
 coursesRouter.put("/certificate/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
 
@@ -63,3 +54,8 @@ coursesRouter.put("/user/:userId/course/:courseId/attempt", authenticateToken, v
 
 // Actualizar certificado del curso del usuario (valida que el usuario solo actualice sus propios certificados, a menos que sea admin)
 coursesRouter.put("/user/:userId/course/:courseId/certificate", authenticateToken, validateUserOwnership(), coursesController.updateUserCourseCertificate);
+
+// ========== RUTAS PROTEGIDAS PARA INSTRUCTORES ==========
+
+// Solicitar modificación de curso (para instructores)
+coursesRouter.post("/request-modification/:courseId", authenticateToken, authorizeByCategory(['Instructor']), coursesController.requestCourseModification);

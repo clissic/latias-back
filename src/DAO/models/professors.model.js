@@ -128,8 +128,9 @@ class ProfessorsModel {
   }
 
   async findByCourseId(courseId) {
+    // courseId es el courseId del curso (string)
     const professors = await ProfessorsMongoose.find(
-      { courses: courseId },
+      { courses: String(courseId) },
       {
         _id: true,
         firstName: true,

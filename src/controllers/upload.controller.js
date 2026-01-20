@@ -112,7 +112,7 @@ class UploadController {
     }
   }
 
-  // Subir imagen de perfil de profesor
+  // Subir imagen de perfil de instructor
   async uploadProfessorImage(req, res) {
     try {
       if (!req.file) {
@@ -126,7 +126,7 @@ class UploadController {
       // La ruta relativa desde public
       const imagePath = `/uploads/professors/${req.file.filename}`;
 
-      logger.info(`Imagen de profesor subida: ${imagePath}`);
+      logger.info(`Imagen de instructor subida: ${imagePath}`);
 
       return res.status(200).json({
         status: "success",
@@ -137,7 +137,7 @@ class UploadController {
         },
       });
     } catch (error) {
-      logger.error("Error al subir imagen de profesor:", error);
+      logger.error("Error al subir imagen de instructor:", error);
       return res.status(500).json({
         status: "error",
         msg: "Error al subir la imagen",

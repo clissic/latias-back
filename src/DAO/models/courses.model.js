@@ -19,15 +19,9 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
-        enrolledDate: true,
-        isFinished: true,
-        finishedDate: true,
-        progress: true,
-        attempts: true,
         certificate: true,
         professor: true,
         modules: true,
-        finalExam: true,
       }
     );
     return courses;
@@ -56,15 +50,9 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
-        enrolledDate: true,
-        isFinished: true,
-        finishedDate: true,
-        progress: true,
-        attempts: true,
         certificate: true,
         professor: true,
         modules: true,
-        finalExam: true,
       }
     );
     return course;
@@ -88,15 +76,9 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
-        enrolledDate: true,
-        isFinished: true,
-        finishedDate: true,
-        progress: true,
-        attempts: true,
         certificate: true,
         professor: true,
         modules: true,
-        finalExam: true,
       }
     );
     return course;
@@ -154,15 +136,9 @@ class CoursesModel {
     price,
     difficulty,
     category,
-    enrolledDate,
-    isFinished,
-    finishedDate,
-    progress,
-    attempts,
     certificate,
     professor,
     modules,
-    finalExam,
   }) {
     const courseUpdated = await CoursesMongoose.updateOne(
       {
@@ -182,15 +158,9 @@ class CoursesModel {
         price,
         difficulty,
         category,
-        enrolledDate,
-        isFinished,
-        finishedDate,
-        progress,
-        attempts,
         certificate,
         professor,
         modules,
-        finalExam,
       }
     );
     return courseUpdated;
@@ -201,42 +171,6 @@ class CoursesModel {
     return result;
   }
 
-  async updateProgress({ _id, progress }) {
-    const courseUpdated = await CoursesMongoose.updateOne(
-      {
-        _id: _id,
-      },
-      {
-        progress: progress,
-      }
-    );
-    return courseUpdated;
-  }
-
-  async updateFinishedStatus({ _id, isFinished, finishedDate }) {
-    const courseUpdated = await CoursesMongoose.updateOne(
-      {
-        _id: _id,
-      },
-      {
-        isFinished: isFinished,
-        finishedDate: finishedDate,
-      }
-    );
-    return courseUpdated;
-  }
-
-  async addAttempt({ _id, attempt }) {
-    const courseUpdated = await CoursesMongoose.updateOne(
-      {
-        _id: _id,
-      },
-      {
-        $push: { attempts: attempt },
-      }
-    );
-    return courseUpdated;
-  }
 
   async updateCertificate({ _id, certificate }) {
     const courseUpdated = await CoursesMongoose.updateOne(
@@ -268,15 +202,9 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
-        enrolledDate: true,
-        isFinished: true,
-        finishedDate: true,
-        progress: true,
-        attempts: true,
         certificate: true,
         professor: true,
         modules: true,
-        finalExam: true,
       }
     );
     return courses;
@@ -300,15 +228,9 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
-        enrolledDate: true,
-        isFinished: true,
-        finishedDate: true,
-        progress: true,
-        attempts: true,
         certificate: true,
         professor: true,
         modules: true,
-        finalExam: true,
       }
     );
     return courses;

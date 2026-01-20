@@ -14,7 +14,7 @@ const schema = new Schema({
   bio: { type: String, max: 1000 },
   certifications: [{ type: String }],
   achievements: [{ type: String }],
-  courses: [{ type: Number }], // Array de IDs de cursos
+  courses: [{ type: String }], // Array de courseId de cursos (string)
   contact: {
     email: { type: String, required: true, max: 100 },
     phone: { type: String, max: 20, default: "" }

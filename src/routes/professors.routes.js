@@ -6,25 +6,25 @@ export const professorsRouter = express.Router();
 
 // ========== RUTAS PÚBLICAS ==========
 
-// Obtener todos los profesores (público)
+// Obtener todos los instructores (público)
 professorsRouter.get("/", professorsController.getAll);
 
-// Obtener profesor por ID (público)
+// Obtener instructor por ID (público)
 professorsRouter.get("/id/:id", professorsController.findById);
 
-// Obtener profesor por CI (público)
+// Obtener instructor por CI (público)
 professorsRouter.get("/ci/:ci", professorsController.findByCi);
 
-// Obtener profesores por ID de curso (público)
+// Obtener instructores por ID de curso (público)
 professorsRouter.get("/course/:courseId", professorsController.findByCourseId);
 
 // ========== RUTAS PROTEGIDAS PARA ADMINISTRADORES ==========
 
-// Crear nuevo profesor
+// Crear nuevo instructor
 professorsRouter.post("/create", authenticateToken, authorizeByCategory(['Administrador']), professorsController.create);
 
-// Actualizar profesor
+// Actualizar instructor
 professorsRouter.put("/update/:id", authenticateToken, authorizeByCategory(['Administrador']), professorsController.updateOne);
 
-// Eliminar profesor
+// Eliminar instructor
 professorsRouter.delete("/delete/:id", authenticateToken, authorizeByCategory(['Administrador']), professorsController.deleteOne);

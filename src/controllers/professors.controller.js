@@ -2,13 +2,13 @@ import { professorsService } from "../services/professors.service.js";
 import { logger } from "../utils/logger.js";
 
 class ProfessorsController {
-  // Obtener todos los profesores
+  // Obtener todos los instructores
   async getAll(req, res) {
     try {
       const professors = await professorsService.getAll();
       return res.status(200).json({
         status: "success",
-        msg: "Todos los profesores obtenidos",
+        msg: "Todos los instructores obtenidos",
         payload: professors,
       });
     } catch (e) {
@@ -21,7 +21,7 @@ class ProfessorsController {
     }
   }
 
-  // Obtener profesor por ID
+  // Obtener instructor por ID
   async findById(req, res) {
     try {
       const { id } = req.params;
@@ -29,13 +29,13 @@ class ProfessorsController {
       if (professor) {
         return res.status(200).json({
           status: "success",
-          message: "Profesor encontrado por ID",
+          message: "Instructor encontrado por ID",
           payload: professor,
         });
       } else {
         return res.status(404).json({
           status: "error",
-          message: "Profesor no encontrado",
+          message: "Instructor no encontrado",
           payload: {},
         });
       }
@@ -49,7 +49,7 @@ class ProfessorsController {
     }
   }
 
-  // Obtener profesor por CI
+  // Obtener instructor por CI
   async findByCi(req, res) {
     try {
       const { ci } = req.params;
@@ -57,13 +57,13 @@ class ProfessorsController {
       if (professor) {
         return res.status(200).json({
           status: "success",
-          message: "Profesor encontrado por CI",
+          message: "Instructor encontrado por CI",
           payload: professor,
         });
       } else {
         return res.status(404).json({
           status: "error",
-          message: "Profesor no encontrado",
+          message: "Instructor no encontrado",
           payload: {},
         });
       }
@@ -77,14 +77,14 @@ class ProfessorsController {
     }
   }
 
-  // Obtener profesores por ID de curso
+  // Obtener instructores por ID de curso
   async findByCourseId(req, res) {
     try {
       const { courseId } = req.params;
-      const professors = await professorsService.findByCourseId(parseInt(courseId));
+      const professors = await professorsService.findByCourseId(courseId);
       return res.status(200).json({
         status: "success",
-        msg: "Profesores encontrados por curso",
+        msg: "Instructores encontrados por curso",
         payload: professors,
       });
     } catch (e) {
@@ -97,7 +97,7 @@ class ProfessorsController {
     }
   }
 
-  // Crear nuevo profesor
+  // Crear nuevo instructor
   async create(req, res) {
     try {
       const {
@@ -149,7 +149,7 @@ class ProfessorsController {
 
       return res.status(201).json({
         status: "success",
-        msg: "Profesor creado exitosamente",
+        msg: "Instructor creado exitosamente",
         payload: professorCreated,
       });
     } catch (e) {
@@ -158,7 +158,7 @@ class ProfessorsController {
       if (e.code === 11000) {
         return res.status(400).json({
           status: "error",
-          msg: "Ya existe un profesor con este CI",
+          msg: "Ya existe un instructor con este CI",
           payload: {},
         });
       }
@@ -170,18 +170,18 @@ class ProfessorsController {
     }
   }
 
-  // Actualizar profesor
+  // Actualizar instructor
   async updateOne(req, res) {
     try {
       const { id } = req.params;
       const professorData = req.body;
 
-      // Buscar el profesor por ID
+      // Buscar el instructor por ID
       const professor = await professorsService.findById(id);
       if (!professor) {
         return res.status(404).json({
           status: "error",
-          msg: "Profesor no encontrado",
+          msg: "Instructor no encontrado",
           payload: {},
         });
       }
@@ -192,13 +192,13 @@ class ProfessorsController {
       if (professorUpdated.matchedCount > 0) {
         return res.status(200).json({
           status: "success",
-          msg: "Profesor actualizado exitosamente",
+          msg: "Instructor actualizado exitosamente",
           payload: {},
         });
       } else {
         return res.status(404).json({
           status: "error",
-          msg: "Profesor no encontrado",
+          msg: "Instructor no encontrado",
           payload: {},
         });
       }
@@ -208,7 +208,7 @@ class ProfessorsController {
       if (e.code === 11000) {
         return res.status(400).json({
           status: "error",
-          msg: "Ya existe un profesor con este CI",
+          msg: "Ya existe un instructor con este CI",
           payload: {},
         });
       }
@@ -220,7 +220,7 @@ class ProfessorsController {
     }
   }
 
-  // Eliminar profesor
+  // Eliminar instructor
   async deleteOne(req, res) {
     try {
       const { id } = req.params;
@@ -230,13 +230,13 @@ class ProfessorsController {
       if (result?.deletedCount > 0) {
         return res.status(200).json({
           status: "success",
-          msg: "Profesor eliminado exitosamente",
+          msg: "Instructor eliminado exitosamente",
           payload: {},
         });
       } else {
         return res.status(404).json({
           status: "error",
-          msg: "Profesor no encontrado",
+          msg: "Instructor no encontrado",
           payload: {},
         });
       }

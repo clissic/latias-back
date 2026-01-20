@@ -47,20 +47,6 @@ class CoursesService {
     return result;
   }
 
-  async updateProgress({ _id, progress }) {
-    const courseUpdated = await coursesModel.updateProgress({ _id, progress });
-    return courseUpdated;
-  }
-
-  async updateFinishedStatus({ _id, isFinished, finishedDate }) {
-    const courseUpdated = await coursesModel.updateFinishedStatus({ _id, isFinished, finishedDate });
-    return courseUpdated;
-  }
-
-  async addAttempt({ _id, attempt }) {
-    const courseUpdated = await coursesModel.addAttempt({ _id, attempt });
-    return courseUpdated;
-  }
 
   async updateCertificate({ _id, certificate }) {
     const courseUpdated = await coursesModel.updateCertificate({ _id, certificate });

@@ -36,7 +36,7 @@ uploadRouter.post(
   uploadController.uploadCourseImages
 );
 
-// Subir imagen de perfil de profesor
+// Subir imagen de perfil de instructor
 uploadRouter.post(
   "/professor-image",
   authenticateToken,
@@ -44,7 +44,7 @@ uploadRouter.post(
   (req, res, next) => {
     uploadProfessorImage(req, res, (err) => {
       if (err) {
-        logger.error('Error en middleware de upload de profesor:', err);
+        logger.error('Error en middleware de upload de instructor:', err);
         return res.status(400).json({
           status: "error",
           msg: err.message || "Error al subir la imagen",
