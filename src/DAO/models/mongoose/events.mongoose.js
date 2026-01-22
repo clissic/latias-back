@@ -32,6 +32,7 @@ const schema = new Schema({
     lastName: { type: String, required: true },
     ci: { type: String, required: true },
     ticketId: { type: String, required: true }, // ID único para autenticar el ticket
+    available: { type: Boolean, default: true }, // Estado del ticket (true = disponible, false = usado)
     registeredAt: { type: Date, default: Date.now }
   }]
 }, {

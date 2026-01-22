@@ -162,6 +162,14 @@ class EventsModel {
     });
     return events;
   }
+
+  async updateTicketAvailability(eventId, ticketId, available) {
+    const result = await EventsMongoose.updateOne(
+      { _id: eventId, "peopleRegistered.ticketId": ticketId },
+      { $set: { "peopleRegistered.$.available": available } }
+    );
+    return result;
+  }
 }
 
 export const eventsModel = new EventsModel();

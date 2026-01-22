@@ -13,6 +13,7 @@ import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
 import { uploadRouter } from "./routes/upload.routes.js";
 import { professorsRouter } from "./routes/professors.routes.js";
 import { eventsRouter } from "./routes/events.routes.js";
+import { contactRouter } from "./routes/contact.routes.js";
 import { startEventsCron } from "./utils/events-cron.js";
 
 const app = express();
@@ -63,6 +64,7 @@ app.use("/api/mercadopago", mercadoPagoRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/professors", professorsRouter);
 app.use("/api/events", eventsRouter);
+app.use("/api/contact", contactRouter);
 
 // Servir archivos estáticos desde public/uploads (para imágenes subidas)
 // Esto debe ir después de las rutas de API pero antes del catch-all de React

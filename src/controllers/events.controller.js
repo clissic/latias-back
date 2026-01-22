@@ -1,5 +1,6 @@
 import { eventsService } from "../services/events.service.js";
 import { userService } from "../services/users.service.js";
+import { ticketLogsService } from "../services/ticket-logs.service.js";
 import { logger } from "../utils/logger.js";
 import { transport } from "../utils/nodemailer.js";
 import QRCode from "qrcode";
@@ -599,6 +600,128 @@ class EventsController {
       return res.status(500).json({
         status: "error",
         msg: "Error al verificar el ticket",
+        payload: {},
+      });
+    }
+  }
+
+  // Verificar ticket para usuarios checkin (protegido)
+  async verifyTicketCheckin(req, res) {
+    try {
+      const { ticketId } = req.params;
+
+      if (!ticketId) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Ticket ID es requerido",
+          payload: {},
+        });
+      }
+
+      // Verificar que el usuario es checkin
+      if (req.user.category !== "checkin") {
+        return res.status(403).json({
+          status: "error",
+          msg: "Solo usuarios checkin pueden usar este endpoint",
+          payload: {},
+        });
+      }
+
+      // Preparar datos del usuario checkin
+      const checkinUser = {
+        userId: String(req.user.userId),
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email
+      };
+
+      const verification = await eventsService.verifyTicketCheckin(ticketId, checkinUser);
+
+      if (!verification) {
+        return res.status(500).json({
+          status: "error",
+          msg: "Error al procesar la verificación",
+          payload: {},
+        });
+      }
+
+      // Crear log del movimiento (siempre, incluso para tickets inválidos)
+      try {
+        if (verification.logData) {
+          await ticketLogsService.createLog(verification.logData);
+        }
+      } catch (logError) {
+        logger.error(`Error al crear log de ticket: ${logError?.message || logError}`);
+        // No fallar la verificación si falla el log
+      }
+
+      // Si el ticket es inválido, retornar error pero con el log creado
+      if (!verification.isValid) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Ticket no encontrado o inválido",
+          payload: {
+            isValid: false,
+            processed: false
+          },
+        });
+      }
+
+      // Preparar respuesta
+      const response = {
+        event: verification.event,
+        person: verification.person,
+        isValid: verification.isValid,
+        processed: verification.processed
+      };
+
+      let message = "Ticket válido";
+      if (verification.processed) {
+        message = "Ticket válido y procesado correctamente";
+      } else if (verification.person?.available === false) {
+        message = "Ticket ya fue utilizado anteriormente";
+      }
+
+      return res.status(200).json({
+        status: "success",
+        msg: message,
+        payload: response,
+      });
+    } catch (e) {
+      logger.error(e?.message || e || "Error desconocido");
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al verificar el ticket",
+        payload: {},
+      });
+    }
+  }
+
+  // Obtener logs de tickets (para usuarios checkin y administradores)
+  async getTicketLogs(req, res) {
+    try {
+      // Verificar que el usuario es checkin o administrador
+      if (req.user.category !== "checkin" && req.user.category !== "Administrador") {
+        return res.status(403).json({
+          status: "error",
+          msg: "Solo usuarios checkin y administradores pueden acceder a los logs",
+          payload: {},
+        });
+      }
+
+      const limit = parseInt(req.query.limit) || 100;
+      const logs = await ticketLogsService.getAllLogs(limit);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Logs obtenidos",
+        payload: logs,
+      });
+    } catch (e) {
+      logger.error(e?.message || e || "Error desconocido");
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al obtener los logs",
         payload: {},
       });
     }

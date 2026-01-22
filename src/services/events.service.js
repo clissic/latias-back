@@ -154,6 +154,7 @@ class EventsService {
         lastName: userData.lastName,
         ci: userData.ci,
         ticketId: ticketId,
+        available: true, // Ticket disponible por defecto
         registeredAt: new Date()
       };
 
@@ -203,8 +204,140 @@ class EventsService {
         location: event.location
       },
       person: person,
-      isValid: true
+      isValid: true,
+      available: person.available !== undefined ? person.available : true // Estado del ticket
     };
+  }
+
+  async verifyTicketCheckin(ticketId, checkinUser) {
+    const event = await eventsModel.findByTicketId(ticketId);
+    if (!event) {
+      // Ticket no existe - crear log de ticket inválido
+      const logData = {
+        ticketId: ticketId,
+        eventId: "S/D",
+        eventTitle: "S/D",
+        personFirstName: "S/D",
+        personLastName: "S/D",
+        personCi: "S/D",
+        checkedBy: {
+          userId: checkinUser.userId,
+          firstName: checkinUser.firstName,
+          lastName: checkinUser.lastName,
+          email: checkinUser.email
+        },
+        action: 'invalid',
+        previousAvailable: null,
+        newAvailable: null,
+        timestamp: new Date()
+      };
+
+      return {
+        event: null,
+        person: null,
+        isValid: false,
+        processed: false,
+        logData: logData
+      };
+    }
+
+    // Buscar la persona registrada con ese ticketId
+    const personIndex = event.peopleRegistered.findIndex(p => p.ticketId === ticketId);
+    if (personIndex === -1) {
+      // Ticket no encontrado en el evento - crear log de ticket inválido
+      const logData = {
+        ticketId: ticketId,
+        eventId: event.eventId || "S/D",
+        eventTitle: event.title || "S/D",
+        personFirstName: "S/D",
+        personLastName: "S/D",
+        personCi: "S/D",
+        checkedBy: {
+          userId: checkinUser.userId,
+          firstName: checkinUser.firstName,
+          lastName: checkinUser.lastName,
+          email: checkinUser.email
+        },
+        action: 'invalid',
+        previousAvailable: null,
+        newAvailable: null,
+        timestamp: new Date()
+      };
+
+      return {
+        event: {
+          eventId: event.eventId,
+          title: event.title,
+          date: event.date,
+          hour: event.hour,
+          location: event.location
+        },
+        person: null,
+        isValid: false,
+        processed: false,
+        logData: logData
+      };
+    }
+
+    const person = event.peopleRegistered[personIndex];
+    const previousAvailable = person.available !== undefined ? person.available : true;
+    
+    let action = 'validated';
+    let newAvailable = previousAvailable;
+    let processed = false;
+
+    // Si el ticket está disponible, marcarlo como usado
+    if (previousAvailable === true) {
+      newAvailable = false;
+      processed = true;
+      
+      // Actualizar el ticket en la base de datos
+      await eventsModel.updateTicketAvailability(event._id, ticketId, false);
+    } else {
+      // Ticket ya fue usado
+      action = 'already_used';
+    }
+
+    // Preparar datos para el log
+    const logData = {
+      ticketId: ticketId,
+      eventId: event.eventId,
+      eventTitle: event.title,
+      personFirstName: person.firstName,
+      personLastName: person.lastName,
+      personCi: person.ci,
+      checkedBy: {
+        userId: checkinUser.userId,
+        firstName: checkinUser.firstName,
+        lastName: checkinUser.lastName,
+        email: checkinUser.email
+      },
+      action: action,
+      previousAvailable: previousAvailable,
+      newAvailable: newAvailable,
+      timestamp: new Date()
+    };
+
+    return {
+      event: {
+        eventId: event.eventId,
+        title: event.title,
+        date: event.date,
+        hour: event.hour,
+        location: event.location
+      },
+      person: {
+        ...person,
+        available: newAvailable
+      },
+      isValid: true,
+      processed: processed,
+      logData: logData
+    };
+  }
+
+  async updateTicketAvailability(eventId, ticketId, available) {
+    await eventsModel.updateTicketAvailability(eventId, ticketId, available);
   }
 }
 

@@ -24,10 +24,10 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ✔️ CUMPLIDO (1% cada uno) - 🟡 EN DESARROLLO (0.5% cada uno) - ❌ INCUMPLIDO (0%)
 
-**Progreso del proyecto: 43% completado**
-- ✔️ Completados: 38 puntos (38%)
-- 🟡 En desarrollo: 10 puntos (5%)
-- ❌ Pendientes: 52 puntos (0%)
+**Progreso del proyecto: 48% completado**
+- ✔️ Completados: 47 puntos (47%)
+- 🟡 En desarrollo: 2 puntos (1%)
+- ❌ Pendientes: 51 puntos (0%)
 
 ### Preparación del proyecto (1-10)
 ✔️ 1. Crear el repositorio en GitHub.  
@@ -47,10 +47,10 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 13. Implementar login con JWT.  
 ✔️ 14. Crear middleware de autenticación.  
 ✔️ 15. Crear roles: cadete, instructor, administrador.  
-🟡 16. Crear middleware de autorización según rol.  
+✔️ 16. Crear middleware de autorización según rol.  
 ✔️ 17. Probar endpoints de autenticación con Postman.  
 ✔️ 18. Configurar frontend para login y registro.  
-🟡 19. Crear páginas protegidas según rol.  
+✔️ 19. Crear páginas protegidas según rol.  
 ❌ 20. Testear flujo completo de autenticación y roles.  
 
 ### Gestión de cursos (21-35)
@@ -59,13 +59,13 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 23. Crear endpoints para CRUD de cursos.  
 ✔️ 24. Crear interfaz de Administrador para crear cursos.  
 ✔️ 25. Crear formulario de creación de curso en frontend.  
-🟡 26. Implementar subida de archivos (miniaturas y PDFs).  
+✔️ 26. Implementar subida de archivos (miniaturas y PDFs).  
 ✔️ 27. Integrar edición de curso existente.  
 ✔️ 28. Implementar eliminación de curso.  
 ✔️ 29. Crear endpoint para listar cursos.  
 ✔️ 30. Mostrar cursos en dashboard de cadetes.  
 ✔️ 31. Filtrar cursos por categoría.  
-❌ 32. Crear paginación en listado de cursos.  
+✔️ 32. Crear paginación en listado de cursos.  
 ✔️ 33. Crear búsqueda por título y descripción.  
 ✔️ 34. Probar CRUD completo de cursos.  
 ❌ 35. Testear interfaz y experiencia de usuario.  
@@ -105,10 +105,10 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ❌ 65. Subir diplomas generados a perfil del cadete.  
 
 ### Pagos y monetización (66-75)
-🟡 66. Configurar cuenta de Mercado Pago.  
+✔️ 66. Configurar cuenta de Mercado Pago.  
 🟡 67. Crear modelo de transacción en base de datos.  
-🟡 68. Crear endpoints para pagos y verificación.  
-🟡 69. Implementar frontend para proceso de compra.  
+✔️ 68. Crear endpoints para pagos y verificación.  
+✔️ 69. Implementar frontend para proceso de compra.  
 ✔️ 70. Integrar webhooks de Mercado Pago para confirmar pagos.  
 ✔️ 71. Marcar cursos comprados en perfil de cadete.  
 ❌ 72. Restringir acceso a cursos no comprados.  
@@ -117,9 +117,9 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 75. Documentar flujo de pagos. (Ver MERCADOPAGO_SETUP.md)  
 
 ### Panel de administración y cadetes (76-85)
-🟡 76. Crear dashboard de administrador.  
+✔️ 76. Crear dashboard de administrador.  
 ✔️ 77. Listar todos los cadetes y sus cursos.  
-🟡 78. Listar todos los instructores y cursos asignados.
+✔️ 78. Listar todos los instructores y cursos asignados.
 ✔️ 79. Permitir desactivar o eliminar usuarios.  
 ✔️ 80. Crear filtros por rol y estado.  
 ✔️ 81. Implementar búsqueda de usuarios.  

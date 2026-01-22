@@ -21,6 +21,14 @@ eventsRouter.post("/purchase/:eventId", authenticateToken, eventsController.purc
 // Verificar autenticidad de un ticket (público)
 eventsRouter.get("/verify/:ticketId", eventsController.verifyTicket);
 
+// ========== RUTAS PARA USUARIOS CHECKIN ==========
+
+// Verificar ticket para checkin (protegido, solo checkin)
+eventsRouter.get("/checkin/verify/:ticketId", authenticateToken, authorizeByCategory(['checkin']), eventsController.verifyTicketCheckin);
+
+// Obtener logs de tickets (protegido, solo checkin)
+eventsRouter.get("/checkin/logs", authenticateToken, authorizeByCategory(['checkin']), eventsController.getTicketLogs);
+
 // ========== RUTAS PROTEGIDAS PARA ADMINISTRADORES ==========
 
 // Obtener todos los eventos (para administradores)
@@ -37,3 +45,6 @@ eventsRouter.delete("/delete/:eventId", authenticateToken, authorizeByCategory([
 
 // Desactivar eventos vencidos
 eventsRouter.post("/deactivate-expired", authenticateToken, authorizeByCategory(['Administrador']), eventsController.deactivateExpiredEvents);
+
+// Obtener logs de tickets (para administradores)
+eventsRouter.get("/logs", authenticateToken, authorizeByCategory(['Administrador']), eventsController.getTicketLogs);
