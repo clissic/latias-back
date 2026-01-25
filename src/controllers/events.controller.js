@@ -667,6 +667,36 @@ class EventsController {
         });
       }
 
+      // Si el ticket fue procesado (available: true -> false), agregar el _id del evento al array eventsAttended del usuario
+      // Se busca por CI porque el ticket no guarda el _id del usuario.
+      if (verification.processed) {
+        const attendeeCi = String(verification.logData?.personCi || verification.person?.ci || "").trim();
+        const eventId = String(verification.event?._id || "").trim();
+        if (attendeeCi && eventId) {
+          try {
+            const addResult = await userService.addEventAttendedByCi(attendeeCi, eventId);
+            if (!addResult?.matchedCount) {
+              logger.warning(
+                `No se encontró usuario con CI ${attendeeCi} para agregar evento a eventsAttended (ticketId: ${ticketId}, eventId: ${eventId})`
+              );
+            } else if (!addResult?.modifiedCount) {
+              // Puede ser que el evento ya estaba en el array (no es error, solo info)
+              logger.info(
+                `Usuario con CI ${attendeeCi} ya tenía el evento ${eventId} en eventsAttended (ticketId: ${ticketId})`
+              );
+            }
+          } catch (addError) {
+            logger.error(
+              `Error agregando evento a eventsAttended para CI ${attendeeCi}: ${addError?.message || addError}`
+            );
+          }
+        } else {
+          logger.warning(
+            `Ticket procesado pero CI del asistente o eventId vacío (ticketId: ${ticketId}, CI: ${attendeeCi}, eventId: ${eventId})`
+          );
+        }
+      }
+
       // Preparar respuesta
       const response = {
         event: verification.event,

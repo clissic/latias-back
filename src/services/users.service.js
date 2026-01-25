@@ -1,4 +1,5 @@
 import { usersModel } from "../DAO/models/users.model.js";
+import { boatsService } from "../services/boats.service.js";
 import { transport } from "../utils/nodemailer.js";
 import { logger } from "../utils/logger.js";
 import { isValidPassword } from "../utils/Bcrypt.js";
@@ -100,6 +101,71 @@ class UserService {
         return await usersModel.findByCi(ci);
       } catch (error) {
         throw new Error("Failed to find user by email: " + error);
+      }
+    }
+
+    async addEventAttendedByCi(ci, eventId) {
+      try {
+        return await usersModel.addEventAttendedByCi(ci, eventId);
+      } catch (error) {
+        throw new Error("Failed to add event to eventsAttended by CI: " + error);
+      }
+    }
+
+    async requestBoatToFleet(userId, boatId) {
+      try {
+        return await usersModel.requestBoatToFleet(userId, boatId);
+      } catch (error) {
+        throw new Error("Failed to request boat to fleet: " + error);
+      }
+    }
+
+    async getUserFleet(userId) {
+      try {
+        // Buscar barcos por owner_id en lugar del array fleet del usuario
+        const boats = await boatsService.findByOwner(userId);
+        
+        // Transformar los barcos al formato esperado por el frontend
+        // El frontend espera un array con objetos que tengan boatId y status
+        return boats.map(boat => ({
+          _id: boat._id,
+          boatId: boat,
+          status: boat.isActive ? 'approved' : 'pending',
+          requestedAt: boat.createdAt || new Date()
+        }));
+      } catch (error) {
+        throw new Error("Failed to get user fleet: " + error);
+      }
+    }
+
+    async updateFleetRequestStatus(userId, boatId, status) {
+      try {
+        return await usersModel.updateFleetRequestStatus(userId, boatId, status);
+      } catch (error) {
+        throw new Error("Failed to update fleet request status: " + error);
+      }
+    }
+
+    async removeBoatFromFleet(userId, boatId) {
+      try {
+        // Verificar que el barco pertenezca al usuario antes de eliminarlo
+        const boat = await boatsService.findById(boatId);
+        if (!boat) {
+          throw new Error("Barco no encontrado");
+        }
+        
+        // Verificar que el barco pertenezca al usuario
+        // El owner puede estar poblado (objeto) o ser solo un ObjectId
+        const ownerId = boat.owner._id ? String(boat.owner._id) : String(boat.owner);
+        if (ownerId !== String(userId)) {
+          throw new Error("No tienes permiso para eliminar este barco");
+        }
+        
+        // Eliminar el barco de la base de datos
+        const result = await boatsService.deleteOne(boatId);
+        return { matchedCount: result.deletedCount, deletedCount: result.deletedCount };
+      } catch (error) {
+        throw new Error("Failed to remove boat from fleet: " + error);
       }
     }
   

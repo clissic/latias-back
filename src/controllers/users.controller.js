@@ -96,15 +96,34 @@ class UsersController {
   async create(req, res) {
     try {
       const { firstName, lastName, email, ci, birth, password } = req.body;
-      if (!firstName || !lastName || !email || !birth || !password) {
+      if (!firstName || !lastName || !email || !ci || !birth || !password) {
         return res.status(400).json({
           status: "error",
           msg: "All fields are required",
           payload: {},
         });
       }
+
+      const normalizedCi = String(ci).trim();
+      if (!normalizedCi) {
+        return res.status(400).json({
+          status: "error",
+          msg: "CI es requerido",
+          payload: {},
+        });
+      }
+
+      // Asegurar que no existan CI duplicados
+      const existingByCi = await userService.findByCi(normalizedCi);
+      if (existingByCi) {
+        return res.status(409).json({
+          status: "error",
+          msg: "Ya existe un usuario con ese CI",
+          payload: {},
+        });
+      }
   
-      const userDTO = new UserDTO(firstName, lastName, email, ci, birth, createHash(password));
+      const userDTO = new UserDTO(firstName, lastName, email, normalizedCi, birth, createHash(password));
 
       const userCreated = await userService.create(userDTO);
   
@@ -114,6 +133,14 @@ class UsersController {
         payload: userCreated,
       });
     } catch (e) {
+      // Fallback por si el índice unique dispara error de duplicado
+      if (e?.code === 11000 || String(e?.message || "").includes("E11000")) {
+        return res.status(409).json({
+          status: "error",
+          msg: "Usuario duplicado (email o CI ya registrado)",
+          payload: {},
+        });
+      }
       return res.status(500).json({
         status: "error",
         msg: "Something went wrong: " + e.message,
@@ -167,7 +194,7 @@ class UsersController {
       }
 
       // Validar que el category sea uno de los valores permitidos si se proporciona
-      if (category && !["Cadete", "Instructor", "Administrador"].includes(category)) {
+      if (category && !["Cadete", "Instructor", "Administrador", "checkin"].includes(category)) {
         return res.status(400).json({
           status: "error",
           msg: "Categoría inválida. Debe ser: Cadete, Instructor o Administrador",
@@ -589,6 +616,7 @@ class UsersController {
             purchasedCourses: user.purchasedCourses,
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
+            fleet: user.fleet || [],
             status: user.status || "Estudiante"
           }
         },
@@ -621,6 +649,168 @@ class UsersController {
       return res.status(500).json({
         status: "error",
         msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  // Solicitar agregar barco a la flota
+  async requestBoatToFleet(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { boatId } = req.body;
+
+      if (!boatId) {
+        return res.status(400).json({
+          status: "error",
+          msg: "El ID del barco es requerido",
+          payload: {},
+        });
+      }
+
+      const result = await userService.requestBoatToFleet(userId, boatId);
+      
+      if (result.matchedCount > 0) {
+        return res.status(200).json({
+          status: "success",
+          msg: "Solicitud de barco agregada a tu flota",
+          payload: {},
+        });
+      } else {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario no encontrado",
+          payload: {},
+        });
+      }
+    } catch (error) {
+      logger.error("Error al solicitar barco a la flota:", error);
+      
+      if (error.message?.includes("Ya has solicitado")) {
+        return res.status(409).json({
+          status: "error",
+          msg: error.message,
+          payload: {},
+        });
+      }
+
+      return res.status(500).json({
+        status: "error",
+        msg: error.message || "Error al solicitar barco a la flota",
+        payload: {},
+      });
+    }
+  }
+
+  // Obtener flota del usuario
+  async getUserFleet(req, res) {
+    try {
+      const userId = req.user.userId;
+      const fleet = await userService.getUserFleet(userId);
+      
+      return res.status(200).json({
+        status: "success",
+        msg: "Flota obtenida",
+        payload: fleet,
+      });
+    } catch (error) {
+      logger.error("Error al obtener flota:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al obtener la flota",
+        payload: {},
+      });
+    }
+  }
+
+  // Remover barco de la flota
+  async removeBoatFromFleet(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { boatId } = req.params;
+
+      if (!boatId) {
+        return res.status(400).json({
+          status: "error",
+          msg: "El ID del barco es requerido",
+          payload: {},
+        });
+      }
+
+      const result = await userService.removeBoatFromFleet(userId, boatId);
+      
+      if (result.deletedCount > 0) {
+        return res.status(200).json({
+          status: "success",
+          msg: "Barco removido de tu flota",
+          payload: {},
+        });
+      } else {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario o barco no encontrado",
+          payload: {},
+        });
+      }
+    } catch (error) {
+      logger.error("Error al remover barco de la flota:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al remover barco de la flota",
+        payload: {},
+      });
+    }
+  }
+
+  // Actualizar estado de solicitud de flota (solo administradores)
+  async updateFleetRequestStatus(req, res) {
+    try {
+      if (req.user.category !== "Administrador") {
+        return res.status(403).json({
+          status: "error",
+          msg: "Solo los administradores pueden actualizar el estado de las solicitudes",
+          payload: {},
+        });
+      }
+
+      const { userId, boatId, status } = req.body;
+
+      if (!userId || !boatId || !status) {
+        return res.status(400).json({
+          status: "error",
+          msg: "userId, boatId y status son requeridos",
+          payload: {},
+        });
+      }
+
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Estado inválido. Debe ser: pending, approved o rejected",
+          payload: {},
+        });
+      }
+
+      const result = await userService.updateFleetRequestStatus(userId, boatId, status);
+      
+      if (result.matchedCount > 0) {
+        return res.status(200).json({
+          status: "success",
+          msg: "Estado de solicitud actualizado",
+          payload: {},
+        });
+      } else {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario o barco no encontrado",
+          payload: {},
+        });
+      }
+    } catch (error) {
+      logger.error("Error al actualizar estado de solicitud:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error.message || "Error al actualizar estado de solicitud",
         payload: {},
       });
     }

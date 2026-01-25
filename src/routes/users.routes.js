@@ -14,6 +14,14 @@ usersRouter.get("/profile", authenticateToken, usersController.getProfile);
 usersRouter.post("/logout", authenticateToken, usersController.logout);
 usersRouter.put("/update-password", authenticateToken, usersController.updatePassword);
 
+// Rutas de flota para usuarios autenticados
+usersRouter.post("/fleet/request", authenticateToken, usersController.requestBoatToFleet);
+usersRouter.get("/fleet", authenticateToken, usersController.getUserFleet);
+usersRouter.delete("/fleet/:boatId", authenticateToken, usersController.removeBoatFromFleet);
+
+// Rutas de flota para administradores
+usersRouter.put("/fleet/update-status", authenticateToken, authorizeByCategory(['Administrador']), usersController.updateFleetRequestStatus);
+
 // Rutas protegidas solo para Administradores (gestión de usuarios)
 usersRouter.get("/", authenticateToken, authorizeByCategory(['Administrador']), usersController.getAll);
 usersRouter.get("/findByEmail", authenticateToken, authorizeByCategory(['Administrador']), usersController.findByEmail);

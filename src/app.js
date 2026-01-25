@@ -14,6 +14,8 @@ import { uploadRouter } from "./routes/upload.routes.js";
 import { professorsRouter } from "./routes/professors.routes.js";
 import { eventsRouter } from "./routes/events.routes.js";
 import { contactRouter } from "./routes/contact.routes.js";
+import { boatsRouter } from "./routes/boats.routes.js";
+import { certificatesRouter } from "./routes/certificates.routes.js";
 import { startEventsCron } from "./utils/events-cron.js";
 
 const app = express();
@@ -56,6 +58,24 @@ if (!existsSync(professorsUploadsDir)) {
   console.log(`Directorio de uploads de instructores ya existe: ${professorsUploadsDir}`);
 }
 
+// Asegurar que el directorio de uploads de barcos existe
+const boatsUploadsDir = join(__dirname, "../public/uploads/boats");
+if (!existsSync(boatsUploadsDir)) {
+  mkdirSync(boatsUploadsDir, { recursive: true });
+  console.log(`Directorio de uploads de barcos creado: ${boatsUploadsDir}`);
+} else {
+  console.log(`Directorio de uploads de barcos ya existe: ${boatsUploadsDir}`);
+}
+
+// Asegurar que el directorio de uploads de certificados existe
+const certificatesUploadsDir = join(__dirname, "../public/uploads/certificates");
+if (!existsSync(certificatesUploadsDir)) {
+  mkdirSync(certificatesUploadsDir, { recursive: true });
+  console.log(`Directorio de uploads de certificados creado: ${certificatesUploadsDir}`);
+} else {
+  console.log(`Directorio de uploads de certificados ya existe: ${certificatesUploadsDir}`);
+}
+
 // ENDPOINTS (deben ir antes de los archivos estáticos)
 app.use("/api/users", usersRouter);
 app.use("/api/tokens", tokensRouter);
@@ -65,6 +85,8 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/professors", professorsRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/contact", contactRouter);
+app.use("/api/boats", boatsRouter);
+app.use("/api/certificates", certificatesRouter);
 
 // Servir archivos estáticos desde public/uploads (para imágenes subidas)
 // Esto debe ir después de las rutas de API pero antes del catch-all de React

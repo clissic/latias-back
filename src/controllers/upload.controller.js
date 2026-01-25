@@ -179,6 +179,74 @@ class UploadController {
       });
     }
   }
+
+  // Subir imagen de barco
+  async uploadBoatImage(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          status: "error",
+          msg: "No se proporcionó ningún archivo",
+          payload: {},
+        });
+      }
+
+      // La ruta relativa desde public
+      const imagePath = `/uploads/boats/${req.file.filename}`;
+
+      logger.info(`Imagen de barco subida: ${imagePath}`);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Imagen subida exitosamente",
+        payload: {
+          image: imagePath,
+          filename: req.file.filename
+        },
+      });
+    } catch (error) {
+      logger.error("Error al subir imagen de barco:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al subir la imagen",
+        payload: {},
+      });
+    }
+  }
+
+  // Subir PDF de certificado
+  async uploadCertificatePDF(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          status: "error",
+          msg: "No se proporcionó ningún archivo",
+          payload: {},
+        });
+      }
+
+      // La ruta relativa desde public
+      const pdfPath = `/uploads/certificates/${req.file.filename}`;
+
+      logger.info(`PDF de certificado subido: ${pdfPath}`);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "PDF subido exitosamente",
+        payload: {
+          pdfFile: pdfPath,
+          filename: req.file.filename
+        },
+      });
+    } catch (error) {
+      logger.error("Error al subir PDF de certificado:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al subir el PDF",
+        payload: {},
+      });
+    }
+  }
 }
 
 export const uploadController = new UploadController();

@@ -318,8 +318,11 @@ class EventsService {
       timestamp: new Date()
     };
 
+    const personObj = typeof person?.toObject === "function" ? person.toObject() : { ...person };
+
     return {
       event: {
+        _id: String(event._id), // _id del evento para agregar a eventsAttended
         eventId: event.eventId,
         title: event.title,
         date: event.date,
@@ -327,7 +330,7 @@ class EventsService {
         location: event.location
       },
       person: {
-        ...person,
+        ...personObj,
         available: newAvailable
       },
       isValid: true,

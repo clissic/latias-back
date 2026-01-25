@@ -1,7 +1,7 @@
 import express from "express";
 import { uploadController } from "../controllers/upload.controller.js";
 import { authenticateToken, authorizeByCategory } from "../middleware/auth.middleware.js";
-import { uploadSingle, uploadMultiple, uploadProfessorImage, uploadEventImage } from "../middleware/upload.middleware.js";
+import { uploadSingle, uploadMultiple, uploadProfessorImage, uploadEventImage, uploadBoatImage, uploadCertificatePDF } from "../middleware/upload.middleware.js";
 import { logger } from "../utils/logger.js";
 
 export const uploadRouter = express.Router();
@@ -76,4 +76,44 @@ uploadRouter.post(
     });
   },
   uploadController.uploadEventImage
+);
+
+// Subir imagen de barco (autenticado, no solo administradores)
+uploadRouter.post(
+  "/boat-image",
+  authenticateToken,
+  (req, res, next) => {
+    uploadBoatImage(req, res, (err) => {
+      if (err) {
+        logger.error('Error en middleware de upload de barco:', err);
+        return res.status(400).json({
+          status: "error",
+          msg: err.message || "Error al subir la imagen",
+          payload: {},
+        });
+      }
+      next();
+    });
+  },
+  uploadController.uploadBoatImage
+);
+
+// Subir PDF de certificado (autenticado, no solo administradores)
+uploadRouter.post(
+  "/certificate-pdf",
+  authenticateToken,
+  (req, res, next) => {
+    uploadCertificatePDF(req, res, (err) => {
+      if (err) {
+        logger.error('Error en middleware de upload de certificado:', err);
+        return res.status(400).json({
+          status: "error",
+          msg: err.message || "Error al subir el PDF",
+          payload: {},
+        });
+      }
+      next();
+    });
+  },
+  uploadController.uploadCertificatePDF
 );

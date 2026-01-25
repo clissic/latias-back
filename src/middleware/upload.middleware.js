@@ -196,3 +196,122 @@ export const uploadEvent = multer({
 
 // Middleware para subir imagen de evento
 export const uploadEventImage = uploadEvent.single('image');
+
+// Configuración para imágenes de barcos
+const boatsUploadsDir = join(__dirname, '../public/uploads/boats');
+logger.info(`[Upload Middleware] Ruta del directorio de barcos: ${boatsUploadsDir}`);
+
+if (!existsSync(boatsUploadsDir)) {
+  try {
+    mkdirSync(boatsUploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads de barcos creado: ${boatsUploadsDir}`);
+  } catch (error) {
+    logger.error(`[Upload Middleware] Error al crear directorio de barcos: ${error.message}`);
+    throw error;
+  }
+} else {
+  logger.info(`[Upload Middleware] Directorio de uploads de barcos existe: ${boatsUploadsDir}`);
+}
+
+const boatStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    logger.info(`[Multer Boat] destination llamado para archivo: ${file.originalname}`);
+    logger.info(`[Multer Boat] Guardando en: ${boatsUploadsDir}`);
+    
+    if (!existsSync(boatsUploadsDir)) {
+      try {
+        mkdirSync(boatsUploadsDir, { recursive: true });
+        logger.info(`[Multer Boat] Directorio creado en destination: ${boatsUploadsDir}`);
+      } catch (error) {
+        logger.error(`[Multer Boat] Error al crear directorio en destination: ${error.message}`);
+        return cb(error);
+      }
+    }
+    
+    cb(null, boatsUploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = file.originalname.split('.').pop();
+    const filename = `boat-${uniqueSuffix}.${ext}`;
+    logger.info(`[Multer Boat] Generando nombre de archivo: ${filename}`);
+    cb(null, filename);
+  }
+});
+
+export const uploadBoat = multer({
+  storage: boatStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  },
+  fileFilter: fileFilter
+});
+
+// Middleware para subir imagen de barco
+export const uploadBoatImage = uploadBoat.single('image');
+
+// Configuración para PDFs de certificados
+const certificatesUploadsDir = join(__dirname, '../public/uploads/certificates');
+logger.info(`[Upload Middleware] Ruta del directorio de certificados: ${certificatesUploadsDir}`);
+
+if (!existsSync(certificatesUploadsDir)) {
+  try {
+    mkdirSync(certificatesUploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads de certificados creado: ${certificatesUploadsDir}`);
+  } catch (error) {
+    logger.error(`[Upload Middleware] Error al crear directorio de certificados: ${error.message}`);
+    throw error;
+  }
+} else {
+  logger.info(`[Upload Middleware] Directorio de uploads de certificados existe: ${certificatesUploadsDir}`);
+}
+
+const certificateStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    logger.info(`[Multer Certificate] destination llamado para archivo: ${file.originalname}`);
+    logger.info(`[Multer Certificate] Guardando en: ${certificatesUploadsDir}`);
+    
+    if (!existsSync(certificatesUploadsDir)) {
+      try {
+        mkdirSync(certificatesUploadsDir, { recursive: true });
+        logger.info(`[Multer Certificate] Directorio creado en destination: ${certificatesUploadsDir}`);
+      } catch (error) {
+        logger.error(`[Multer Certificate] Error al crear directorio en destination: ${error.message}`);
+        return cb(error);
+      }
+    }
+    
+    cb(null, certificatesUploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = file.originalname.split('.').pop();
+    const filename = `certificate-${uniqueSuffix}.${ext}`;
+    logger.info(`[Multer Certificate] Generando nombre de archivo: ${filename}`);
+    cb(null, filename);
+  }
+});
+
+// Filtro para aceptar solo PDFs
+const pdfFileFilter = (req, file, cb) => {
+  const allowedTypes = /pdf/;
+  const extname = allowedTypes.test(file.originalname.toLowerCase().split('.').pop());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Solo se permiten archivos PDF'));
+  }
+};
+
+export const uploadCertificate = multer({
+  storage: certificateStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB máximo para PDFs
+  },
+  fileFilter: pdfFileFilter
+});
+
+// Middleware para subir PDF de certificado
+export const uploadCertificatePDF = uploadCertificate.single('pdfFile');
