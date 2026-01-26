@@ -36,7 +36,7 @@ class UserService {
       }
     }
   
-    async updateOne({ _id, password, avatar, firstName, lastName, status, email, ci, phone, birth, address, statistics, settings, preferences, purchasedCourses, finishedCourses })
+    async updateOne({ _id, password, avatar, firstName, lastName, status, email, ci, phone, birth, address, statistics, settings, preferences, purchasedCourses, finishedCourses, manager })
     {
       try {
         return await usersModel.updateOne({
@@ -56,6 +56,7 @@ class UserService {
             preferences,
             purchasedCourses,
             finishedCourses,
+            manager,
         });
       } catch (error) {
         throw new Error("Failed to update user by ID");

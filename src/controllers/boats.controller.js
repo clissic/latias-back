@@ -445,7 +445,7 @@ class BoatsController {
                 <h2>Información del Barco</h2>
                 <p><strong>Nombre:</strong> ${boatCreated.name}</p>
                 <p><strong>Número de Registro:</strong> ${boatCreated.registrationNumber}</p>
-                <p><strong>País de Registro:</strong> ${boatCreated.registrationCountry}</p>
+                <p><strong>Bandera:</strong> ${boatCreated.registrationCountry}</p>
                 <p><strong>Puerto de Registro:</strong> ${boatCreated.registrationPort}</p>
                 <p><strong>Tipo:</strong> ${boatCreated.boatType}</p>
                 <p><strong>Eslora:</strong> ${boatCreated.lengthOverall}m</p>

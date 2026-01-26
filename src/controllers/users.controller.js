@@ -180,7 +180,8 @@ class UsersController {
         rank,
         category,
         purchasedCourses,
-        finishedCourses, } = req.body;
+        finishedCourses,
+        manager, } = req.body;
       
       if (!firstName || !lastName || !email || !_id) {
         logger.info(
@@ -222,6 +223,7 @@ class UsersController {
             category,
             purchasedCourses,
             finishedCourses,
+            manager,
         });
         logger.info(`Usuario ${_id} actualizado por administrador ${req.user.userId}`);
         if (userUpdated.matchedCount > 0) {
@@ -502,6 +504,7 @@ class UsersController {
             purchasedCourses: user.purchasedCourses,
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
+            manager: user.manager || { active: false, manager_id: "" },
             status: user.status || "Estudiante"
           },
           tokens: {
@@ -617,6 +620,7 @@ class UsersController {
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
             fleet: user.fleet || [],
+            manager: user.manager || { active: false, manager_id: "" },
             status: user.status || "Estudiante"
           }
         },

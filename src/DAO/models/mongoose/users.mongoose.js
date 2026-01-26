@@ -61,6 +61,10 @@ const schema = new Schema({
     }],
     default: []
   },
+  manager: {
+    active: { type: Boolean, default: false },
+    manager_id: { type: String, default: "" }
+  },
   lastLogin: { type: Date }
 });
 

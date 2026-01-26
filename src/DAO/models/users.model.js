@@ -23,6 +23,7 @@ class UsersModel {
         purchasedCourses: true,
         finishedCourses: true,
         paymentMethods: true,
+        manager: true,
         lastLogin: true,
       }
     );
@@ -50,6 +51,7 @@ class UsersModel {
         purchasedCourses: true,
         finishedCourses: true,
         paymentMethods: true,
+        manager: true,
         lastLogin: true,
       }
     );
@@ -78,6 +80,7 @@ class UsersModel {
         purchasedCourses: true,
         finishedCourses: true,
         paymentMethods: true,
+        manager: true,
         lastLogin: true,
       }
     );
@@ -110,6 +113,7 @@ class UsersModel {
         purchasedCourses: true,
         finishedCourses: true,
         paymentMethods: true,
+        manager: true,
         lastLogin: true,
       }
     );
@@ -138,6 +142,7 @@ class UsersModel {
         purchasedCourses: true,
         finishedCourses: true,
         paymentMethods: true,
+        manager: true,
         lastLogin: true,
       }
     );
@@ -175,6 +180,7 @@ class UsersModel {
     purchasedCourses,
     finishedCourses,
     paymentMethods,
+    manager,
   }) {
     const userUpdated = await UserMongoose.updateOne(
       {
@@ -198,6 +204,7 @@ class UsersModel {
         purchasedCourses,
         finishedCourses,
         paymentMethods,
+        manager,
       }
     );
     return userUpdated;
