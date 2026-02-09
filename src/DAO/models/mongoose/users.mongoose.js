@@ -9,10 +9,10 @@ const schema = new Schema({
   password: { type: String, required: true, max: 100 },
   phone: { type: String, max: 20, default: "" },
   birth: { type: Date, required: true },
-  category: { 
-    type: String, 
-    enum: ["Cadete", "Instructor", "Administrador", "checkin"], 
-    default: "Cadete" 
+  category: {
+    type: [String],
+    enum: ["Cadete", "Instructor", "Administrador", "Gestor", "checkin"],
+    default: ["Cadete"],
   },
   rank: {
     title: { type: String, default: "Grumete" },
@@ -63,7 +63,7 @@ const schema = new Schema({
   },
   manager: {
     active: { type: Boolean, default: false },
-    manager_id: { type: String, default: "" }
+    managerId: { type: String, default: "" }
   },
   lastLogin: { type: Date }
 });

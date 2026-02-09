@@ -78,11 +78,12 @@ export const authorizeByCategory = (allowedCategories) => {
         });
       }
 
-      const userCategory = req.user.category?.trim();
+      const userCategories = Array.isArray(req.user.category) ? req.user.category : (req.user.category != null ? [String(req.user.category).trim()] : []);
       const normalizedAllowedCategories = allowedCategories.map(cat => cat?.trim());
+      const hasAllowedCategory = userCategories.some(c => normalizedAllowedCategories.includes(String(c).trim()));
       
-      if (!normalizedAllowedCategories.includes(userCategory)) {
-        logger.warning(`Usuario ${req.user.userId} con categoría "${userCategory}" intentó acceder a recurso restringido. Categorías permitidas: ${allowedCategories.join(", ")}`);
+      if (!hasAllowedCategory) {
+        logger.warning(`Usuario ${req.user.userId} con categoría(s) "${userCategories.join(", ")}" intentó acceder a recurso restringido. Categorías permitidas: ${allowedCategories.join(", ")}`);
         return res.status(403).json({
           status: "error",
           msg: "No tienes permisos para acceder a este recurso",
@@ -152,7 +153,8 @@ export const validateUserOwnership = (options = {}) => {
       }
 
       // Los administradores pueden acceder a cualquier dato
-      if (req.user.category === "Administrador") {
+      const categories = Array.isArray(req.user.category) ? req.user.category : (req.user.category != null ? [req.user.category] : []);
+      if (categories.includes("Administrador")) {
         return next();
       }
 

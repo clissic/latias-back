@@ -34,6 +34,14 @@ class BoatsModel {
     return boats;
   }
 
+  async countByOwner(ownerId) {
+    return BoatsMongoose.countDocuments({ owner: ownerId });
+  }
+
+  async countActiveByOwner(ownerId) {
+    return BoatsMongoose.countDocuments({ owner: ownerId, isActive: { $ne: false } });
+  }
+
   async create(boatData) {
     const boatCreated = await BoatsMongoose.create(boatData);
     const populatedBoat = await BoatsMongoose.findById(boatCreated._id)

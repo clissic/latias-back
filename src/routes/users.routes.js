@@ -1,6 +1,6 @@
 import express from "express";
 import { usersController } from "../controllers/users.controller.js";
-import { authenticateToken, authorizeByCategory } from "../middleware/auth.middleware.js";
+import { authenticateToken, authorizeByCategory, validateUserOwnership } from "../middleware/auth.middleware.js";
 
 export const usersRouter = express.Router();
 
@@ -11,8 +11,14 @@ usersRouter.post("/create", usersController.create);
 
 // Rutas protegidas para usuarios autenticados
 usersRouter.get("/profile", authenticateToken, usersController.getProfile);
+usersRouter.get("/gestors", authenticateToken, usersController.getGestors);
+usersRouter.get("/gestor/clients", authenticateToken, authorizeByCategory(["Gestor"]), usersController.getMyClients);
+usersRouter.patch("/profile/manager", authenticateToken, usersController.updateMyManager);
 usersRouter.post("/logout", authenticateToken, usersController.logout);
 usersRouter.put("/update-password", authenticateToken, usersController.updatePassword);
+
+// Actualizar datos propios (cualquier usuario autenticado solo puede actualizar su propio perfil; Admin puede actualizar cualquiera)
+usersRouter.put("/update", authenticateToken, validateUserOwnership({ userIdParam: "_id" }), usersController.updateOne);
 
 // Rutas de flota para usuarios autenticados
 usersRouter.post("/fleet/request", authenticateToken, usersController.requestBoatToFleet);
@@ -27,5 +33,4 @@ usersRouter.get("/", authenticateToken, authorizeByCategory(['Administrador']), 
 usersRouter.get("/findByEmail", authenticateToken, authorizeByCategory(['Administrador']), usersController.findByEmail);
 usersRouter.get("/findByCi", authenticateToken, authorizeByCategory(['Administrador']), usersController.findByCi);
 usersRouter.get("/:id", authenticateToken, authorizeByCategory(['Administrador']), usersController.findById);
-usersRouter.put("/update", authenticateToken, authorizeByCategory(['Administrador']), usersController.updateOne);
 usersRouter.delete("/:id", authenticateToken, authorizeByCategory(['Administrador']), usersController.deleteOne);

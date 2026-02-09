@@ -82,10 +82,27 @@ class BoatsController {
     }
   }
 
-  // Obtener barcos por propietario (autenticado)
+  // Obtener barcos por propietario (el propio owner o un Gestor que tenga a ese owner como cliente)
   async findByOwner(req, res) {
     try {
+      const userId = req.user?.userId;
       const { ownerId } = req.params;
+      if (!userId) {
+        return res.status(401).json({ status: "error", msg: "No autenticado", payload: {} });
+      }
+      const isOwner = String(userId) === String(ownerId);
+      if (!isOwner) {
+        const categories = Array.isArray(req.user?.category) ? req.user.category : (req.user?.category != null ? [req.user.category] : []);
+        const isGestor = categories.includes("Gestor");
+        if (isGestor) {
+          const owner = await userService.findById(ownerId);
+          if (!owner || String(owner.manager?.managerId) !== String(userId)) {
+            return res.status(403).json({ status: "error", msg: "Solo puedes ver barcos de tus clientes.", payload: {} });
+          }
+        } else {
+          return res.status(403).json({ status: "error", msg: "Solo el propietario o su gestor pueden ver estos barcos.", payload: {} });
+        }
+      }
       const boats = await boatsService.findByOwner(ownerId);
       return res.status(200).json({
         status: "success",
@@ -327,8 +344,19 @@ class BoatsController {
       // Agregar el owner al boatData
       boatData.owner = userId;
 
+      // Generar tokens únicos para aprobar/rechazar antes de crear el barco
+      const approvalToken = crypto.randomBytes(32).toString('hex');
+      const rejectionToken = crypto.randomBytes(32).toString('hex');
+
       // Crear barco con isActive: false
       const boatCreated = await boatsService.requestRegistration(boatData);
+
+      // Guardar tokens en el barco para validar en approve/reject
+      await boatsService.updateOne({
+        _id: boatCreated._id,
+        approvalToken,
+        rejectionToken
+      });
 
       // Obtener información del usuario solicitante
       const user = await userService.findById(userId);
@@ -336,16 +364,10 @@ class BoatsController {
       // Obtener todos los administradores
       const admins = await userService.getAll();
       const adminEmails = admins
-        .filter(admin => admin.category === "Administrador")
+        .filter(admin => (Array.isArray(admin.category) ? admin.category : (admin.category != null ? [admin.category] : [])).includes("Administrador"))
         .map(admin => admin.email);
 
       if (adminEmails.length > 0) {
-        // Generar token único para aprobar/rechazar
-        const approvalToken = crypto.randomBytes(32).toString('hex');
-        const rejectionToken = crypto.randomBytes(32).toString('hex');
-
-        // Guardar tokens en el barco (necesitamos agregar estos campos al modelo)
-        // Por ahora, usaremos el _id del barco para generar URLs únicas
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         const approvalUrl = `${frontendUrl}/boat-registration/approve/${boatCreated._id}?token=${approvalToken}`;
         const rejectionUrl = `${frontendUrl}/boat-registration/reject/${boatCreated._id}?token=${rejectionToken}`;
@@ -518,7 +540,7 @@ class BoatsController {
     }
   }
 
-  // Aprobar registro de barco (público con token)
+  // Aprobar registro de barco (público con token válido)
   async approveRegistration(req, res) {
     try {
       const { id } = req.params;
@@ -550,8 +572,22 @@ class BoatsController {
         });
       }
 
-      // Actualizar isActive a true
-      const boatUpdated = await boatsService.updateOne({ _id: id, isActive: true });
+      // Validar que el token coincida con el guardado al solicitar el registro
+      if (!boat.approvalToken || boat.approvalToken !== token) {
+        return res.status(403).json({
+          status: "error",
+          msg: "Token de confirmación inválido",
+          payload: {},
+        });
+      }
+
+      // Actualizar isActive a true y limpiar tokens (un solo uso)
+      const boatUpdated = await boatsService.updateOne({
+        _id: id,
+        isActive: true,
+        approvalToken: null,
+        rejectionToken: null
+      });
 
       if (!boatUpdated) {
         return res.status(404).json({
@@ -661,7 +697,7 @@ class BoatsController {
     }
   }
 
-  // Rechazar registro de barco (público con token)
+  // Rechazar registro de barco (público con token válido)
   async rejectRegistration(req, res) {
     try {
       const { id } = req.params;
@@ -681,6 +717,15 @@ class BoatsController {
         return res.status(404).json({
           status: "error",
           msg: "Barco no encontrado",
+          payload: {},
+        });
+      }
+
+      // Validar que el token coincida con el guardado al solicitar el registro
+      if (!boat.rejectionToken || boat.rejectionToken !== token) {
+        return res.status(403).json({
+          status: "error",
+          msg: "Token de confirmación inválido",
           payload: {},
         });
       }

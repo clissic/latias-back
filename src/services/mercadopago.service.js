@@ -146,7 +146,7 @@ class MercadoPagoService {
 
       logger.info(`Precio formateado: ${finalPrice}, Moneda: ${currencyCode}`);
 
-      // Construir el objeto de preferencia en el orden correcto
+      // Preferencia Checkout Pro (doc: https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/create-payment-preference)
       preferenceData = {
         items: [
           {
@@ -172,7 +172,6 @@ class MercadoPagoService {
           courseName: String(courseName),
           userId: String(userId),
         },
-        // Configuración de métodos de pago
         payment_methods: {
           excluded_payment_methods: [],
           excluded_payment_types: [],
@@ -221,8 +220,8 @@ class MercadoPagoService {
         throw new Error(`back_urls.success no es válido: "${preferenceData.back_urls.success}"`);
       }
 
-      // IMPORTANTE: Mercado Pago puede rechazar localhost con auto_return
-      // Si estamos en desarrollo con localhost, quitar auto_return temporalmente
+      // IMPORTANTE: Mercado Pago rechaza auto_return si back_urls.success es localhost
+      // Si la URL del front es localhost, quitar auto_return para que la preferencia se cree correctamente
       const isLocalhost = frontendUrl.includes('localhost') || frontendUrl.includes('127.0.0.1');
       if (isLocalhost && preferenceData.auto_return) {
         logger.warning('Detectado localhost - removiendo auto_return para evitar errores de Mercado Pago');
@@ -274,18 +273,31 @@ class MercadoPagoService {
     }
   }
 
+  /**
+   * Maneja el webhook de Mercado Pago (Checkout Pro).
+   * Soporta formato clásico (type, data) y nuevo (action, data).
+   * Doc: https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/payment-notifications
+   */
   async handleWebhook(body) {
     try {
-      const { type, data } = body;
+      // Formato nuevo: { action: "payment.updated", type: "payment", data: { id: "..." } }
+      // Formato clásico: { type: "payment", data: { id: "..." } }
+      const type = body.type || (body.action ? body.action.split('.')[0] : null);
+      const dataId = body.data?.id;
 
-      logger.info(`Webhook de Mercado Pago recibido: ${type}`);
+      logger.info(`Webhook de Mercado Pago recibido: type=${type}, data.id=${dataId}`);
+
+      if (!type || !dataId) {
+        logger.warning('Webhook sin type o data.id:', body);
+        return { received: true, skipped: true };
+      }
 
       switch (type) {
         case 'payment':
-          await this.handlePaymentNotification(data.id);
+          await this.handlePaymentNotification(dataId);
           break;
         case 'merchant_order':
-          await this.handleMerchantOrderNotification(data.id);
+          await this.handleMerchantOrderNotification(dataId);
           break;
         default:
           logger.info(`Tipo de webhook no manejado: ${type}`);

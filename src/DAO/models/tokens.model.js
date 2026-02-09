@@ -10,9 +10,13 @@ export default class RecoverTokensModel {
         return newRecoverToken
     }
 
-    async findOne({token, email}) {
+    async findOne({ token, email }) {
         const recoverTokenFound = await RecoverTokensMongoose.findOne({ token, email });
         return recoverTokenFound;
+    }
+
+    async deleteOne({ token, email }) {
+        await RecoverTokensMongoose.deleteOne({ token, email });
     }
 }
 

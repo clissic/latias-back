@@ -95,7 +95,7 @@ class UsersController {
 
   async create(req, res) {
     try {
-      const { firstName, lastName, email, ci, birth, password } = req.body;
+      const { firstName, lastName, email, ci, birth, password, category } = req.body;
       if (!firstName || !lastName || !email || !ci || !birth || !password) {
         return res.status(400).json({
           status: "error",
@@ -113,6 +113,18 @@ class UsersController {
         });
       }
 
+      const validCategories = ["Cadete", "Instructor", "Administrador", "Gestor", "checkin"];
+      const categoryNormalized = category != null
+        ? (Array.isArray(category) ? category : [category]).filter(c => validCategories.includes(c))
+        : ["Cadete"];
+      if (category != null && categoryNormalized.length === 0) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Categoría inválida",
+          payload: {},
+        });
+      }
+
       // Asegurar que no existan CI duplicados
       const existingByCi = await userService.findByCi(normalizedCi);
       if (existingByCi) {
@@ -125,7 +137,7 @@ class UsersController {
   
       const userDTO = new UserDTO(firstName, lastName, email, normalizedCi, birth, createHash(password));
 
-      const userCreated = await userService.create(userDTO);
+      const userCreated = await userService.create({ ...userDTO, category: categoryNormalized });
   
       return res.status(201).json({
         status: "success",
@@ -151,20 +163,11 @@ class UsersController {
 
   async updateOne(req, res) {
     try {
-      // Validar que solo administradores puedan modificar usuarios
-      // (esto es redundante con el middleware, pero es una capa adicional de seguridad)
-      if (req.user.category !== "Administrador") {
-        logger.warning(`Usuario ${req.user.userId} con categoría ${req.user.category} intentó modificar un usuario`);
-        return res.status(403).json({
-          status: "error",
-          msg: "Solo los administradores pueden modificar usuarios",
-          payload: {},
-        });
-      }
-
-      // Si viene _id en params, usarlo (para rutas con :id), sino usar el usuario autenticado
       const _id = req.params._id || req.body._id || req.user.userId;
-      const { password,
+      const userCategories = Array.isArray(req.user.category) ? req.user.category : [];
+      const isAdmin = userCategories.includes("Administrador");
+      const {
+        password,
         avatar,
         firstName,
         lastName,
@@ -181,8 +184,9 @@ class UsersController {
         category,
         purchasedCourses,
         finishedCourses,
-        manager, } = req.body;
-      
+        manager,
+      } = req.body;
+
       if (!firstName || !lastName || !email || !_id) {
         logger.info(
           "Validation error: please complete firstName, lastName and email."
@@ -194,17 +198,23 @@ class UsersController {
         });
       }
 
-      // Validar que el category sea uno de los valores permitidos si se proporciona
-      if (category && !["Cadete", "Instructor", "Administrador", "checkin"].includes(category)) {
-        return res.status(400).json({
-          status: "error",
-          msg: "Categoría inválida. Debe ser: Cadete, Instructor o Administrador",
-          payload: {},
-        });
+      const validCategories = ["Cadete", "Instructor", "Administrador", "Gestor", "checkin"];
+      let categoryNormalized = category;
+      if (category !== undefined && category !== null) {
+        categoryNormalized = Array.isArray(category) ? category : [category];
+        const invalid = categoryNormalized.filter(c => !validCategories.includes(c));
+        if (invalid.length > 0) {
+          return res.status(400).json({
+            status: "error",
+            msg: "Categoría inválida. Debe ser: Cadete, Instructor, Administrador, Gestor o checkin",
+            payload: {},
+          });
+        }
       }
 
-      try {
-        const userUpdated = await userService.updateOne({
+      // Usuarios no administradores solo pueden actualizar sus propios datos de perfil (Ajustes)
+      const updatePayload = isAdmin
+        ? {
             _id,
             password,
             avatar,
@@ -220,12 +230,27 @@ class UsersController {
             settings,
             preferences,
             rank,
-            category,
+            ...(categoryNormalized !== undefined && { category: categoryNormalized }),
             purchasedCourses,
             finishedCourses,
             manager,
-        });
-        logger.info(`Usuario ${_id} actualizado por administrador ${req.user.userId}`);
+          }
+        : {
+            _id,
+            firstName,
+            lastName,
+            email,
+            ci,
+            phone,
+            birth,
+            address,
+          };
+
+      try {
+        const userUpdated = await userService.updateOne(updatePayload);
+        logger.info(
+          `Usuario ${_id} actualizado${isAdmin ? ` por administrador ${req.user.userId}` : " (datos propios)"}`
+        );
         if (userUpdated.matchedCount > 0) {
           return res.status(201).json({
             status: "success",
@@ -482,6 +507,26 @@ class UsersController {
 
       logger.info(`Usuario ${user.email} inició sesión exitosamente`);
 
+      // Enriquecer manager con datos del gestor si está asignado
+      let managerPayload = user.manager || { active: false, managerId: "" };
+      if (managerPayload.managerId) {
+        try {
+          const managerUser = await userService.findById(managerPayload.managerId);
+          if (managerUser) {
+            managerPayload = {
+              ...managerPayload,
+              firstName: managerUser.firstName,
+              lastName: managerUser.lastName,
+              email: managerUser.email,
+              phone: managerUser.phone,
+              address: managerUser.address,
+            };
+          }
+        } catch (e) {
+          // Si falla la búsqueda del gestor, se devuelve el payload sin datos extra
+        }
+      }
+
       return res.status(200).json({
         status: "success",
         msg: "Login exitoso",
@@ -504,7 +549,7 @@ class UsersController {
             purchasedCourses: user.purchasedCourses,
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
-            manager: user.manager || { active: false, manager_id: "" },
+            manager: managerPayload,
             status: user.status || "Estudiante"
           },
           tokens: {
@@ -597,6 +642,26 @@ class UsersController {
         });
       }
 
+      // Enriquecer manager con datos del gestor si está asignado
+      let managerPayload = user.manager || { active: false, managerId: "" };
+      if (managerPayload.managerId) {
+        try {
+          const managerUser = await userService.findById(managerPayload.managerId);
+          if (managerUser) {
+            managerPayload = {
+              ...managerPayload,
+              firstName: managerUser.firstName,
+              lastName: managerUser.lastName,
+              email: managerUser.email,
+              phone: managerUser.phone,
+              address: managerUser.address,
+            };
+          }
+        } catch (e) {
+          // Si falla la búsqueda del gestor, se devuelve el payload sin datos extra
+        }
+      }
+
       return res.status(200).json({
         status: "success",
         msg: "Perfil obtenido exitosamente",
@@ -620,7 +685,7 @@ class UsersController {
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
             fleet: user.fleet || [],
-            manager: user.manager || { active: false, manager_id: "" },
+            manager: managerPayload,
             status: user.status || "Estudiante"
           }
         },
@@ -630,6 +695,141 @@ class UsersController {
       return res.status(500).json({
         status: "error",
         msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  // Listar usuarios con categoría Gestor (para que el usuario pueda elegir uno)
+  async getGestors(req, res) {
+    try {
+      const gestors = await userService.getByCategory("Gestor");
+      const payload = gestors.map((g) => ({
+        id: g._id,
+        firstName: g.firstName,
+        lastName: g.lastName,
+        email: g.email,
+        phone: g.phone,
+        address: g.address,
+      }));
+      return res.status(200).json({
+        status: "success",
+        msg: "Gestores obtenidos",
+        payload,
+      });
+    } catch (error) {
+      logger.error("Error al obtener gestores:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al obtener lista de gestores",
+        payload: {},
+      });
+    }
+  }
+
+  /** Clientes que eligieron al usuario actual como gestor (solo Gestor). Incluye fleetCount. */
+  async getMyClients(req, res) {
+    try {
+      const managerId = req.user?.userId;
+      if (!managerId) {
+        return res.status(401).json({ status: "error", msg: "No autenticado", payload: {} });
+      }
+      const clients = await userService.getClientsByManagerId(managerId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Clientes obtenidos",
+        payload: clients,
+      });
+    } catch (error) {
+      logger.error("Error al obtener clientes del gestor:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error?.message || "Error al obtener clientes",
+        payload: {},
+      });
+    }
+  }
+
+  // Asignar o desvincular gestor del usuario autenticado
+  async updateMyManager(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { managerId, jurisdiction: jurisdictionName } = req.body;
+
+      if (managerId === undefined || managerId === null) {
+        return res.status(400).json({
+          status: "error",
+          msg: "managerId es requerido (use cadena vacía para desvincular)",
+          payload: {},
+        });
+      }
+
+      const newManagerId = String(managerId).trim();
+
+      if (newManagerId === "") {
+        await userService.updateOne({
+          _id: userId,
+          manager: { active: false, managerId: "" },
+        });
+        return res.status(200).json({
+          status: "success",
+          msg: "Gestor desvinculado correctamente",
+          payload: {},
+        });
+      }
+
+      const managerUser = await userService.findById(newManagerId);
+      if (!managerUser) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Gestor no encontrado",
+          payload: {},
+        });
+      }
+      const managerCats = Array.isArray(managerUser.category) ? managerUser.category : (managerUser.category != null ? [managerUser.category] : []);
+      if (!managerCats.includes("Gestor")) {
+        return res.status(400).json({
+          status: "error",
+          msg: "El usuario seleccionado no es un gestor",
+          payload: {},
+        });
+      }
+
+      await userService.updateOne({
+        _id: userId,
+        manager: { active: true, managerId: newManagerId },
+      });
+
+      // Enviar email al gestor informando que fue seleccionado (no fallar si falla el envío)
+      try {
+        const clientUser = await userService.findById(userId);
+        if (clientUser && managerUser.email) {
+          await userService.sendGestorAssignedEmail({
+            to: managerUser.email,
+            clientUser: {
+              firstName: clientUser.firstName,
+              lastName: clientUser.lastName,
+              email: clientUser.email,
+              phone: clientUser.phone,
+              address: clientUser.address,
+            },
+            jurisdictionName: jurisdictionName || (managerUser.address?.country ?? "No indicada"),
+          });
+        }
+      } catch (emailErr) {
+        logger.error("Error al enviar email al gestor en updateMyManager:", emailErr?.message);
+      }
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Gestor asignado correctamente",
+        payload: {},
+      });
+    } catch (error) {
+      logger.error("Error al actualizar gestor:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al actualizar gestor",
         payload: {},
       });
     }
@@ -769,7 +969,8 @@ class UsersController {
   // Actualizar estado de solicitud de flota (solo administradores)
   async updateFleetRequestStatus(req, res) {
     try {
-      if (req.user.category !== "Administrador") {
+      const adminCategories = Array.isArray(req.user.category) ? req.user.category : [];
+      if (!adminCategories.includes("Administrador")) {
         return res.status(403).json({
           status: "error",
           msg: "Solo los administradores pueden actualizar el estado de las solicitudes",

@@ -21,8 +21,9 @@ class UserService {
       }
     }
   
-    async create({ firstName, lastName, birth, ci, email, password }) {
+    async create({ firstName, lastName, birth, ci, email, password, category }) {
       try {
+        const categoryArr = Array.isArray(category) ? category : (category != null ? [category] : undefined);
         return await usersModel.create({
             firstName,
             lastName,
@@ -30,6 +31,7 @@ class UserService {
             ci,
             email,
             password,
+            ...(categoryArr && { category: categoryArr }),
         });
       } catch (error) {
         throw new Error("Failed to create a user: " + error);
@@ -76,6 +78,14 @@ class UserService {
       return await usersModel.findByEmail(email);
     } catch (error) {
       throw new Error("Failed to find user by email: " + error);
+    }
+  }
+
+  async getByCategory(category) {
+    try {
+      return await usersModel.findByCategory(category);
+    } catch (error) {
+      throw new Error("Failed to find users by category: " + error);
     }
   }
 
@@ -136,6 +146,22 @@ class UserService {
         }));
       } catch (error) {
         throw new Error("Failed to get user fleet: " + error);
+      }
+    }
+
+    /** Clientes que tienen a este usuario como gestor. Solo para categoría Gestor. Incluye fleetCount (barcos del cliente). */
+    async getClientsByManagerId(managerId) {
+      try {
+        const list = await usersModel.findClientsByManagerId(managerId);
+        const withCount = await Promise.all(
+          list.map(async (client) => {
+            const fleetCount = await boatsService.countActiveByOwner(client._id);
+            return { ...client, fleetCount };
+          })
+        );
+        return withCount;
+      } catch (error) {
+        throw new Error("Failed to get clients by manager: " + error);
       }
     }
 
@@ -215,6 +241,197 @@ class UserService {
         return true;
       } catch (error) {
         logger.error("Email could not be sent successfully: " + error);
+      }
+    }
+
+    /**
+     * Envía email al gestor informando que fue seleccionado por un usuario.
+     * @param {Object} options
+     * @param {string} options.to - Email del gestor
+     * @param {Object} options.clientUser - Datos del usuario que lo seleccionó (firstName, lastName, email, phone). No se incluye dirección por privacidad.
+     * @param {string} options.jurisdictionName - Nombre de la jurisdicción por la que fue elegido (ej. "Uruguay")
+     */
+    async sendGestorAssignedEmail({ to, clientUser, jurisdictionName }) {
+      if (!to) return false;
+      const firstName = clientUser?.firstName ?? "—";
+      const lastName = clientUser?.lastName ?? "—";
+      const email = clientUser?.email ?? "—";
+      const phone = clientUser?.phone ?? "No indicado";
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: "[LATIAS] Has sido seleccionado/a como gestor",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Has sido seleccionado/a como gestor</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a gestor/a,</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Un usuario de la plataforma te ha seleccionado como su gestor.</p>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Jurisdicción</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;">Por la que fuiste elegido/a: <strong>${jurisdictionName || "No indicada"}</strong></p>
+                  <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">En el futuro un mismo gestor puede estar en varias jurisdicciones; esta asignación corresponde a la jurisdicción indicada.</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos del usuario que te seleccionó</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nombre:</strong> ${firstName} ${lastName}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Email:</strong> ${email}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Teléfono:</strong> ${phone}</p>
+                </div>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
+                  <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+                  <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
+                </div>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de asignación como gestor enviado a ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email al gestor asignado: " + error?.message);
+        return false;
+      }
+    }
+
+    /**
+     * Envía email al gestor con solicitud de trámite por certificado (renovación/preparación/asesoramiento).
+     * @param {Object} options
+     * @param {string} options.to - Email del gestor
+     * @param {Object} options.requester - Usuario que solicita (firstName, lastName, email, phone)
+     * @param {Object} options.boat - Barco (name, registrationNumber, boatType, displacement, registrationCountry, currentPort)
+     * @param {Object} options.certificate - Certificado (certificateType, number, issueDate, expirationDate)
+     * @param {string[]} options.types - Tipos de trámite: Renovación, Preparación, Asesoramiento
+     */
+    async sendGestorCertificateRequestEmail({ to, requester, boat, certificate, types }) {
+      if (!to) return false;
+      const reqName = [requester?.firstName, requester?.lastName].filter(Boolean).join(" ") || "—";
+      const reqEmail = requester?.email ?? "—";
+      const reqPhone = requester?.phone ?? "No indicado";
+      const boatName = boat?.name ?? "—";
+      const boatReg = boat?.registrationNumber ?? "—";
+      const boatType = boat?.boatType ?? "—";
+      const boatDisplacement = boat?.displacement != null && boat?.displacement !== "" ? String(boat.displacement) : "—";
+      const boatFlag = boat?.registrationCountry ?? "—";
+      const boatLocation = boat?.currentPort ?? "—";
+      const certType = certificate?.certificateType ?? "—";
+      const certNumber = certificate?.number ?? "—";
+      const certIssue = certificate?.issueDate ? new Date(certificate.issueDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+      const certExp = certificate?.expirationDate ? new Date(certificate.expirationDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+      const typesStr = Array.isArray(types) && types.length > 0 ? types.join(", ") : "—";
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: "[LATIAS] Solicitud de trámite de certificado",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Solicitud de trámite de certificado</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a gestor/a,</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Un usuario de la plataforma ha solicitado que gestiones un trámite relacionado con el certificado del siguiente barco.</p>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Tipos de trámites solicitados:</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;">${typesStr}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos del solicitante:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nombre:</strong> ${reqName}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Email:</strong> ${reqEmail}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Teléfono:</strong> ${reqPhone}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos del barco:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nombre:</strong> ${boatName}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nº de registro:</strong> ${boatReg}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipo:</strong> ${boatType}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Desplazamiento:</strong> ${boatDisplacement} toneladas</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Bandera:</strong> ${boatFlag}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Ubicación:</strong> ${boatLocation}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Información del certificado:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipo:</strong> ${certType}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Número:</strong> ${certNumber}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Emisión:</strong> ${certIssue}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Vencimiento:</strong> ${certExp}</p>
+                </div>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
+                  <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+                  <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
+                </div>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de solicitud de certificado enviado al gestor ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de solicitud de certificado al gestor: " + error?.message);
+        return false;
+      }
+    }
+
+    /**
+     * Envía email al cliente (owner) informando el cambio de estado de su solicitud al gestor.
+     * @param {Object} options
+     * @param {string} options.to - Email del cliente
+     * @param {string} options.ownerName - Nombre del cliente
+     * @param {string} options.boatName - Nombre del barco
+     * @param {string} options.newStatus - Nuevo estado: "En progreso", "Completado", "Rechazado"
+     * @param {string} [options.rejectionReason] - Motivo del rechazo (solo si newStatus === "Rechazado")
+     */
+    async sendShipRequestStatusChangeEmail({ to, ownerName, boatName, newStatus, rejectionReason }) {
+      if (!to) return false;
+      const name = ownerName || "Cliente";
+      const boat = boatName || "su barco";
+      const statusLabel = { "En progreso": "en progreso", "Completado": "completado", "Rechazado": "rechazado" }[newStatus] || newStatus;
+      const isRechazado = newStatus === "Rechazado";
+      const motivoBlock = isRechazado && rejectionReason
+        ? `<div style="margin: 20px 0; padding: 15px; background-color: #fff3f3; border-left: 4px solid #dc3545; border-radius: 4px;">
+             <p style="margin: 0 0 8px 0; color: #082b55; font-weight: bold; font-size: 16px;">Motivo del rechazo</p>
+             <p style="margin: 0; color: #333; font-size: 15px;">${String(rejectionReason).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+           </div>`
+        : "";
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: `[LATIAS] Su solicitud ha sido ${statusLabel}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Actualización de su solicitud</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a ${name},</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Su gestor ha actualizado el estado de la solicitud relacionada con el barco <strong>${boat}</strong>.</p>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 8px 0; color: #082b55; font-weight: bold; font-size: 16px;">Nuevo estado</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;">La solicitud ha sido marcada como <strong>${statusLabel}</strong>.</p>
+                </div>
+                ${motivoBlock}
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
+                  <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+                  <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
+                </div>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de cambio de estado de solicitud enviado al cliente ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de cambio de estado al cliente: " + error?.message);
+        return false;
       }
     }
   }

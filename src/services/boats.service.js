@@ -26,6 +26,14 @@ class BoatsService {
     return boats;
   }
 
+  async countByOwner(ownerId) {
+    return boatsModel.countByOwner(ownerId);
+  }
+
+  async countActiveByOwner(ownerId) {
+    return boatsModel.countActiveByOwner(ownerId);
+  }
+
   async create(boatData) {
     // Validar que el registrationNumber sea único
     const existingBoat = await boatsModel.findByRegistrationNumber(boatData.registrationNumber);
@@ -108,7 +116,7 @@ class BoatsService {
       throw new Error("El desplazamiento no puede ser negativo");
     }
 
-    // Crear barco con isActive: false
+    // Crear barco con isActive: false y tokens de aprobación/rechazo (se pasan desde el controller)
     const boatDataWithStatus = {
       ...boatData,
       isActive: false

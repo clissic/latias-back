@@ -64,6 +64,8 @@ const schema = new Schema({
     default: true,
     index: true,
   },
+  approvalToken: { type: String, trim: true },
+  rejectionToken: { type: String, trim: true },
 }, {
   timestamps: true,
 });

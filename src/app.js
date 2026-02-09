@@ -16,6 +16,7 @@ import { eventsRouter } from "./routes/events.routes.js";
 import { contactRouter } from "./routes/contact.routes.js";
 import { boatsRouter } from "./routes/boats.routes.js";
 import { certificatesRouter } from "./routes/certificates.routes.js";
+import { shipRequestsRouter } from "./routes/ship-requests.routes.js";
 import { startEventsCron } from "./utils/events-cron.js";
 
 const app = express();
@@ -87,6 +88,7 @@ app.use("/api/events", eventsRouter);
 app.use("/api/contact", contactRouter);
 app.use("/api/boats", boatsRouter);
 app.use("/api/certificates", certificatesRouter);
+app.use("/api/ship-requests", shipRequestsRouter);
 
 // Servir archivos estáticos desde public/uploads (para imágenes subidas)
 // Esto debe ir después de las rutas de API pero antes del catch-all de React

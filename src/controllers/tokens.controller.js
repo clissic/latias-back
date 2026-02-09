@@ -3,15 +3,28 @@ import { logger } from "../utils/logger.js";
 
 class TokensController {
   async recoverPass(req, res) {
-    const { email, newPassword, confirmPassword } = req.body;
+    const { token, email, newPassword, confirmPassword } = req.body;
     try {
-      if (newPassword === confirmPassword) {
-        await recoverTokensService.recoverPass(email, newPassword);
-        logger.info(email + " actualizó su contraseña con éxito!");
-        res.json({ success: true, message: "Contraseña actualizada correctamente." });
-      } else {
-        res.json({ success: false, message: "Las contraseñas deben coincidir." });
+      if (!token || !email) {
+        return res.status(400).json({ success: false, message: "Token y email son requeridos." });
       }
+      if (!newPassword || !confirmPassword) {
+        return res.status(400).json({ success: false, message: "Nueva contraseña y confirmación son requeridas." });
+      }
+      if (newPassword !== confirmPassword) {
+        return res.json({ success: false, message: "Las contraseñas deben coincidir." });
+      }
+      const foundToken = await recoverTokensService.findOne({ token, email });
+      if (!foundToken) {
+        return res.status(400).json({ success: false, message: "Token inválido." });
+      }
+      if (foundToken.expire < Date.now()) {
+        return res.status(400).json({ success: false, message: "El token ha expirado." });
+      }
+      await recoverTokensService.recoverPass(email, newPassword);
+      await recoverTokensService.deleteOne({ token, email });
+      logger.info(email + " actualizó su contraseña con éxito!");
+      res.json({ success: true, message: "Contraseña actualizada correctamente." });
     } catch (error) {
       logger.error("Error recovering password in tokens.controller: " + error);
       res.status(500).json({ success: false, message: "Error actualizando la contraseña." });

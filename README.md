@@ -7,7 +7,7 @@ LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de n�
 
 ## Características principales
 
-- Gestión de usuarios con roles: Cadetes, Instructores y Administradores.  
+- Gestión de usuarios con roles: Cadetes, Instructores, Administradores y Gestores.  
 - Creación y gestión de cursos (CRUD).  
 - Utilización de plataformas externas de IA para generar avatares, diálogos y voces de los instructores.  
 - Videos protegidos para evitar distribución no autorizada.  
@@ -15,6 +15,7 @@ LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de n�
 - Generación automática de diplomas en PDF.  
 - Pagos con Mercado Pago (con posibilidad de agregar otras pasarelas más adelante).  
 - Panel de administración para gestión de usuarios, cursos y entregables.  
+- Flota de barcos por usuario, certificados por barco y solicitudes a gestor (renovación, preparación, asesoramiento).  
 
 ---
 
@@ -24,9 +25,9 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ✔️ CUMPLIDO (1% cada uno) - 🟡 EN DESARROLLO (0.5% cada uno) - ❌ INCUMPLIDO (0%)
 
-**Progreso del proyecto: 48% completado**
-- ✔️ Completados: 47 puntos (47%)
-- 🟡 En desarrollo: 2 puntos (1%)
+**Progreso del proyecto: 48.5% completado**
+- ✔️ Completados: 47 puntos (48%)
+- 🟡 En desarrollo: 1 puntos (0.5%)
 - ❌ Pendientes: 51 puntos (0%)
 
 ### Preparación del proyecto (1-10)
@@ -112,7 +113,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 70. Integrar webhooks de Mercado Pago para confirmar pagos.  
 ✔️ 71. Marcar cursos comprados en perfil de cadete.  
 ❌ 72. Restringir acceso a cursos no comprados.  
-🟡 73. Probar pagos en modo sandbox.  
+✔️ 73. Probar pagos en modo sandbox.  
 ✔️ 74. Implementar confirmación visual de compra.  
 ✔️ 75. Documentar flujo de pagos. (Ver MERCADOPAGO_SETUP.md)  
 
@@ -151,7 +152,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 # Documentación de la API - LATIAS Backend
 
-Documentación de los endpoints del backend de LATIAS Academia. El servidor expone la API bajo el prefijo `/api` y utiliza tokens Bearer para autenticación en rutas protegidas.
+Documentación de los endpoints del backend de LATIAS Academia. El servidor expone la API bajo el prefijo `/api` y utiliza tokens Bearer (JWT) para autenticación en rutas protegidas. Incluye: usuarios y roles (Cadete, Instructor, Administrador, Gestor, checkin), cursos, eventos, barcos y flota, certificados, **solicitudes a gestor** (ship-requests), instructores, contacto, Mercado Pago y subida de archivos.
 
 > **Uso recomendado:** Esta documentación está pensada para equipos de desarrollo e integración autorizados. En producción, evita publicarla en sitios o repositorios públicos; si la expones, no incluyas datos sensibles (URLs internas, cuentas de correo, detalles de implementación interna).
 
@@ -169,12 +170,15 @@ Documentación de los endpoints del backend de LATIAS Academia. El servidor expo
 8. [Eventos (`/api/events`)](#eventos-apievents)
 9. [Barcos (`/api/boats`)](#barcos-apiboats)
 10. [Certificados (`/api/certificates`)](#certificados-apicertificates)
-11. [Instructores (`/api/professors`)](#instructores-apiprofessors)
-12. [Contacto (`/api/contact`)](#contacto-apicontact)
-13. [Mercado Pago (`/api/mercadopago`)](#mercado-pago-apimercadopago)
-14. [Upload (`/api/upload`)](#upload-apiupload)
-15. [Archivos estáticos](#archivos-estáticos)
-16. [Modelos de datos](#modelos-de-datos)
+11. [Solicitudes a gestor (`/api/ship-requests`)](#solicitudes-a-gestor-apiship-requests)
+12. [Instructores (`/api/professors`)](#instructores-apiprofessors)
+13. [Contacto (`/api/contact`)](#contacto-apicontact)
+14. [Mercado Pago (`/api/mercadopago`)](#mercado-pago-apimercadopago)
+15. [Upload (`/api/upload`)](#upload-apiupload)
+16. [Archivos estáticos](#archivos-estáticos)
+17. [Modelos de datos](#modelos-de-datos)
+
+Para una revisión de seguridad de los endpoints, ver **SECURITY_AUDIT.md** en la raíz del proyecto.
 
 ---
 
@@ -434,7 +438,7 @@ Solo Administrador. Parámetro: `id` (identificador del usuario).
 
 Solo Administrador. Puede enviar `_id` en body o params.
 
-**Body (todos opcionales salvo los indicados):** `_id`, `firstName`, `lastName`, `email`, `password`, `avatar`, `status`, `ci`, `phone`, `birth`, `address`, `statistics`, `settings`, `preferences`, `rank`, `category`, `purchasedCourses`, `finishedCourses`, `manager`. Requeridos para actualización: `firstName`, `lastName`, `email`, `_id`. `category` debe ser uno de: `Cadete`, `Instructor`, `Administrador`, `checkin`.
+**Body (todos opcionales salvo los indicados):** `_id`, `firstName`, `lastName`, `email`, `password`, `avatar`, `status`, `ci`, `phone`, `birth`, `address`, `statistics`, `settings`, `preferences`, `rank`, `category`, `purchasedCourses`, `finishedCourses`, `manager`. Requeridos para actualización: `firstName`, `lastName`, `email`, `_id`. `category` debe incluir uno o más de: `Cadete`, `Instructor`, `Administrador`, `Gestor`, `checkin`.
 
 **Respuesta 201:** actualización aplicada. **404:** usuario no encontrado.
 
@@ -456,9 +460,9 @@ Solo Administrador.
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/recoverForm` | No | Validar token de recuperación y actualizar contraseña. |
+| POST | `/recoverForm` | No | Validar token + email en BD y actualizar contraseña (uso único del token). |
 | POST | `/recoverPassword` | No | Enviar email con token de recuperación. |
-| GET | `/recoverPassword` | No | Validar token y email (query). |
+| GET | `/recoverPassword` | No | Validar token y email (query) para mostrar formulario de nueva contraseña. |
 
 ### Detalle
 
@@ -467,13 +471,20 @@ Solo Administrador.
 **Body:**
 ```json
 {
+  "token": "string",
   "email": "string",
   "newPassword": "string",
   "confirmPassword": "string"
 }
 ```
 
-Las contraseñas deben coincidir. Respuesta: `{ "success": true/false, "message": "..." }`. Sin formato estándar `status/msg/payload`.
+- `token` y `email` son **requeridos**; el token se valida contra la base de datos.
+- El token debe no haber expirado; tras un uso exitoso se elimina (uso único).
+- Las contraseñas deben coincidir.
+
+**Respuesta 200:** `{ "success": true, "message": "Contraseña actualizada correctamente." }`.
+
+**Errores:** 400 (token/email faltantes, token inválido o expirado, contraseñas no coinciden), 500.
 
 ---
 
@@ -487,9 +498,9 @@ Envía email con link/token de recuperación. Respuesta: `success`, `message`.
 
 #### GET `/api/tokens/recoverPassword`
 
-**Parámetros:** token de recuperación y email (según implementación del cliente).
+**Query:** `token`, `email` (requeridos).
 
-Valida que el token sea válido y no haya expirado. Respuesta: `{ "success": true, "email": "..." }` o 400 si el token no es válido o expiró.
+Valida que el token exista en BD y no haya expirado. Se usa para mostrar el formulario de nueva contraseña en el frontend. Respuesta 200: `{ "success": true, "email": "..." }`. 400 si el token no es válido o expiró.
 
 ---
 
@@ -626,6 +637,39 @@ Todos los códigos de error estándar (400, 401, 403, 404, 500) aplican según v
 
 ---
 
+## Solicitudes a gestor (`/api/ship-requests`)
+
+Solicitudes de trabajo de un cliente (owner) hacia un gestor (manager) sobre un barco: renovación, preparación o asesoramiento de certificados. Todas las rutas requieren **autenticación** (Bearer token).
+
+| Método | Ruta | Auth | Rol / Restricción | Descripción |
+|--------|------|------|-------------------|-------------|
+| POST | `/` | Sí | Cualquiera | Crear solicitud (body: ship, owner?, manager, type/types, notes?). |
+| POST | `/certificate` | Sí | Cualquiera | Crear solicitud desde certificado (flota) y enviar email al gestor. |
+| GET | `/` | Sí | Administrador o Gestor | Listar todas (query: status, owner, manager, ship). |
+| GET | `/owner/:ownerId` | Sí | Propietario o Admin | Solicitudes del owner (solo el propio usuario o Admin). |
+| GET | `/manager/:managerId` | Sí | Gestor o Admin | Solicitudes del gestor (solo el gestor o Admin). |
+| GET | `/ship/:shipId` | Sí | Cualquiera | Solicitudes del barco. |
+| GET | `/:id` | Sí | Cualquiera | Obtener una solicitud por ID. |
+| PATCH | `/:id/status` | Sí | Administrador o Gestor asignado | Actualizar estado. |
+| PUT | `/:id` | Sí | Administrador o Gestor asignado | Actualizar solicitud. |
+| DELETE | `/:id` | Sí | Administrador o owner | Eliminar solicitud. |
+
+### Detalle (resumen)
+
+- **POST `/`:** Body: `ship` (ObjectId), `owner` (opcional, default usuario autenticado), `manager` (ObjectId), `type` o `types` (array: "Renovación", "Preparación", "Asesoramiento"), `notes` (opcional). 201 con solicitud creada.
+- **POST `/certificate`:** Body: `shipId`, `certificate` (objeto con certificateType, number, issueDate, expirationDate), `types` (array no vacío), `notes` (opcional). El usuario debe tener gestor asignado (`manager.managerId`). Crea la solicitud y envía email al gestor. 201 con solicitud creada. 400 si no hay gestor asignado.
+- **GET `/`:** Query opcionales: `status`, `owner`, `manager`, `ship`. `payload`: array de solicitudes.
+- **GET `/owner/:ownerId`**, **GET `/manager/:managerId`:** `payload`: array de solicitudes. Validación de ownership: solo el propio usuario o Administrador.
+- **GET `/ship/:shipId`:** `payload`: array de solicitudes del barco.
+- **GET `/:id`:** `payload`: solicitud poblada (ship, owner, manager). 404 si no existe.
+- **PATCH `/:id/status`:** Body: `status` (requerido: "Pendiente", "En progreso", "Completado", "Rechazado"), `completedAt` (opcional), `rejectionReason` (obligatorio si status es "Rechazado"). Envía email al owner al cambiar estado. 200 con solicitud actualizada.
+- **PUT `/:id`:** Body con campos a actualizar. 200 con solicitud actualizada. 404 si no existe.
+- **DELETE `/:id`:** Solo Administrador o el owner de la solicitud. 200 al eliminar. 403 si no tiene permiso. 404 si no existe.
+
+**status:** `Pendiente`, `En progreso`, `Completado`, `Rechazado`. **type:** array de `Renovación`, `Preparación`, `Asesoramiento`.
+
+---
+
 ## Instructores (`/api/professors`)
 
 | Método | Ruta | Auth | Rol | Descripción |
@@ -734,7 +778,7 @@ Resumen de las entidades y campos principales de la API (para referencia al inte
 ### Usuario (users)
 
 - `firstName`, `lastName`, `email`, `ci`, `password`, `phone`, `birth` — datos básicos; `email` y `ci` únicos.
-- `category`: enum `Cadete`, `Instructor`, `Administrador`, `checkin`. Default `Cadete`.
+- `category`: array/enum `Cadete`, `Instructor`, `Administrador`, `Gestor`, `checkin`. Default `Cadete`.
 - `rank`: `{ title, description }`.
 - `address`: `{ street, city, state, country, number, zipCode }`.
 - `preferences`: `{ language, notifications, newsLetter }`.
@@ -742,7 +786,7 @@ Resumen de las entidades y campos principales de la API (para referencia al inte
 - `settings`: `{ theme, twoStepVerification }`.
 - `purchasedCourses`, `finishedCourses`, `paymentMethods`: arrays.
 - `fleet`: `[{ boatId, requestedAt, status: pending|approved|rejected }]`.
-- `manager`: `{ active, manager_id }`.
+- `manager`: `{ active, managerId }`.
 - `lastLogin`: Date.
 
 ### Curso (courses)
@@ -771,6 +815,10 @@ Resumen de las entidades y campos principales de la API (para referencia al inte
 ### Instructor (professors)
 
 - `firstName`, `lastName`, `ci` (único, número), `profileImage`, `profession`, `experience`, `bio`, `certifications`, `achievements`, `courses` (array de courseId), `contact`: `{ email, phone }`, `socialMedia`. Timestamps.
+
+### Solicitud a gestor (ship-requests)
+
+- `ship` (ObjectId ref boats), `owner` (ObjectId ref users), `manager` (ObjectId ref users), `type` (array de "Renovación", "Preparación", "Asesoramiento"), `status` ("Pendiente", "En progreso", "Completado", "Rechazado"), `requestedAt`, `completedAt`, `notes`, `rejectionReason`. Timestamps.
 
 ### Ticket Log (ticket-logs)
 

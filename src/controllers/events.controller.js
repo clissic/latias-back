@@ -619,7 +619,8 @@ class EventsController {
       }
 
       // Verificar que el usuario es checkin
-      if (req.user.category !== "checkin") {
+      const userCats = Array.isArray(req.user.category) ? req.user.category : [];
+      if (!userCats.includes("checkin")) {
         return res.status(403).json({
           status: "error",
           msg: "Solo usuarios checkin pueden usar este endpoint",
@@ -731,7 +732,8 @@ class EventsController {
   async getTicketLogs(req, res) {
     try {
       // Verificar que el usuario es checkin o administrador
-      if (req.user.category !== "checkin" && req.user.category !== "Administrador") {
+      const cats = Array.isArray(req.user.category) ? req.user.category : [];
+      if (!cats.includes("checkin") && !cats.includes("Administrador")) {
         return res.status(403).json({
           status: "error",
           msg: "Solo usuarios checkin y administradores pueden acceder a los logs",

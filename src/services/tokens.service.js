@@ -14,12 +14,20 @@ class RecoverTokensService {
     }
   }
 
-  async findOne({token, email}) {
+  async findOne({ token, email }) {
     try {
-      const recoverTokenFound = await recoverTokensModel.findOne({token, email});
+      const recoverTokenFound = await recoverTokensModel.findOne({ token, email });
       return recoverTokenFound;
     } catch (error) {
       logger.error("Error finding recover token in tokens.service: " + error);
+    }
+  }
+
+  async deleteOne({ token, email }) {
+    try {
+      await recoverTokensModel.deleteOne({ token, email });
+    } catch (error) {
+      logger.error("Error deleting recover token in tokens.service: " + error);
     }
   }
 

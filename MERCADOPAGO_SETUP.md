@@ -1,6 +1,15 @@
 # Configuración y Pruebas de Mercado Pago
 
-Esta guía explica cómo configurar y probar la integración con Mercado Pago en el proyecto LATIAS Academia.
+Esta guía explica cómo configurar y probar la integración con **Checkout Pro** de Mercado Pago en el proyecto LATIAS Academia.
+
+## Checkout Pro – Flujo implementado
+
+La integración sigue la [documentación oficial de Checkout Pro](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/overview):
+
+1. **Backend**: Crear preferencia de pago (items, `back_urls`, `auto_return`, `notification_url`, `external_reference`).
+2. **Frontend**: SDK con Public Key; componente **Wallet** con `preferenceId`; el usuario es redirigido al checkout de Mercado Pago.
+3. **Retorno**: Mercado Pago redirige a las `back_urls` con `payment_id`/`collection_id`, `status`, etc. La app verifica el pago en el backend.
+4. **Notificaciones**: Webhook recibe notificaciones (formato `type`/`action` + `data.id`). Opcional: validación de firma con `MERCADOPAGO_WEBHOOK_SECRET`.
 
 ## 📋 Requisitos Previos
 
@@ -26,6 +35,8 @@ En tu archivo `.env.development` del backend (o `.env` según tu entorno), agreg
 MERCADOPAGO_ACCESS_TOKEN=TEST-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:3000
+# Opcional: validar firma del webhook (Tus integraciones > Webhooks > Configurar notificaciones > Clave secreta)
+# MERCADOPAGO_WEBHOOK_SECRET=tu_clave_secreta
 ```
 
 **Importante:** 
@@ -233,12 +244,12 @@ Puedes verificar el estado de los pagos desde:
 
 Cuando estés listo para producción:
 
-1. **Cambia** el Access Token por las credenciales de producción
-2. **Configura** las URLs de producción en las variables de entorno
-3. **Configura** el webhook en Mercado Pago con la URL de producción
-4. **Prueba** con montos pequeños antes de lanzar completamente
-5. **Monitorea** los logs y las transacciones regularmente
+1. **Cambia** el Access Token y la Public Key por las credenciales de producción (misma aplicación).
+2. **Configura** `FRONTEND_URL` y `BACKEND_URL` con las URLs públicas (HTTPS).
+3. **Configura el webhook** en [Tus integraciones > Webhooks > Configurar notificaciones](https://www.mercadopago.com.ar/developers/panel/app): URL `https://tu-backend.com/api/mercadopago/webhook`, evento **Pagos**. Copia la **clave secreta** y añádela como `MERCADOPAGO_WEBHOOK_SECRET` en el backend (recomendado para validar la firma).
+4. **Prueba** con montos pequeños antes de lanzar.
+5. **Monitorea** los logs y las transacciones.
 
 ---
 
-**Última actualización:** Enero 2025
+**Última actualización:** 2025

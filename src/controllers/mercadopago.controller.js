@@ -146,7 +146,7 @@ class MercadoPagoController {
         const authenticatedUserId = String(req.user?.userId);
         const paymentUserId = userId ? String(userId) : null;
         
-        if (paymentUserId && req.user?.category !== 'Administrador' && authenticatedUserId !== paymentUserId) {
+        if (paymentUserId && !(Array.isArray(req.user?.category) && req.user.category.includes('Administrador')) && authenticatedUserId !== paymentUserId) {
           logger.warning(`Usuario ${authenticatedUserId} intentó acceder a pago del usuario ${paymentUserId}`);
           return res.status(403).json({
             status: "error",
@@ -173,21 +173,44 @@ class MercadoPagoController {
     }
   }
 
-  // Webhook de Mercado Pago
-  // NOTA: En producción, se recomienda validar la firma del webhook usando x-signature y x-request-id
-  // Por ahora aceptamos todos los webhooks, pero se puede agregar validación de firma si es necesario
+  // Webhook de Mercado Pago (Checkout Pro)
+  // Doc: https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/payment-notifications
+  // Si MERCADOPAGO_WEBHOOK_SECRET está definido, se valida la firma x-signature (HMAC SHA256).
   async handleWebhook(req, res) {
     try {
       const body = req.body;
       const signature = req.headers['x-signature'];
       const requestId = req.headers['x-request-id'];
+      const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
-      // Log de headers para debug (solo en desarrollo)
       if (process.env.LOGGER_ENV === 'development') {
         logger.info(`Webhook recibido - Signature: ${signature ? 'presente' : 'ausente'}, Request ID: ${requestId || 'ausente'}`);
       }
 
-      if (!body || !body.type) {
+      // Validación de firma (recomendado en producción)
+      if (secret && signature) {
+        const dataId = req.query['data.id'] || body?.data?.id;
+        const parts = signature.split(',');
+        let ts, v1;
+        parts.forEach((part) => {
+          const [key, value] = part.split('=').map((s) => s.trim());
+          if (key === 'ts') ts = value;
+          if (key === 'v1') v1 = value;
+        });
+        const manifest = `id:${dataId || ''};request-id:${requestId || ''};ts:${ts || ''};`;
+        const crypto = await import('crypto');
+        const computed = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+        if (computed !== v1) {
+          logger.warning('Webhook: firma inválida');
+          return res.status(401).json({ status: "error", msg: "Firma inválida", payload: {} });
+        }
+      } else if (secret && !signature) {
+        logger.warning('Webhook: MERCADOPAGO_WEBHOOK_SECRET definido pero no se recibió x-signature');
+        return res.status(401).json({ status: "error", msg: "Firma requerida", payload: {} });
+      }
+
+      const type = body?.type || (body?.action ? body.action.split('.')[0] : null);
+      if (!body || !type) {
         logger.warning('Webhook recibido sin tipo válido:', body);
         return res.status(400).json({
           status: "error",
@@ -196,11 +219,8 @@ class MercadoPagoController {
         });
       }
 
-      // Procesar el webhook
       const result = await mercadoPagoService.handleWebhook(body);
 
-      // IMPORTANTE: Siempre responder 200 a Mercado Pago, incluso si hay errores internos
-      // Mercado Pago reintentará si no recibe 200
       return res.status(200).json({
         status: "success",
         msg: "Webhook procesado exitosamente",
@@ -208,8 +228,6 @@ class MercadoPagoController {
       });
     } catch (error) {
       logger.error("Error en handleWebhook:", error);
-      // Aún así responder 200 para evitar reintentos de Mercado Pago
-      // El error ya fue logueado para revisión manual
       return res.status(200).json({
         status: "error",
         msg: "Error al procesar webhook (logueado para revisión)",
@@ -265,7 +283,7 @@ class MercadoPagoController {
     }
   }
 
-  // Crear reembolso
+  // Crear reembolso (solo el dueño del pago o administrador)
   async refundPayment(req, res) {
     try {
       const { paymentId } = req.params;
@@ -277,6 +295,21 @@ class MercadoPagoController {
           msg: "El paymentId es requerido",
           payload: {},
         });
+      }
+
+      const payment = await mercadoPagoService.getPayment(paymentId);
+      if (payment.external_reference) {
+        const [, userId] = payment.external_reference.split('|');
+        const authenticatedUserId = String(req.user?.userId);
+        const paymentUserId = userId ? String(userId) : null;
+        if (paymentUserId && !(Array.isArray(req.user?.category) && req.user.category.includes('Administrador')) && authenticatedUserId !== paymentUserId) {
+          logger.warning(`Usuario ${authenticatedUserId} intentó reembolsar pago del usuario ${paymentUserId}`);
+          return res.status(403).json({
+            status: "error",
+            msg: "No tienes permisos para reembolsar este pago",
+            payload: {},
+          });
+        }
       }
 
       const refund = await mercadoPagoService.refundPayment(paymentId, amount);
@@ -369,7 +402,7 @@ class MercadoPagoController {
       const authenticatedUserId = String(req.user?.userId);
       const paymentUserId = String(userId);
       
-      if (req.user?.category !== 'Administrador' && authenticatedUserId !== paymentUserId) {
+      if (!(Array.isArray(req.user?.category) && req.user.category.includes('Administrador')) && authenticatedUserId !== paymentUserId) {
         logger.warning(`Usuario ${authenticatedUserId} intentó procesar pago del usuario ${paymentUserId}`);
         return res.status(403).json({
           status: "error",
@@ -447,7 +480,7 @@ class MercadoPagoController {
         const paymentUserId = userId ? String(userId) : null;
         
         // Solo validar si hay userId en el external_reference y el usuario no es Admin
-        if (paymentUserId && req.user?.category !== 'Administrador' && authenticatedUserId !== paymentUserId) {
+        if (paymentUserId && !(Array.isArray(req.user?.category) && req.user.category.includes('Administrador')) && authenticatedUserId !== paymentUserId) {
           logger.warning(`Usuario ${authenticatedUserId} intentó verificar pago del usuario ${paymentUserId}`);
           return res.status(403).json({
             status: "error",

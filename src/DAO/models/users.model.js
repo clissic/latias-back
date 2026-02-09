@@ -120,7 +120,22 @@ class UsersModel {
     return user;
   }
 
-    async findByCi(ci) {
+    async findByCategory(category) {
+    const users = await UserMongoose.find(
+      { category },
+      {
+        _id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+      }
+    );
+    return users;
+  }
+
+  async findByCi(ci) {
     const user = await UserMongoose.findOne(
       { ci: ci },
       {
@@ -149,63 +164,30 @@ class UsersModel {
     return user;
   }
 
-  async create({ firstName, lastName, birth, ci, email, password }) {
-    const userCreated = await UserMongoose.create({
+  async create({ firstName, lastName, birth, ci, email, password, category }) {
+    const doc = {
       firstName,
       lastName,
       birth,
       ci,
       email,
       password,
-    });
+    };
+    if (category != null && Array.isArray(category) && category.length > 0) {
+      doc.category = category;
+    }
+    const userCreated = await UserMongoose.create(doc);
     return userCreated;
   }
 
-  async updateOne({
-    _id,
-    password,
-    avatar,
-    firstName,
-    lastName,
-    email,
-    ci,
-    phone,
-    birth,
-    address,
-    statistics,
-    settings,
-    preferences,
-    rank,
-    category,
-    purchasedCourses,
-    finishedCourses,
-    paymentMethods,
-    manager,
-  }) {
+  async updateOne(payload) {
+    const { _id, ...rest } = payload;
+    const updateFields = Object.fromEntries(
+      Object.entries(rest).filter(([, v]) => v !== undefined)
+    );
     const userUpdated = await UserMongoose.updateOne(
-      {
-        _id: _id,
-      },
-      {
-        password,
-        avatar,
-        firstName,
-        lastName,
-        email,
-        ci,
-        phone,
-        birth,
-        address,
-        statistics,
-        settings,
-        preferences,
-        rank,
-        category,
-        purchasedCourses,
-        finishedCourses,
-        paymentMethods,
-        manager,
-      }
+      { _id },
+      updateFields
     );
     return userUpdated;
   }
@@ -321,6 +303,16 @@ class UsersModel {
       }
     );
     return result;
+  }
+
+  /** Usuarios que tienen a este gestor asignado (manager.managerId === managerId). */
+  async findClientsByManagerId(managerId) {
+    const idStr = String(managerId);
+    return UserMongoose.find(
+      { "manager.managerId": idStr },
+      { _id: true, firstName: true, lastName: true, email: true, phone: true, address: true }
+    )
+      .lean();
   }
 }
 
