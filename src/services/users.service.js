@@ -299,15 +299,16 @@ class UserService {
     }
 
     /**
-     * Envía email al gestor con solicitud de trámite por certificado (renovación/preparación/asesoramiento).
+     * Envía email al gestor con solicitud de trámite por certificado (renovación/preparación/asesoramiento) o solicitud especial.
      * @param {Object} options
      * @param {string} options.to - Email del gestor
      * @param {Object} options.requester - Usuario que solicita (firstName, lastName, email, phone)
      * @param {Object} options.boat - Barco (name, registrationNumber, boatType, displacement, registrationCountry, currentPort)
-     * @param {Object} options.certificate - Certificado (certificateType, number, issueDate, expirationDate)
-     * @param {string[]} options.types - Tipos de trámite: Renovación, Preparación, Asesoramiento
+     * @param {Object} [options.certificate] - Certificado (certificateType, number, issueDate, expirationDate); omitir para solicitud especial
+     * @param {string[]} options.types - Tipos de trámite: Renovación, Preparación, Asesoramiento, Solicitud especial
+     * @param {string} [options.notes] - Cuerpo/detalle de la solicitud (usado en solicitud especial; reemplaza el bloque de certificado)
      */
-    async sendGestorCertificateRequestEmail({ to, requester, boat, certificate, types }) {
+    async sendGestorCertificateRequestEmail({ to, requester, boat, certificate, types, notes }) {
       if (!to) return false;
       const reqName = [requester?.firstName, requester?.lastName].filter(Boolean).join(" ") || "—";
       const reqEmail = requester?.email ?? "—";
@@ -323,6 +324,33 @@ class UserService {
       const certIssue = certificate?.issueDate ? new Date(certificate.issueDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
       const certExp = certificate?.expirationDate ? new Date(certificate.expirationDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
       const typesStr = Array.isArray(types) && types.length > 0 ? types.join(", ") : "—";
+      const isSpecialRequest = notes != null && String(notes).trim() !== "";
+      const escapeHtml = (s) => String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/\n/g, "<br />");
+      const notesHtml = isSpecialRequest ? escapeHtml(notes).trim() : "";
+
+      const introText = isSpecialRequest
+        ? "Un usuario de la plataforma ha realizado una solicitud especial relacionada con el siguiente barco."
+        : "Un usuario de la plataforma ha solicitado que gestiones un trámite relacionado con el certificado del siguiente barco.";
+
+      const certificateBlock = `
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Información del certificado:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipo:</strong> ${certType}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Número:</strong> ${certNumber}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Emisión:</strong> ${certIssue}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Vencimiento:</strong> ${certExp}</p>
+                </div>`;
+      const notesBlock = isSpecialRequest ? `
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Detalle de la solicitud:</p>
+                  <p style="margin: 0; color: #333; font-size: 15px; white-space: pre-wrap;">${notesHtml}</p>
+                </div>` : "";
+
       try {
         await transport.sendMail({
           from: process.env.GOOGLE_EMAIL,
@@ -336,7 +364,7 @@ class UserService {
               </div>
               <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a gestor/a,</p>
-                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Un usuario de la plataforma ha solicitado que gestiones un trámite relacionado con el certificado del siguiente barco.</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">${introText}</p>
                 <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
                   <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Tipos de trámites solicitados:</p>
                   <p style="margin: 0; color: #333; font-size: 15px;">${typesStr}</p>
@@ -356,13 +384,7 @@ class UserService {
                   <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Bandera:</strong> ${boatFlag}</p>
                   <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Ubicación:</strong> ${boatLocation}</p>
                 </div>
-                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
-                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Información del certificado:</p>
-                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipo:</strong> ${certType}</p>
-                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Número:</strong> ${certNumber}</p>
-                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Emisión:</strong> ${certIssue}</p>
-                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Vencimiento:</strong> ${certExp}</p>
-                </div>
+                ${isSpecialRequest ? notesBlock : certificateBlock}
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
                   <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
                   <p style="margin: 8px 0 0 0;">LATIAS Academia</p>

@@ -3,7 +3,7 @@ import { boatsModel } from "../DAO/models/boats.model.js";
 import { usersModel } from "../DAO/models/users.model.js";
 
 const VALID_STATUSES = ["Pendiente", "En progreso", "Completado", "Rechazado"];
-const VALID_TYPES = ["Renovación", "Preparación", "Asesoramiento"];
+const VALID_TYPES = ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial"];
 
 function normalizeTypes(typeOrTypes) {
   const arr = Array.isArray(typeOrTypes) ? typeOrTypes : (typeOrTypes != null ? [String(typeOrTypes).trim()] : []);

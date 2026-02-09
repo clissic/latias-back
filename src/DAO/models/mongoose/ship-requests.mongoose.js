@@ -23,10 +23,10 @@ const schema = new Schema(
     type: {
       type: [String],
       required: true,
-      enum: ["Renovación", "Preparación", "Asesoramiento"],
+      enum: ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial"],
       validate: {
-        validator: (v) => Array.isArray(v) && v.length > 0 && v.every((t) => ["Renovación", "Preparación", "Asesoramiento"].includes(t)),
-        message: "type debe ser un array con al menos uno de: Renovación, Preparación, Asesoramiento",
+        validator: (v) => Array.isArray(v) && v.length > 0 && v.every((t) => ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial"].includes(t)),
+        message: "type debe ser un array con al menos uno de: Renovación, Preparación, Asesoramiento, Solicitud especial",
       },
     },
     status: {

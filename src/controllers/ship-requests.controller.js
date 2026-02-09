@@ -9,14 +9,45 @@ class ShipRequestsController {
     try {
       const { ship, owner, manager, type, types, notes } = req.body;
       const userId = req.user?.userId;
+      const ownerId = owner || userId;
+      const typeArray = Array.isArray(types) ? types : (Array.isArray(type) ? type : type != null ? [type] : []);
 
       const request = await shipRequestsService.create({
         ship,
-        owner: owner || userId,
+        owner: ownerId,
         manager,
         type: types ?? type,
         notes: notes || null,
       });
+
+      const isSpecialRequest = typeArray.some((t) => String(t).trim() === "Solicitud especial");
+      const managerEmail = request?.manager?.email;
+      if (isSpecialRequest && managerEmail) {
+        const ownerUser = await usersModel.findById(ownerId);
+        const boat = await boatsModel.findById(request.ship?._id || ship);
+        if (ownerUser && boat) {
+          await userService.sendGestorCertificateRequestEmail({
+            to: managerEmail,
+            requester: {
+              firstName: ownerUser.firstName,
+              lastName: ownerUser.lastName,
+              email: ownerUser.email,
+              phone: ownerUser.phone,
+            },
+            boat: {
+              name: boat.name,
+              registrationNumber: boat.registrationNumber,
+              boatType: boat.boatType,
+              displacement: boat.displacement,
+              registrationCountry: boat.registrationCountry,
+              currentPort: boat.currentPort,
+            },
+            certificate: null,
+            types: typeArray,
+            notes: request.notes || "",
+          });
+        }
+      }
 
       return res.status(201).json({
         status: "success",
