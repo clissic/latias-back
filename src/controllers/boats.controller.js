@@ -82,6 +82,25 @@ class BoatsController {
     }
   }
 
+  // Obtener tipos de barco permitidos (público, para formularios)
+  async getBoatTypes(req, res) {
+    try {
+      const types = boatsService.getBoatTypes();
+      return res.status(200).json({
+        status: "success",
+        msg: "Tipos de barco obtenidos",
+        payload: types,
+      });
+    } catch (e) {
+      logger.error(e?.message || e || "Error desconocido");
+      return res.status(500).json({
+        status: "error",
+        msg: e?.message || "Algo salió mal",
+        payload: [],
+      });
+    }
+  }
+
   // Obtener barcos por propietario (el propio owner o un Gestor que tenga a ese owner como cliente)
   async findByOwner(req, res) {
     try {

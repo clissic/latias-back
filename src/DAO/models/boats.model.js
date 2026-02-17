@@ -79,6 +79,12 @@ class BoatsModel {
       .populate('owner', 'firstName lastName email');
     return toggledBoat;
   }
+
+  /** Devuelve los valores permitidos de tipo de barco (enum del esquema). */
+  getBoatTypes() {
+    const path = BoatsMongoose.schema.path("boatType");
+    return path?.enumValues ? [...path.enumValues] : [];
+  }
 }
 
 export const boatsModel = new BoatsModel();

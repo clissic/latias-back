@@ -15,6 +15,9 @@ boatsRouter.get("/id/:id", boatsController.findById);
 // Obtener barco por número de registro (público)
 boatsRouter.get("/registration/:registrationNumber", boatsController.findByRegistrationNumber);
 
+// Obtener tipos de barco permitidos (público)
+boatsRouter.get("/types", boatsController.getBoatTypes);
+
 // ========== RUTAS AUTENTICADAS ==========
 
 // Obtener barcos por propietario (autenticado)

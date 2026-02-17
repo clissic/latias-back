@@ -34,6 +34,10 @@ class BoatsService {
     return boatsModel.countActiveByOwner(ownerId);
   }
 
+  getBoatTypes() {
+    return boatsModel.getBoatTypes();
+  }
+
   async create(boatData) {
     // Validar que el registrationNumber sea único
     const existingBoat = await boatsModel.findByRegistrationNumber(boatData.registrationNumber);
