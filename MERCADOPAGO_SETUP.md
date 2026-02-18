@@ -233,6 +233,20 @@ Puedes verificar el estado de los pagos desde:
   - Considera usar herramientas como [ngrok](https://ngrok.com/) para exponer tu servidor local
   - O espera a que el usuario complete el pago y se procese desde `PaymentSuccess.jsx`
 
+### No me redirige a la plataforma después del pago
+- **Causa**: En algunos entornos (p. ej. localhost) Mercado Pago puede no hacer la redirección automática.
+- **Solución**: 
+  - El backend intenta enviar `auto_return: approved` para que MP redirija solo; si MP lo rechaza, se crea la preferencia sin auto_return.
+  - Si tras pagar te quedas en la página de Mercado Pago, **haz clic en el botón "Volver al comercio"** (o "Return to site") para regresar a la plataforma.
+  - Comprueba que `FRONTEND_URL` en el backend sea la URL donde corre tu front (ej. `http://localhost:5173`). Esa es la URL a la que MP enviará al usuario.
+
+### Modo desarrollo: simular compra sin Mercado Pago
+Cuando el sandbox no redirige a localhost, puedes probar el flujo completo (curso asignado + página de éxito) con el **botón "Comprar (Dev mode)"** (azul), que aparece debajo del botón de Mercado Pago **solo en desarrollo** (`npm run dev`).
+
+- **Frontend**: El botón solo se muestra si `import.meta.env.DEV` es true (build de producción no lo incluye). Llama a `POST /mercadopago/dev-complete-purchase` con `courseId` y `userId`, luego redirige a `/payment/success?dev=1`.
+- **Backend**: La ruta `POST /mercadopago/dev-complete-purchase` solo responde si `NODE_ENV === 'development'` o `ENABLE_DEV_PAYMENT === 'true'`; en producción devuelve 404.
+- **Producción**: Eliminar o no exponer el botón y, si quieres, eliminar la ruta `dev-complete-purchase` en `mercadopago.routes.js` y el método `devCompletePurchase` en el controlador. Ver comentarios en el código.
+
 ## 📚 Recursos Adicionales
 
 - [Documentación de Mercado Pago](https://www.mercadopago.com/developers/es/docs)

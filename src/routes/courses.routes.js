@@ -49,6 +49,9 @@ coursesRouter.get("/user/:userId/purchased", authenticateToken, validateUserOwne
 // Actualizar progreso del curso del usuario (valida que el usuario solo actualice su propio progreso, a menos que sea admin)
 coursesRouter.put("/user/:userId/course/:courseId/progress", authenticateToken, validateUserOwnership(), coursesController.updateUserCourseProgress);
 
+// Actualizar progreso de una lección (marcar completada); valida ownership
+coursesRouter.put("/user/:userId/course/:courseId/module/:moduleId/lesson/:lessonId/progress", authenticateToken, validateUserOwnership(), coursesController.updateUserLessonProgress);
+
 // Agregar intento de examen al curso del usuario (valida que el usuario solo agregue intentos a sus propios cursos, a menos que sea admin)
 coursesRouter.put("/user/:userId/course/:courseId/attempt", authenticateToken, validateUserOwnership(), coursesController.addUserCourseAttempt);
 

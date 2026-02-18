@@ -1,6 +1,6 @@
 import express from "express";
 import { mercadoPagoController } from "../controllers/mercadopago.controller.js";
-import { authenticateToken, validateUserOwnership } from "../middleware/auth.middleware.js";
+import { authenticateToken, validateUserOwnership, authorizeByCategory } from "../middleware/auth.middleware.js";
 
 export const mercadoPagoRouter = express.Router();
 
@@ -34,3 +34,10 @@ mercadoPagoRouter.get("/payment-status/:paymentId", authenticateToken, mercadoPa
 
 // Procesar pago exitoso
 mercadoPagoRouter.post("/process-successful-payment", authenticateToken, mercadoPagoController.processSuccessfulPayment);
+
+// ---------- SOLO DESARROLLO: simular compra sin Mercado Pago (sandbox no redirige a localhost).
+// En producción: eliminar esta ruta o no exponer el botón en el front. Ver MERCADOPAGO_SETUP.md.
+mercadoPagoRouter.post("/dev-complete-purchase", authenticateToken, mercadoPagoController.devCompletePurchase);
+
+// Obtener pagos procesados (solo Administrador)
+mercadoPagoRouter.get("/processed-payments", authenticateToken, authorizeByCategory(["Administrador"]), mercadoPagoController.getProcessedPayments);

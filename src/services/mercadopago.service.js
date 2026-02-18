@@ -33,9 +33,17 @@ const client = new MercadoPagoConfig({
   }
 });
 
-// Almacén para evitar procesamiento duplicado de pagos (en memoria, para desarrollo)
-// En producción, debería usar Redis o base de datos
+// Almacén para evitar procesamiento duplicado de pagos (en memoria)
 const processedPayments = new Set();
+
+let processedPaymentsModel = null;
+const getProcessedPaymentsModel = async () => {
+  if (!processedPaymentsModel) {
+    const { processedPaymentsModel: model } = await import('../DAO/models/processed-payments.model.js');
+    processedPaymentsModel = model;
+  }
+  return processedPaymentsModel;
+};
 
 class MercadoPagoService {
   /**
@@ -220,15 +228,22 @@ class MercadoPagoService {
         throw new Error(`back_urls.success no es válido: "${preferenceData.back_urls.success}"`);
       }
 
-      // IMPORTANTE: Mercado Pago rechaza auto_return si back_urls.success es localhost
-      // Si la URL del front es localhost, quitar auto_return para que la preferencia se cree correctamente
-      const isLocalhost = frontendUrl.includes('localhost') || frontendUrl.includes('127.0.0.1');
-      if (isLocalhost && preferenceData.auto_return) {
-        logger.warning('Detectado localhost - removiendo auto_return para evitar errores de Mercado Pago');
-        delete preferenceData.auto_return;
+      // Intentar crear con auto_return para redirección automática al finalizar el pago.
+      // Si MP rechaza (ej. con localhost en algunos entornos), se reintenta sin auto_return.
+      let response;
+      try {
+        response = await preference.create({ body: preferenceData });
+      } catch (firstError) {
+        const msg = firstError?.message || '';
+        const isBackUrlError = /back_url|auto_return|redirect|url/i.test(msg);
+        if (isBackUrlError && preferenceData.auto_return) {
+          logger.warning('Preferencia con auto_return rechazada, reintentando sin auto_return:', msg);
+          delete preferenceData.auto_return;
+          response = await preference.create({ body: preferenceData });
+        } else {
+          throw firstError;
+        }
       }
-
-      const response = await preference.create({ body: preferenceData });
       
       logger.info(`Preferencia de Mercado Pago creada para el curso ${courseId}: ${response.id}`);
       return response;
@@ -336,14 +351,26 @@ class MercadoPagoService {
   async processApprovedPayment(payment) {
     try {
       const paymentId = String(payment.id);
+      const model = await getProcessedPaymentsModel();
       
-      // Prevenir procesamiento duplicado del mismo pago
-      if (processedPayments.has(paymentId)) {
+      // Verificar si el pago ya fue procesado (en BD)
+      const existingPayment = await model.findByPaymentId(paymentId);
+      if (existingPayment) {
         logger.warning(`Pago ${paymentId} ya fue procesado anteriormente, omitiendo procesamiento duplicado`);
         return { 
           success: true, 
           alreadyProcessed: true,
           message: 'Este pago ya fue procesado anteriormente'
+        };
+      }
+
+      // También verificar en memoria (para evitar procesamiento simultáneo)
+      if (processedPayments.has(paymentId)) {
+        logger.warning(`Pago ${paymentId} está siendo procesado actualmente`);
+        return { 
+          success: true, 
+          alreadyProcessed: true,
+          message: 'Este pago está siendo procesado'
         };
       }
 
@@ -367,38 +394,96 @@ class MercadoPagoService {
       // Marcar el pago como procesado ANTES de intentar agregarlo (idempotencia)
       processedPayments.add(paymentId);
 
-      // Importar el servicio de cursos dinámicamente para evitar dependencias circulares
+      // Importar servicios necesarios dinámicamente para evitar dependencias circulares
       const { coursesService } = await import('./courses.service.js');
+      const { usersModel } = await import('../DAO/models/users.model.js');
       
+      // Obtener información del curso y usuario para guardar en el log
+      const course = await coursesService.findByCourseId(courseId);
+      const user = await usersModel.findById(userId);
+      
+      const courseName = course?.courseName || 'Curso no encontrado';
+      const userEmail = user?.email || 'Email no encontrado';
+      const userFirstName = user?.firstName || '';
+      const userLastName = user?.lastName || '';
+      const transactionAmount = payment.transaction_amount || 0;
+      const currency = payment.currency_id || 'USD';
+      const paymentStatus = payment.status || 'approved';
+      const paymentStatusDetail = payment.status_detail || '';
+
       // Agregar el curso al usuario
       // purchaseCourse ya tiene protección contra duplicados (verifica si ya está comprado)
+      let purchaseResult = null;
+      let alreadyPurchased = false;
+      let errorMessage = null;
+      
       try {
-        const result = await coursesService.purchaseCourse(userId, courseId);
+        purchaseResult = await coursesService.purchaseCourse(userId, courseId);
         logger.info(`Curso ${courseId} agregado exitosamente al usuario ${userId} (Payment ID: ${paymentId})`);
-        return { 
-          success: true, 
-          courseId, 
-          userId, 
-          paymentId,
-          result 
-        };
       } catch (error) {
         // Si el curso ya fue comprado, no es un error crítico (puede ser procesamiento duplicado)
         if (error.message && error.message.includes('ya ha comprado')) {
           logger.warning(`Intento de comprar curso duplicado - Curso: ${courseId}, Usuario: ${userId}, Payment ID: ${paymentId}`);
-          return { 
-            success: true, 
-            courseId, 
-            userId, 
-            paymentId,
-            alreadyPurchased: true,
-            message: 'El curso ya estaba asociado al usuario'
-          };
+          alreadyPurchased = true;
+        } else {
+          // Si hay otro error, remover el pago del set para permitir reintento
+          processedPayments.delete(paymentId);
+          errorMessage = error.message || 'Error desconocido';
+          throw error;
         }
-        // Si hay otro error, remover el pago del set para permitir reintento
-        processedPayments.delete(paymentId);
-        throw error;
       }
+
+      // Persistir el pago procesado en BD
+      try {
+        await model.create({
+          paymentId,
+          courseId,
+          courseName,
+          userId,
+          userEmail,
+          userFirstName,
+          userLastName,
+          transactionAmount,
+          currency,
+          paymentStatus,
+          paymentStatusDetail,
+          externalReference,
+          alreadyPurchased,
+          errorMessage
+        });
+        logger.info(`Pago ${paymentId} guardado en BD exitosamente`);
+      } catch (dbError) {
+        // Si falla la persistencia pero el curso se agregó, loguear pero no fallar
+        logger.error(`Error al guardar pago ${paymentId} en BD:`, dbError);
+        // No lanzar error para no afectar el flujo principal
+      }
+
+      // Enviar email de confirmación al usuario (webhook: cuando el pago se procesa solo por notificación)
+      if (userEmail && !alreadyPurchased) {
+        try {
+          const { userService } = await import('./users.service.js');
+          await userService.sendPurchaseConfirmationEmail({
+            to: userEmail,
+            userName: [userFirstName, userLastName].filter(Boolean).join(' ') || 'Usuario',
+            courseName,
+            paymentId,
+            amount: transactionAmount,
+            currency,
+            courseId,
+          });
+        } catch (emailErr) {
+          logger.error('Error al enviar email de confirmación en processApprovedPayment:', emailErr?.message);
+        }
+      }
+
+      return { 
+        success: true, 
+        courseId, 
+        userId, 
+        paymentId,
+        alreadyPurchased,
+        result: purchaseResult 
+      };
     } catch (error) {
       logger.error('Error al procesar pago aprobado:', error);
       throw error;

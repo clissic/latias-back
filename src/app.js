@@ -7,6 +7,7 @@ import { existsSync, mkdirSync } from 'fs';
 
 // Importar rutas
 import { usersRouter } from "./routes/users.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
 import { tokensRouter } from "./routes/tokens.routes.js";
 import { coursesRouter } from "./routes/courses.routes.js";
 import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
@@ -79,6 +80,7 @@ if (!existsSync(certificatesUploadsDir)) {
 
 // ENDPOINTS (deben ir antes de los archivos estáticos)
 app.use("/api/users", usersRouter);
+app.use("/api/auth", authRouter);
 app.use("/api/tokens", tokensRouter);
 app.use("/api/courses", coursesRouter);
 app.use("/api/mercadopago", mercadoPagoRouter);

@@ -1,4 +1,5 @@
 import { userService } from "../services/users.service.js";
+import { coursesService } from "../services/courses.service.js";
 import { createHash } from "../utils/Bcrypt.js";
 import { logger } from "../utils/logger.js";
 import { jwtService } from "../services/jwt.service.js";
@@ -546,7 +547,7 @@ class UsersController {
             statistics: user.statistics,
             settings: user.settings,
             preferences: user.preferences,
-            purchasedCourses: user.purchasedCourses,
+            purchasedCourses: await coursesService.getUserPurchasedCourses(user._id.toString()),
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
             manager: managerPayload,
@@ -681,7 +682,7 @@ class UsersController {
             statistics: user.statistics,
             settings: user.settings,
             preferences: user.preferences,
-            purchasedCourses: user.purchasedCourses,
+            purchasedCourses: await coursesService.getUserPurchasedCourses(userId),
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],
             fleet: user.fleet || [],

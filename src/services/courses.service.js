@@ -54,10 +54,14 @@ class CoursesService {
   }
 
   // Función para que un usuario compre un curso
+  // courseId puede ser el identificador custom (ej. "course_xxx") o el _id de MongoDB
   async purchaseCourse(userId, courseId) {
     try {
-      // Verificar que el curso existe
-      const course = await coursesModel.findById(courseId);
+      // Buscar curso por courseId (campo custom); si falla, intentar por _id para compatibilidad
+      let course = await coursesModel.findByCourseId(courseId);
+      if (!course) {
+        course = await coursesModel.findById(courseId);
+      }
       if (!course) {
         throw new Error("Curso no encontrado");
       }
@@ -78,34 +82,30 @@ class CoursesService {
         throw new Error("El usuario ya ha comprado este curso");
       }
 
-      // Agregar el curso a los cursos comprados del usuario
+      // Solo guardamos courseId y estructura de módulos/lecciones con IDs + datos de progreso.
+      // Los datos del curso (nombre, banner, etc.) se obtienen luego por courseId al listar.
+      const now = new Date();
       const courseToAdd = {
         courseId: course.courseId,
-        sku: course.sku,
-        courseName: course.courseName,
-        bannerUrl: course.bannerUrl,
-        image: course.image,
-        shortImage: course.shortImage,
-        currency: course.currency,
-        shortDescription: course.shortDescription,
-        longDescription: course.longDescription,
-        duration: course.duration,
-        price: course.price,
-        difficulty: course.difficulty,
-        category: course.category,
-        professor: course.professor,
-        modules: course.modules,
-        purchasedDate: new Date(),
-        enrolledDate: new Date(),
+        purchasedDate: now,
+        enrolledDate: now,
         isFinished: false,
         finishedDate: null,
         progress: 0,
         attempts: [],
-        certificate: null
+        certificate: null,
+        modules: (course.modules || []).map((mod) => ({
+          moduleId: mod.moduleId,
+          lessons: (mod.lessons || []).map((les) => ({
+            lessonId: les.lessonId,
+            completed: false,
+            completedAt: null
+          }))
+        }))
       };
 
       const updatedPurchasedCourses = [...purchasedCourses, courseToAdd];
-      
+
       const userUpdated = await usersModel.updateOne({
         _id: userId,
         purchasedCourses: updatedPurchasedCourses
@@ -122,7 +122,67 @@ class CoursesService {
     }
   }
 
-  // Función para obtener los cursos comprados de un usuario
+  /**
+   * Enriquece un ítem de purchasedCourses (solo IDs + progreso) con datos del curso desde BD.
+   * Compatible con formato nuevo (solo courseId + modules[].lessonId + completed) y legacy (objeto completo).
+   */
+  async _enrichPurchasedCourse(purchasedItem) {
+    if (!purchasedItem || !purchasedItem.courseId) return null;
+    const course = await coursesModel.findByCourseId(purchasedItem.courseId);
+    if (!course) return null;
+
+    // Formato legacy: ya tiene courseName, etc.; puede tener modules con lessons completos
+    const isLegacy = !!purchasedItem.courseName;
+    const storedModules = purchasedItem.modules || [];
+    const courseModules = course.modules || [];
+
+    const modulesCompleted = courseModules.map((mod) => {
+      const storedMod = storedModules.find((m) => m.moduleId === mod.moduleId);
+      const storedLessons = storedMod?.lessons || [];
+      return {
+        moduleId: mod.moduleId,
+        moduleName: mod.moduleName,
+        moduleDescription: mod.moduleDescription,
+        lessons: (mod.lessons || []).map((les) => {
+          const storedLes = storedLessons.find((l) => l.lessonId === les.lessonId);
+          return {
+            lessonId: les.lessonId,
+            lessonName: les.lessonName,
+            lessonDescription: les.lessonDescription,
+            completed: storedLes?.completed ?? false,
+            completedAt: storedLes?.completedAt ?? null
+          };
+        })
+      };
+    });
+
+    return {
+      courseId: course.courseId,
+      courseName: course.courseName,
+      bannerUrl: course.bannerUrl,
+      image: course.image,
+      shortImage: course.shortImage,
+      currency: course.currency,
+      shortDescription: course.shortDescription,
+      longDescription: course.longDescription,
+      duration: course.duration,
+      price: course.price,
+      difficulty: course.difficulty,
+      category: course.category,
+      professor: course.professor,
+      modulesCompleted,
+      purchasedDate: purchasedItem.purchasedDate,
+      enrolledDate: purchasedItem.enrolledDate ?? purchasedItem.purchasedDate,
+      dateEnrolled: purchasedItem.enrolledDate ?? purchasedItem.purchasedDate,
+      isFinished: purchasedItem.isFinished ?? false,
+      finishedDate: purchasedItem.finishedDate ?? null,
+      progress: purchasedItem.progress ?? 0,
+      attempts: purchasedItem.attempts ?? [],
+      certificate: purchasedItem.certificate ?? null
+    };
+  }
+
+  // Función para obtener los cursos comprados de un usuario (enriquecidos con datos del curso por courseId)
   async getUserPurchasedCourses(userId) {
     try {
       const user = await usersModel.findById(userId);
@@ -130,13 +190,19 @@ class CoursesService {
         throw new Error("Usuario no encontrado");
       }
 
-      return user.purchasedCourses || [];
+      const purchased = user.purchasedCourses || [];
+      const enriched = [];
+      for (const item of purchased) {
+        const course = await this._enrichPurchasedCourse(item);
+        if (course) enriched.push(course);
+      }
+      return enriched;
     } catch (error) {
       throw error;
     }
   }
 
-  // Función para actualizar el progreso de un curso del usuario
+  // Función para actualizar el progreso de un curso del usuario (porcentaje global)
   async updateUserCourseProgress(userId, courseId, progress) {
     try {
       const user = await usersModel.findById(userId);
@@ -145,24 +211,19 @@ class CoursesService {
       }
 
       const purchasedCourses = user.purchasedCourses || [];
-      const courseIndex = purchasedCourses.findIndex(course => 
-        course.courseId === courseId
-      );
+      const courseIndex = purchasedCourses.findIndex((c) => c.courseId === courseId);
 
       if (courseIndex === -1) {
         throw new Error("El usuario no ha comprado este curso");
       }
 
-      // Actualizar el progreso
       purchasedCourses[courseIndex].progress = progress;
-
-      // Si el progreso es 100%, marcar como terminado
       if (progress >= 100) {
         purchasedCourses[courseIndex].isFinished = true;
         purchasedCourses[courseIndex].finishedDate = new Date();
       }
 
-      const userUpdated = await usersModel.updateOne({
+      await usersModel.updateOne({
         _id: userId,
         purchasedCourses: purchasedCourses
       });
@@ -171,7 +232,83 @@ class CoursesService {
         success: true,
         message: "Progreso actualizado exitosamente",
         course: purchasedCourses[courseIndex],
-        userUpdated
+        userUpdated: true
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Marca una lección como completada/no completada y recalcula el progreso del curso.
+   * Guarda solo IDs + progreso (completed, completedAt) en el usuario.
+   */
+  async updateUserLessonProgress(userId, courseId, moduleId, lessonId, { completed }) {
+    try {
+      const user = await usersModel.findById(userId);
+      if (!user) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      const purchasedCourses = user.purchasedCourses || [];
+      const courseIndex = purchasedCourses.findIndex((c) => c.courseId === courseId);
+
+      if (courseIndex === -1) {
+        throw new Error("El usuario no ha comprado este curso");
+      }
+
+      const course = purchasedCourses[courseIndex];
+      if (!course.modules) {
+        course.modules = [];
+      }
+
+      let mod = course.modules.find((m) => m.moduleId === moduleId);
+      if (!mod) {
+        mod = { moduleId, lessons: [] };
+        course.modules.push(mod);
+      }
+      if (!mod.lessons) {
+        mod.lessons = [];
+      }
+
+      let les = mod.lessons.find((l) => l.lessonId === lessonId);
+      if (!les) {
+        les = { lessonId, completed: false, completedAt: null };
+        mod.lessons.push(les);
+      }
+      les.completed = !!completed;
+      les.completedAt = completed ? new Date() : null;
+
+      // Recalcular progreso global del curso (lecciones completadas / total lecciones)
+      const courseDoc = await coursesModel.findByCourseId(courseId);
+      const totalLessons = (courseDoc?.modules || []).reduce(
+        (acc, m) => acc + (m.lessons || []).length,
+        0
+      );
+      let completedCount = 0;
+      for (const m of course.modules || []) {
+        for (const l of m.lessons || []) {
+          if (l.completed) completedCount++;
+        }
+      }
+      const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+      course.progress = progress;
+      if (progress >= 100) {
+        course.isFinished = true;
+        course.finishedDate = new Date();
+      }
+
+      await usersModel.updateOne({
+        _id: userId,
+        purchasedCourses: purchasedCourses
+      });
+
+      return {
+        success: true,
+        message: "Progreso de lección actualizado",
+        course: purchasedCourses[courseIndex],
+        progress,
+        userUpdated: true
       };
     } catch (error) {
       throw error;

@@ -634,7 +634,7 @@ class CoursesController {
     }
   }
 
-  // Actualizar progreso del curso del usuario
+  // Actualizar progreso del curso del usuario (porcentaje 0-100)
   async updateUserCourseProgress(req, res) {
     try {
       const { userId, courseId } = req.params;
@@ -654,6 +654,39 @@ class CoursesController {
         status: "success",
         msg: result.message,
         payload: result.course,
+      });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({
+        status: "error",
+        msg: error.message,
+        payload: {},
+      });
+    }
+  }
+
+  // Actualizar progreso de una lección (marcar completada); recalcula el progreso del curso
+  async updateUserLessonProgress(req, res) {
+    try {
+      const { userId, courseId, moduleId, lessonId } = req.params;
+      const { completed } = req.body;
+
+      if (moduleId == null || lessonId == null) {
+        return res.status(400).json({
+          status: "error",
+          msg: "moduleId y lessonId son requeridos",
+          payload: {},
+        });
+      }
+
+      const result = await coursesService.updateUserLessonProgress(userId, courseId, moduleId, lessonId, {
+        completed: completed !== false && completed !== "false"
+      });
+
+      return res.status(200).json({
+        status: "success",
+        msg: result.message,
+        payload: { course: result.course, progress: result.progress },
       });
     } catch (error) {
       logger.info(error);

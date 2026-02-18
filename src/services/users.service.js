@@ -245,6 +245,60 @@ class UserService {
     }
 
     /**
+     * Envía email de confirmación de compra de curso al usuario.
+     * @param {Object} options
+     * @param {string} options.to - Email del usuario
+     * @param {string} options.userName - Nombre del usuario (ej. "Juan Pérez")
+     * @param {string} options.courseName - Nombre del curso comprado
+     * @param {string} options.paymentId - ID del pago (Mercado Pago o DEV-...)
+     * @param {number} options.amount - Monto pagado
+     * @param {string} options.currency - Moneda (USD, UYU, etc.)
+     * @param {string} options.courseId - ID del curso para el enlace "Ir al curso"
+     */
+    async sendPurchaseConfirmationEmail({ to, userName, courseName, paymentId, amount, currency, courseId }) {
+      if (!to) return false;
+      const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+      const courseLink = `${frontendUrl}/course/${courseId || ""}`;
+      const amountStr = amount != null ? Number(amount).toFixed(2) : "—";
+      const currencyStr = currency || "USD";
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: "[LATIAS] Confirmación de compra - " + (courseName || "Curso"),
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Confirmación de compra</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a ${userName || "usuario"},</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Tu compra ha sido procesada correctamente. Ya tienes acceso al curso.</p>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Detalles de la compra</p>
+                  <ul style="margin: 0; padding-left: 20px; color: #333; font-size: 15px;">
+                    <li style="margin: 6px 0;"><strong>Curso:</strong> ${courseName || "—"}</li>
+                    <li style="margin: 6px 0;"><strong>ID de pago:</strong> ${paymentId || "—"}</li>
+                    <li style="margin: 6px 0;"><strong>Monto:</strong> ${amountStr} ${currencyStr}</li>
+                  </ul>
+                </div>
+                <p style="margin: 20px 0 0 0; color: #333; font-size: 16px;">Puedes acceder al curso desde tu panel o haciendo clic en el siguiente enlace:</p>
+                <p style="margin: 15px 0 0 0;"><a href="${courseLink}" style="display: inline-block; background-color: #ffa500; color: #082b55; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Ir al curso</a></p>
+                <p style="margin: 25px 0 0 0; color: #666; font-size: 14px;">Si no realizaste esta compra, contacta con nosotros.</p>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de confirmación de compra enviado a ${to} (curso: ${courseName})`);
+        return true;
+      } catch (err) {
+        logger.error("Error al enviar email de confirmación de compra:", err?.message);
+        return false;
+      }
+    }
+
+    /**
      * Envía email al gestor informando que fue seleccionado por un usuario.
      * @param {Object} options
      * @param {string} options.to - Email del gestor

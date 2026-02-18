@@ -1,5 +1,8 @@
 import { mercadoPagoService } from "../services/mercadopago.service.js";
 import { coursesService } from "../services/courses.service.js";
+import { userService } from "../services/users.service.js";
+import { processedPaymentsModel } from "../DAO/models/processed-payments.model.js";
+import { usersModel } from "../DAO/models/users.model.js";
 import { logger } from "../utils/logger.js";
 
 /**
@@ -411,32 +414,80 @@ class MercadoPagoController {
         });
       }
 
+      // Datos para el registro en processed_payments (y para respuestas)
+      const course = await coursesService.findByCourseId(courseId);
+      const user = await usersModel.findById(userId);
+      const courseName = course?.courseName || "Curso no encontrado";
+      const userEmail = user?.email || "";
+      const userFirstName = user?.firstName || "";
+      const userLastName = user?.lastName || "";
+
       // Agregar el curso al usuario usando el servicio existente
       // purchaseCourse ya tiene protección contra duplicados (verifica si ya está comprado)
+      let result = null;
+      let alreadyPurchased = false;
       try {
-        const result = await coursesService.purchaseCourse(userId, courseId);
-        return res.status(200).json({
-          status: "success",
-          msg: "Pago procesado y curso agregado al usuario exitosamente",
-          payload: {
-            ...result,
-            paymentId: paymentId
-          },
-        });
+        result = await coursesService.purchaseCourse(userId, courseId);
       } catch (error) {
-        // Si el curso ya fue comprado, no es un error crítico
-        if (error.message && error.message.includes('ya ha comprado')) {
-          return res.status(200).json({
-            status: "success",
-            msg: "El curso ya estaba asociado a este usuario",
-            payload: { 
-              alreadyPurchased: true,
-              paymentId: paymentId
-            },
-          });
+        if (error.message && error.message.includes("ya ha comprado")) {
+          alreadyPurchased = true;
+        } else {
+          throw error;
         }
-        throw error;
       }
+
+      // Persistir en processed_payments si aún no existe (idempotente)
+      const existingProcessed = await processedPaymentsModel.findByPaymentId(String(paymentId));
+      if (!existingProcessed) {
+        try {
+          await processedPaymentsModel.create({
+            paymentId: String(paymentId),
+            courseId,
+            courseName,
+            userId,
+            userEmail,
+            userFirstName,
+            userLastName,
+            transactionAmount: payment.transaction_amount ?? 0,
+            currency: payment.currency_id ?? "USD",
+            paymentStatus: payment.status ?? "approved",
+            paymentStatusDetail: payment.status_detail ?? "",
+            externalReference,
+            alreadyPurchased,
+            errorMessage: null,
+          });
+          logger.info(`Pago ${paymentId} registrado en processed_payments desde processSuccessfulPayment`);
+        } catch (dbError) {
+          logger.error(`Error al guardar pago ${paymentId} en processed_payments:`, dbError);
+        }
+      }
+
+      // Enviar email de confirmación de compra al usuario (no bloquear respuesta si falla)
+      if (userEmail && !alreadyPurchased) {
+        try {
+          await userService.sendPurchaseConfirmationEmail({
+            to: userEmail,
+            userName: [userFirstName, userLastName].filter(Boolean).join(" ") || "Usuario",
+            courseName,
+            paymentId: String(paymentId),
+            amount: payment.transaction_amount ?? 0,
+            currency: payment.currency_id ?? "USD",
+            courseId,
+          });
+        } catch (emailErr) {
+          logger.error("Error al enviar email de confirmación de compra en processSuccessfulPayment:", emailErr?.message);
+        }
+      }
+
+      return res.status(200).json({
+        status: "success",
+        msg: alreadyPurchased ? "El curso ya estaba asociado a este usuario" : "Pago procesado y curso agregado al usuario exitosamente",
+        payload: {
+          ...(result || {}),
+          paymentId,
+          alreadyPurchased,
+        },
+      });
     } catch (error) {
       logger.error("Error en processSuccessfulPayment:", error);
       
@@ -506,6 +557,198 @@ class MercadoPagoController {
       return res.status(500).json({
         status: "error",
         msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /**
+   * [SOLO DESARROLLO] Simula la finalización de una compra sin pasar por Mercado Pago.
+   * Asigna el curso al usuario y opcionalmente registra un pago en processed_payments con ID "DEV-...".
+   * En producción: eliminar esta ruta o hacer que devuelva 404.
+   * Ver MERCADOPAGO_SETUP.md y comentarios en mercadopago.routes.js.
+   */
+  async devCompletePurchase(req, res) {
+    const isDev = process.env.NODE_ENV === "development" || process.env.ENABLE_DEV_PAYMENT === "true";
+    if (!isDev) {
+      return res.status(404).json({
+        status: "error",
+        msg: "No disponible",
+        payload: {},
+      });
+    }
+
+    try {
+      const { courseId, userId } = req.body;
+      if (!courseId || !userId) {
+        return res.status(400).json({
+          status: "error",
+          msg: "courseId y userId son requeridos",
+          payload: {},
+        });
+      }
+
+      const authenticatedUserId = String(req.user?.userId);
+      const targetUserId = String(userId);
+      const isAdmin = Array.isArray(req.user?.category) && req.user.category.includes("Administrador");
+      if (!isAdmin && authenticatedUserId !== targetUserId) {
+        logger.warning(`Dev purchase: usuario ${authenticatedUserId} intentó comprar como ${targetUserId}`);
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permisos para simular esta compra",
+          payload: {},
+        });
+      }
+
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+
+      const user = await usersModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario no encontrado",
+          payload: {},
+        });
+      }
+
+      let result = null;
+      let alreadyPurchased = false;
+      try {
+        result = await coursesService.purchaseCourse(userId, courseId);
+      } catch (error) {
+        if (error.message && error.message.includes("ya ha comprado")) {
+          alreadyPurchased = true;
+        } else {
+          throw error;
+        }
+      }
+
+      const devPaymentId = `DEV-${Date.now()}-${courseId}`;
+      const externalReference = `${courseId}|${userId}`;
+      const existingProcessed = await processedPaymentsModel.findByPaymentId(devPaymentId);
+      if (!existingProcessed) {
+        try {
+          await processedPaymentsModel.create({
+            paymentId: devPaymentId,
+            courseId,
+            courseName: course.courseName || course.name || "Curso",
+            userId,
+            userEmail: user.email || "",
+            userFirstName: user.firstName || "",
+            userLastName: user.lastName || "",
+            transactionAmount: course.price ?? 0,
+            currency: course.currency ?? "USD",
+            paymentStatus: "approved",
+            paymentStatusDetail: "dev_simulation",
+            externalReference,
+            alreadyPurchased,
+            errorMessage: null,
+          });
+          logger.info(`Dev: pago simulado ${devPaymentId} registrado en processed_payments`);
+        } catch (dbError) {
+          logger.error("Error al guardar pago dev en processed_payments:", dbError);
+        }
+      }
+
+      // Enviar email de confirmación de compra al usuario (no bloquear respuesta si falla)
+      if (user.email && !alreadyPurchased) {
+        try {
+          await userService.sendPurchaseConfirmationEmail({
+            to: user.email,
+            userName: [user.firstName, user.lastName].filter(Boolean).join(" ") || "Usuario",
+            courseName: course.courseName || course.name || "Curso",
+            paymentId: devPaymentId,
+            amount: course.price ?? 0,
+            currency: course.currency ?? "USD",
+            courseId,
+          });
+        } catch (emailErr) {
+          logger.error("Error al enviar email de confirmación en devCompletePurchase:", emailErr?.message);
+        }
+      }
+
+      return res.status(200).json({
+        status: "success",
+        msg: alreadyPurchased ? "El curso ya estaba asociado a este usuario" : "Compra simulada (dev). Curso asignado.",
+        payload: {
+          paymentId: devPaymentId,
+          courseId,
+          userId,
+          alreadyPurchased,
+          ...(result || {}),
+        },
+      });
+    } catch (error) {
+      logger.error("Error en devCompletePurchase:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error.message || "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  // Obtener pagos procesados (solo Administrador)
+  async getProcessedPayments(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+      const paymentId = (req.query.paymentId || "").trim();
+      const courseId = (req.query.courseId || "").trim();
+      const courseName = (req.query.courseName || "").trim();
+      const userEmail = (req.query.userEmail || "").trim();
+      const userId = (req.query.userId || "").trim();
+      const paymentStatus = (req.query.paymentStatus || "").trim();
+      const currency = (req.query.currency || "").trim();
+
+      const mongoose = await import("mongoose");
+      const ObjectId = mongoose.default?.Types?.ObjectId;
+      const filters = {};
+      if (paymentId) filters.paymentId = new RegExp(paymentId, "i");
+      if (courseId) filters.courseId = new RegExp(courseId, "i");
+      if (courseName) filters.courseName = new RegExp(courseName, "i");
+      if (userEmail) filters.userEmail = new RegExp(userEmail, "i");
+      if (userId) {
+        try {
+          if (ObjectId && ObjectId.isValid(userId)) {
+            filters.userId = new ObjectId(userId);
+          } else {
+            filters.userId = userId;
+          }
+        } catch (_) {
+          filters.userId = userId;
+        }
+      }
+      if (paymentStatus) filters.paymentStatus = paymentStatus;
+      if (currency) filters.currency = new RegExp(currency, "i");
+
+      const result = await processedPaymentsModel.getPaginated(filters, page, limit);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Pagos procesados obtenidos exitosamente",
+        payload: {
+          docs: result.docs,
+          totalDocs: result.totalDocs,
+          limit: result.limit,
+          page: result.page,
+          totalPages: result.totalPages,
+          hasNextPage: result.hasNextPage,
+          hasPrevPage: result.hasPrevPage,
+        },
+      });
+    } catch (error) {
+      logger.error("Error en getProcessedPayments:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error.message || "Error interno del servidor",
         payload: {},
       });
     }
