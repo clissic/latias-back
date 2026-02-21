@@ -1,5 +1,9 @@
 import { coursesModel } from "../DAO/models/courses.model.js";
 import { usersModel } from "../DAO/models/users.model.js";
+import { CourseCertificateMongoose } from "../DAO/models/mongoose/course-certificates.mongoose.js";
+
+const PARTIAL_AVG_MIN = 60;
+const FINAL_TEST_MIN = 70;
 
 class CoursesService {
   async getAll() {
@@ -94,8 +98,12 @@ class CoursesService {
         progress: 0,
         attempts: [],
         certificate: null,
+        finalTestAttempts: 0,
+        finalTestLastScore: null,
         modules: (course.modules || []).map((mod) => ({
           moduleId: mod.moduleId,
+          testAttempts: 0,
+          lastTestScore: null,
           lessons: (mod.lessons || []).map((les) => ({
             lessonId: les.lessonId,
             completed: false,
@@ -143,6 +151,8 @@ class CoursesService {
         moduleId: mod.moduleId,
         moduleName: mod.moduleName,
         moduleDescription: mod.moduleDescription,
+        testAttempts: storedMod?.testAttempts ?? 0,
+        lastTestScore: storedMod?.lastTestScore ?? null,
         lessons: (mod.lessons || []).map((les) => {
           const storedLes = storedLessons.find((l) => l.lessonId === les.lessonId);
           return {
@@ -155,6 +165,14 @@ class CoursesService {
         })
       };
     });
+
+    let certificateIssuedAt = null;
+    if (purchasedItem.certificate) {
+      try {
+        const cert = await CourseCertificateMongoose.findById(purchasedItem.certificate).lean();
+        if (cert?.issuedAt) certificateIssuedAt = cert.issuedAt;
+      } catch (_) {}
+    }
 
     return {
       courseId: course.courseId,
@@ -178,7 +196,10 @@ class CoursesService {
       finishedDate: purchasedItem.finishedDate ?? null,
       progress: purchasedItem.progress ?? 0,
       attempts: purchasedItem.attempts ?? [],
-      certificate: purchasedItem.certificate ?? null
+      certificate: purchasedItem.certificate ?? null,
+      certificateIssuedAt,
+      finalTestAttempts: purchasedItem.finalTestAttempts ?? 0,
+      finalTestLastScore: purchasedItem.finalTestLastScore ?? null
     };
   }
 
@@ -315,6 +336,204 @@ class CoursesService {
     }
   }
 
+  /**
+   * Registra el inicio de un intento de prueba parcial (descuenta el intento). Se llama al abrir la prueba.
+   */
+  async startModuleTestAttempt(userId, courseId, moduleId) {
+    try {
+      const user = await usersModel.findById(userId);
+      if (!user) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      const purchasedCourses = user.purchasedCourses || [];
+      const courseIndex = purchasedCourses.findIndex((c) => c.courseId === courseId);
+
+      if (courseIndex === -1) {
+        throw new Error("El usuario no ha comprado este curso");
+      }
+
+      const course = purchasedCourses[courseIndex];
+      if (!course.modules) {
+        course.modules = [];
+      }
+
+      let mod = course.modules.find((m) => m.moduleId === moduleId);
+      if (!mod) {
+        mod = { moduleId, lessons: [], testAttempts: 0, lastTestScore: null };
+        course.modules.push(mod);
+      }
+      mod.testAttempts = (mod.testAttempts || 0) + 1;
+
+      await usersModel.updateOne({
+        _id: userId,
+        purchasedCourses: purchasedCourses
+      });
+
+      return {
+        success: true,
+        message: "Intento de prueba iniciado",
+        course: purchasedCourses[courseIndex],
+        userUpdated: true
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Guarda el puntaje de la prueba parcial (el intento ya fue descontado al abrir la prueba).
+   */
+  async updateModuleTestResult(userId, courseId, moduleId, { score }) {
+    try {
+      const user = await usersModel.findById(userId);
+      if (!user) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      const purchasedCourses = user.purchasedCourses || [];
+      const courseIndex = purchasedCourses.findIndex((c) => c.courseId === courseId);
+
+      if (courseIndex === -1) {
+        throw new Error("El usuario no ha comprado este curso");
+      }
+
+      const course = purchasedCourses[courseIndex];
+      if (!course.modules) {
+        course.modules = [];
+      }
+
+      let mod = course.modules.find((m) => m.moduleId === moduleId);
+      if (!mod) {
+        mod = { moduleId, lessons: [], testAttempts: 0, lastTestScore: null };
+        course.modules.push(mod);
+      }
+      // Solo se actualiza el puntaje si es mayor que el anterior (en el segundo intento se mantiene el mejor resultado)
+      const current = mod.lastTestScore ?? null;
+      if (score != null && (current === null || score > current)) {
+        mod.lastTestScore = score;
+      }
+
+      await usersModel.updateOne({
+        _id: userId,
+        purchasedCourses: purchasedCourses
+      });
+
+      return {
+        success: true,
+        message: "Resultado de prueba parcial actualizado",
+        course: purchasedCourses[courseIndex],
+        userUpdated: true
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Inicia un intento de la prueba final del curso (descuenta el intento al abrir).
+   */
+  async startFinalTestAttempt(userId, courseId) {
+    try {
+      const user = await usersModel.findById(userId);
+      if (!user) throw new Error("Usuario no encontrado");
+
+      const purchasedCourses = user.purchasedCourses || [];
+      const courseIndex = purchasedCourses.findIndex((c) => c.courseId === courseId);
+      if (courseIndex === -1) throw new Error("El usuario no ha comprado este curso");
+
+      const course = purchasedCourses[courseIndex];
+      course.finalTestAttempts = (course.finalTestAttempts || 0) + 1;
+
+      await usersModel.updateOne({ _id: userId, purchasedCourses: purchasedCourses });
+      return { success: true, message: "Intento de prueba final iniciado", course: course, userUpdated: true };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Guarda el puntaje de la prueba final (solo si es mayor al anterior).
+   * Si se cumplen condiciones de aprobación (promedio parciales >= 60% y prueba final >= 70%),
+   * emite un certificado (award) y guarda su _id en user.purchasedCourses[].certificate.
+   */
+  async updateFinalTestResult(userId, courseId, { score }) {
+    try {
+      const user = await usersModel.findById(userId);
+      if (!user) throw new Error("Usuario no encontrado");
+
+      const purchasedCourses = user.purchasedCourses || [];
+      const courseIndex = purchasedCourses.findIndex((c) => c.courseId === courseId);
+      if (courseIndex === -1) throw new Error("El usuario no ha comprado este curso");
+
+      const course = purchasedCourses[courseIndex];
+      const current = course.finalTestLastScore ?? null;
+      if (score != null && (current === null || score > current)) {
+        course.finalTestLastScore = score;
+      }
+
+      const scoreToUse = course.finalTestLastScore ?? null;
+      const alreadyHasCertificate = course.certificate != null && course.certificate !== "";
+
+      if (
+        scoreToUse != null &&
+        !alreadyHasCertificate &&
+        (course.modules || []).length > 0
+      ) {
+        const courseDoc = await coursesModel.findByCourseId(courseId);
+        if (courseDoc) {
+          const resultsModules = (courseDoc.modules || []).map((mod) => {
+            const stored = (course.modules || []).find((m) => m.moduleId === mod.moduleId);
+            const result = stored?.lastTestScore ?? 0;
+            return { moduleName: mod.moduleName || mod.moduleId, result };
+          });
+          const scoresOnly = resultsModules.map((r) => r.result).filter((s) => s != null && typeof s === "number");
+          const avgPartial =
+            scoresOnly.length > 0
+              ? Math.round((scoresOnly.reduce((a, b) => a + b, 0) / scoresOnly.length) * 10) / 10
+              : 0;
+
+          if (avgPartial >= PARTIAL_AVG_MIN && scoreToUse >= FINAL_TEST_MIN) {
+            const finalResult = Math.round((scoreToUse * 0.6 + avgPartial * 0.4) * 10) / 10;
+            const prof = courseDoc.professor && courseDoc.professor[0] ? courseDoc.professor[0] : {};
+            const instructor = [prof.firstName, prof.lastName].filter(Boolean).join(" ").trim() || "Instructor";
+            const userName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || "Usuario";
+
+            const newCertificate = await CourseCertificateMongoose.create({
+              course: courseDoc.courseName || courseId,
+              instructor,
+              profession: prof.profession || "",
+              duration: courseDoc.duration ?? null,
+              userName,
+              resultsModules,
+              resultFinalTest: scoreToUse,
+              finalResult,
+              issuedAt: new Date(),
+            });
+
+            course.certificate = newCertificate._id;
+            await usersModel.updateOne({
+              _id: userId,
+              purchasedCourses: purchasedCourses,
+            });
+            return {
+              success: true,
+              message: "Resultado de prueba final actualizado. Certificado emitido.",
+              course: course,
+              userUpdated: true,
+              certificateId: newCertificate._id,
+            };
+          }
+        }
+      }
+
+      await usersModel.updateOne({ _id: userId, purchasedCourses: purchasedCourses });
+      return { success: true, message: "Resultado de prueba final actualizado", course: course, userUpdated: true };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Función para agregar un intento de examen al curso del usuario
   async addUserCourseAttempt(userId, courseId, attempt) {
     try {
@@ -352,6 +571,20 @@ class CoursesService {
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Obtiene el certificado (award) de curso del usuario para un curso dado.
+   * Solo devuelve el certificado si el usuario tiene course.certificate guardado para ese curso.
+   */
+  async getCourseCertificate(userId, courseId) {
+    const user = await usersModel.findById(userId);
+    if (!user) throw new Error("Usuario no encontrado");
+    const purchasedCourses = user.purchasedCourses || [];
+    const course = purchasedCourses.find((c) => c.courseId === courseId);
+    if (!course || !course.certificate) return null;
+    const cert = await CourseCertificateMongoose.findById(course.certificate).lean();
+    return cert || null;
   }
 
   // Función para actualizar el certificado del curso del usuario

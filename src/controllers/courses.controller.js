@@ -698,6 +698,106 @@ class CoursesController {
     }
   }
 
+  // Iniciar intento de prueba parcial (descuenta el intento al abrir la prueba)
+  async startModuleTestAttempt(req, res) {
+    try {
+      const { userId, courseId, moduleId } = req.params;
+
+      await coursesService.startModuleTestAttempt(userId, courseId, moduleId);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Intento de prueba iniciado",
+        payload: {},
+      });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({
+        status: "error",
+        msg: error.message,
+        payload: {},
+      });
+    }
+  }
+
+  // Registrar puntaje de prueba parcial (el intento ya fue descontado al abrir)
+  async updateModuleTestResult(req, res) {
+    try {
+      const { userId, courseId, moduleId } = req.params;
+      const { score } = req.body;
+
+      if (score == null || typeof score !== "number" || score < 0 || score > 100) {
+        return res.status(400).json({
+          status: "error",
+          msg: "El puntaje (score) debe ser un número entre 0 y 100",
+          payload: {},
+        });
+      }
+
+      const result = await coursesService.updateModuleTestResult(userId, courseId, moduleId, { score });
+
+      return res.status(200).json({
+        status: "success",
+        msg: result.message,
+        payload: result.course,
+      });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({
+        status: "error",
+        msg: error.message,
+        payload: {},
+      });
+    }
+  }
+
+  // Iniciar intento de prueba final del curso
+  async startFinalTestAttempt(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      await coursesService.startFinalTestAttempt(userId, courseId);
+      return res.status(200).json({ status: "success", msg: "Intento de prueba final iniciado", payload: {} });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({ status: "error", msg: error.message, payload: {} });
+    }
+  }
+
+  // Obtener certificado de curso del usuario (para "Ver certificado")
+  async getCourseCertificate(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      const certificate = await coursesService.getCourseCertificate(userId, courseId);
+      if (certificate) {
+        return res.status(200).json({ status: "success", msg: "Certificado obtenido", payload: certificate });
+      }
+      return res.status(404).json({ status: "error", msg: "Certificado no encontrado", payload: {} });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({ status: "error", msg: error.message, payload: {} });
+    }
+  }
+
+  // Guardar puntaje de prueba final
+  async updateFinalTestResult(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      const { score } = req.body;
+      if (score == null || typeof score !== "number" || score < 0 || score > 100) {
+        return res.status(400).json({
+          status: "error",
+          msg: "El puntaje (score) debe ser un número entre 0 y 100",
+          payload: {},
+        });
+      }
+      const result = await coursesService.updateFinalTestResult(userId, courseId, { score });
+      return res.status(200).json({ status: "success", msg: result.message, payload: result.course });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({ status: "error", msg: error.message, payload: {} });
+    }
+  }
+
   // Agregar intento de examen al curso del usuario
   async addUserCourseAttempt(req, res) {
     try {

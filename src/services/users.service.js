@@ -510,6 +510,105 @@ class UserService {
         return false;
       }
     }
+
+    /**
+     * Envía email al cliente informando que su gestor lo ha desvinculado y los motivos.
+     * @param {Object} options
+     * @param {string} options.to - Email del cliente
+     * @param {string} options.clientName - Nombre del cliente
+     * @param {string} options.gestorName - Nombre del gestor
+     * @param {string} options.reason - Motivos de desvinculación
+     */
+    async sendClientUnlinkedByGestorEmail({ to, clientName, gestorName, reason }) {
+      if (!to) return false;
+      const name = clientName || "Cliente";
+      const gestor = gestorName || "Su gestor";
+      const reasonSafe = reason ? String(reason).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: "[LATIAS] Desvinculación con tu gestor",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Desvinculación con tu gestor</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a ${name},</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">${gestor} ha decidido desvincularse como tu gestor en la plataforma LATIAS.</p>
+                ${reasonSafe ? `
+                <div style="margin: 20px 0; padding: 15px; background-color: #fff9f0; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 8px 0; color: #082b55; font-weight: bold; font-size: 16px;">Motivos indicados</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;">${reasonSafe}</p>
+                </div>
+                ` : ""}
+                <p style="margin: 15px 0 0 0; color: #333; font-size: 16px;">Puedes asignar un nuevo gestor desde <strong>Mi Latias → General</strong> cuando lo desees.</p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
+                  <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+                  <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
+                </div>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de desvinculación enviado al cliente ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de desvinculación al cliente: " + error?.message);
+        return false;
+      }
+    }
+
+    /**
+     * Envía email al gestor informando que un cliente lo ha desvinculado y los motivos.
+     * @param {Object} options
+     * @param {string} options.to - Email del gestor
+     * @param {string} options.gestorName - Nombre del gestor
+     * @param {string} options.clientName - Nombre del cliente
+     * @param {string} options.reason - Motivos de desvinculación
+     */
+    async sendGestorUnlinkedByClientEmail({ to, gestorName, clientName, reason }) {
+      if (!to) return false;
+      const name = gestorName || "Gestor";
+      const client = clientName || "Un cliente";
+      const reasonSafe = reason ? String(reason).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: "[LATIAS] Un cliente te ha desvinculado",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Desvinculación de cliente</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a ${name},</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">El/La cliente <strong>${client}</strong> ha decidido desvincularse de ti como gestor en la plataforma LATIAS.</p>
+                ${reasonSafe ? `
+                <div style="margin: 20px 0; padding: 15px; background-color: #fff9f0; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 8px 0; color: #082b55; font-weight: bold; font-size: 16px;">Motivos indicados</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;">${reasonSafe}</p>
+                </div>
+                ` : ""}
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
+                  <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+                  <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
+                </div>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de desvinculación enviado al gestor ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de desvinculación al gestor: " + error?.message);
+        return false;
+      }
+    }
   }
   
   export const userService = new UserService();

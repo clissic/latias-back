@@ -1,7 +1,7 @@
 # LATIAS Academia
 
 **Descripción:**  
-LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de náutica y supervivencia, entre otros. La aplicación permite a los cadetes acceder a cursos desarrollados por profesionales del mar, utilizando herramientas de inteligencia artíficial para la generación de videos y diálogos, evaluaciones profesionales y académicas en conjunto con exámenes finales para la obtención de certificados oficiales, generados automáticamente al completar los cursos. En cuanto a los aspéctos técnicos, la plataforma está desarrollada con el stack MERN y utiliza Bootstrap para la interfaz gráfica para mantener un diseño responsive y prolijo.
+LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de náutica y supervivencia, entre otros. La aplicación permite a los cadetes acceder a cursos desarrollados por profesionales del mar, utilizando herramientas de inteligencia artificial para la generación de videos y diálogos, evaluaciones profesionales y académicas en conjunto con exámenes finales para la obtención de certificados oficiales, generados automáticamente al completar los cursos. En cuanto a los aspectos técnicos, la plataforma está desarrollada con el stack MERN y utiliza Bootstrap para la interfaz gráfica para mantener un diseño responsive y prolijo.
 
 ---
 
@@ -25,10 +25,10 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ✔️ CUMPLIDO (1% cada uno) - 🟡 EN DESARROLLO (0.5% cada uno) - ❌ INCUMPLIDO (0%)
 
-**Progreso del proyecto: 48.5% completado**
-- ✔️ Completados: 47 puntos (48%)
-- 🟡 En desarrollo: 1 puntos (0.5%)
-- ❌ Pendientes: 51 puntos (0%)
+**Progreso del proyecto: 50% completado**
+- ✔️ Completados: 50 puntos (50%)
+- 🟡 En desarrollo: 0 puntos (0%)
+- ❌ Pendientes: 50 puntos (0%)
 
 ### Preparación del proyecto (1-10)
 ✔️ 1. Crear el repositorio en GitHub.  
@@ -107,12 +107,12 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ### Pagos y monetización (66-75)
 ✔️ 66. Configurar cuenta de Mercado Pago.  
-🟡 67. Crear modelo de transacción en base de datos.  
+✔️ 67. Crear modelo de transacción en base de datos.  
 ✔️ 68. Crear endpoints para pagos y verificación.  
 ✔️ 69. Implementar frontend para proceso de compra.  
 ✔️ 70. Integrar webhooks de Mercado Pago para confirmar pagos.  
 ✔️ 71. Marcar cursos comprados en perfil de cadete.  
-❌ 72. Restringir acceso a cursos no comprados.  
+✔️ 72. Restringir acceso a cursos no comprados.  
 ✔️ 73. Probar pagos en modo sandbox.  
 ✔️ 74. Implementar confirmación visual de compra.  
 ✔️ 75. Documentar flujo de pagos. (Ver MERCADOPAGO_SETUP.md)  
@@ -124,7 +124,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ✔️ 79. Permitir desactivar o eliminar usuarios.  
 ✔️ 80. Crear filtros por rol y estado.  
 ✔️ 81. Implementar búsqueda de usuarios.  
-❌ 82. Visualizar historial de pagos y transacciones.  
+✔️ 82. Visualizar historial de pagos y transacciones.  
 ❌ 83. Revisar entregas de cadetes.  
 ❌ 84. Probar funcionalidades administrativas.  
 ❌ 85. Documentar uso del panel de administración.  
@@ -255,6 +255,10 @@ Algunos endpoints antiguos usan `message` en lugar de `msg`. En errores, `payloa
 | POST | `/refresh-token` | No | — | Renovar access token. |
 | POST | `/create` | No | — | Registro de nuevo usuario. |
 | GET | `/profile` | Sí | Cualquiera | Perfil del usuario autenticado. |
+| GET | `/gestors` | Sí | Cualquiera | Listar gestores (para asignar desde General). |
+| GET | `/gestor/clients` | Sí | Gestor | Clientes que tienen al usuario como gestor (Portafolio). |
+| POST | `/gestor/unlink-client` | Sí | Gestor | Desvincular cliente (body: clientId, reason). Envía email al cliente. |
+| PATCH | `/profile/manager` | Sí | Cualquiera | Asignar o desvincular gestor (body: managerId, jurisdiction?, reason? al desvincular). |
 | POST | `/logout` | Sí | Cualquiera | Cerrar sesión (stateless). |
 | PUT | `/update-password` | Sí | Cualquiera | Cambiar contraseña. |
 | POST | `/fleet/request` | Sí | Cualquiera | Solicitar agregar barco a mi flota. |
@@ -349,6 +353,70 @@ Requiere `Authorization: Bearer <token>`.
 **Respuesta 200:** contraseña actualizada.
 
 **Errores:** 400 (newPassword faltante o no se pudo actualizar), 401, 500.
+
+---
+
+#### GET `/api/users/gestors`
+
+**Respuesta 200:** `payload`: array de usuarios con categoría Gestor (para selector al asignar gestor en General).
+
+**Errores:** 401, 500.
+
+---
+
+#### GET `/api/users/gestor/clients`
+
+Solo categoría Gestor. Lista los clientes que tienen al usuario autenticado como gestor (incluye `fleetCount` por cliente).
+
+**Respuesta 200:** `payload`: array de clientes.
+
+**Errores:** 401, 403, 500.
+
+---
+
+#### POST `/api/users/gestor/unlink-client`
+
+Solo categoría Gestor. Desvincula un cliente (el cliente deja de tener a este gestor asignado). Envía email al cliente con los motivos indicados.
+
+**Body:**
+```json
+{
+  "clientId": "string",
+  "reason": "string"
+}
+```
+
+`reason` es obligatorio, entre 1 y 250 caracteres. El cliente debe tener actualmente al usuario autenticado como gestor.
+
+**Respuesta 200:** cliente desvinculado; email enviado al cliente.
+
+**Errores:** 400 (clientId/reason faltantes o reason inválido), 401, 403 (no es tu cliente), 404 (cliente no encontrado), 500.
+
+---
+
+#### PATCH `/api/users/profile/manager`
+
+Asignar o desvincular el gestor del usuario autenticado. Al asignar, se envía email al gestor. Al desvincular, es obligatorio enviar `reason` (1–250 caracteres) y se envía email al gestor con los motivos.
+
+**Body (asignar):**
+```json
+{
+  "managerId": "string",
+  "jurisdiction": "string (opcional)"
+}
+```
+
+**Body (desvincular):**
+```json
+{
+  "managerId": "",
+  "reason": "string (obligatorio, 1–250 caracteres)"
+}
+```
+
+**Respuesta 200:** gestor asignado o desvinculado; en su caso, email enviado al gestor.
+
+**Errores:** 400 (managerId faltante, reason inválido al desvincular, usuario no es gestor), 401, 404 (gestor no encontrado), 500.
 
 ---
 

@@ -751,11 +751,89 @@ class UsersController {
     }
   }
 
+  /** Desvincular un cliente (solo Gestor). El cliente debe tener al usuario actual como gestor. Envía email al cliente con los motivos. */
+  async unlinkClientAsGestor(req, res) {
+    try {
+      const gestorId = req.user?.userId;
+      if (!gestorId) {
+        return res.status(401).json({ status: "error", msg: "No autenticado", payload: {} });
+      }
+      const { clientId, reason } = req.body;
+      if (!clientId || typeof clientId !== "string" || !clientId.trim()) {
+        return res.status(400).json({
+          status: "error",
+          msg: "clientId es requerido",
+          payload: {},
+        });
+      }
+      const reasonStr = typeof reason === "string" ? reason.trim() : "";
+      if (reasonStr.length === 0) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Los motivos de desvinculación son obligatorios",
+          payload: {},
+        });
+      }
+      if (reasonStr.length > 250) {
+        return res.status(400).json({
+          status: "error",
+          msg: "Los motivos no pueden superar 250 caracteres",
+          payload: {},
+        });
+      }
+      const client = await userService.findById(clientId.trim());
+      if (!client) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Cliente no encontrado",
+          payload: {},
+        });
+      }
+      const clientManagerId = client.manager?.managerId ?? client.manager?._id ?? "";
+      if (String(clientManagerId) !== String(gestorId)) {
+        return res.status(403).json({
+          status: "error",
+          msg: "Este usuario no es tu cliente",
+          payload: {},
+        });
+      }
+      await userService.updateOne({
+        _id: client._id,
+        manager: { active: false, managerId: "" },
+      });
+      const gestorUser = await userService.findById(gestorId);
+      const gestorName = [gestorUser?.firstName, gestorUser?.lastName].filter(Boolean).join(" ") || "Tu gestor";
+      const clientName = [client.firstName, client.lastName].filter(Boolean).join(" ") || "Cliente";
+      try {
+        await userService.sendClientUnlinkedByGestorEmail({
+          to: client.email,
+          clientName,
+          gestorName,
+          reason: reasonStr,
+        });
+      } catch (emailErr) {
+        logger.error("Error al enviar email de desvinculación al cliente:", emailErr?.message);
+      }
+      return res.status(200).json({
+        status: "success",
+        msg: "Cliente desvinculado correctamente. Se ha enviado un email al cliente.",
+        payload: {},
+      });
+    } catch (error) {
+      logger.error("Error al desvincular cliente:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error?.message || "Error al desvincular cliente",
+        payload: {},
+      });
+    }
+  }
+
   // Asignar o desvincular gestor del usuario autenticado
   async updateMyManager(req, res) {
     try {
       const userId = req.user.userId;
-      const { managerId, jurisdiction: jurisdictionName } = req.body;
+      const { managerId, jurisdiction: jurisdictionName, reason } = req.body;
 
       if (managerId === undefined || managerId === null) {
         return res.status(400).json({
@@ -768,13 +846,47 @@ class UsersController {
       const newManagerId = String(managerId).trim();
 
       if (newManagerId === "") {
+        const reasonStr = typeof reason === "string" ? reason.trim() : "";
+        if (reasonStr.length === 0) {
+          return res.status(400).json({
+            status: "error",
+            msg: "Los motivos de desvinculación son obligatorios",
+            payload: {},
+          });
+        }
+        if (reasonStr.length > 250) {
+          return res.status(400).json({
+            status: "error",
+            msg: "Los motivos no pueden superar 250 caracteres",
+            payload: {},
+          });
+        }
+        const clientUser = await userService.findById(userId);
+        const currentManagerId = clientUser?.manager?.managerId ?? clientUser?.manager?._id ?? "";
         await userService.updateOne({
           _id: userId,
           manager: { active: false, managerId: "" },
         });
+        if (currentManagerId) {
+          const gestorUser = await userService.findById(currentManagerId);
+          if (gestorUser?.email) {
+            const clientName = [clientUser?.firstName, clientUser?.lastName].filter(Boolean).join(" ") || "Cliente";
+            const gestorName = [gestorUser.firstName, gestorUser.lastName].filter(Boolean).join(" ") || "Gestor";
+            try {
+              await userService.sendGestorUnlinkedByClientEmail({
+                to: gestorUser.email,
+                gestorName,
+                clientName,
+                reason: reasonStr,
+              });
+            } catch (emailErr) {
+              logger.error("Error al enviar email al gestor desvinculado:", emailErr?.message);
+            }
+          }
+        }
         return res.status(200).json({
           status: "success",
-          msg: "Gestor desvinculado correctamente",
+          msg: "Gestor desvinculado correctamente. Se ha enviado un email al gestor.",
           payload: {},
         });
       }

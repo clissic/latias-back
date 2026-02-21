@@ -13,6 +13,7 @@ usersRouter.post("/create", usersController.create);
 usersRouter.get("/profile", authenticateToken, usersController.getProfile);
 usersRouter.get("/gestors", authenticateToken, usersController.getGestors);
 usersRouter.get("/gestor/clients", authenticateToken, authorizeByCategory(["Gestor"]), usersController.getMyClients);
+usersRouter.post("/gestor/unlink-client", authenticateToken, authorizeByCategory(["Gestor"]), usersController.unlinkClientAsGestor);
 usersRouter.patch("/profile/manager", authenticateToken, usersController.updateMyManager);
 usersRouter.post("/logout", authenticateToken, usersController.logout);
 usersRouter.put("/update-password", authenticateToken, usersController.updatePassword);

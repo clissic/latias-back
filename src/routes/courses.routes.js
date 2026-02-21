@@ -52,6 +52,18 @@ coursesRouter.put("/user/:userId/course/:courseId/progress", authenticateToken, 
 // Actualizar progreso de una lección (marcar completada); valida ownership
 coursesRouter.put("/user/:userId/course/:courseId/module/:moduleId/lesson/:lessonId/progress", authenticateToken, validateUserOwnership(), coursesController.updateUserLessonProgress);
 
+// Iniciar intento de prueba parcial (descuenta intento al abrir)
+coursesRouter.post("/user/:userId/course/:courseId/module/:moduleId/test-start", authenticateToken, validateUserOwnership(), coursesController.startModuleTestAttempt);
+// Guardar puntaje de prueba parcial (al finalizar o cerrar)
+coursesRouter.put("/user/:userId/course/:courseId/module/:moduleId/test-result", authenticateToken, validateUserOwnership(), coursesController.updateModuleTestResult);
+
+// Prueba final del curso: iniciar intento y guardar puntaje
+coursesRouter.post("/user/:userId/course/:courseId/test-final-start", authenticateToken, validateUserOwnership(), coursesController.startFinalTestAttempt);
+coursesRouter.put("/user/:userId/course/:courseId/test-final-result", authenticateToken, validateUserOwnership(), coursesController.updateFinalTestResult);
+
+// Obtener certificado de curso del usuario (award)
+coursesRouter.get("/user/:userId/course/:courseId/certificate", authenticateToken, validateUserOwnership(), coursesController.getCourseCertificate);
+
 // Agregar intento de examen al curso del usuario (valida que el usuario solo agregue intentos a sus propios cursos, a menos que sea admin)
 coursesRouter.put("/user/:userId/course/:courseId/attempt", authenticateToken, validateUserOwnership(), coursesController.addUserCourseAttempt);
 

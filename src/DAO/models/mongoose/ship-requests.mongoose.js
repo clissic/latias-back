@@ -51,6 +51,16 @@ const schema = new Schema(
       default: null,
       trim: true,
     },
+    certificate: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    number: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     rejectionReason: {
       type: String,
       default: null,

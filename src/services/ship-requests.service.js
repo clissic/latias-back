@@ -13,7 +13,7 @@ function normalizeTypes(typeOrTypes) {
 
 class ShipRequestsService {
   async create(data) {
-    const { ship, owner, manager, type, types, notes } = data;
+    const { ship, owner, manager, type, types, notes, certificate, number } = data;
     const typeArray = normalizeTypes(types ?? type);
 
     if (!ship || !owner || !manager) {
@@ -43,6 +43,8 @@ class ShipRequestsService {
       type: typeArray,
       status: "Pendiente",
       notes: notes != null ? String(notes).trim() : null,
+      certificate: certificate != null ? String(certificate).trim() : null,
+      number: number != null ? String(number).trim() : null,
     });
 
     return request;
@@ -85,7 +87,7 @@ class ShipRequestsService {
     const request = await shipRequestsModel.findById(id);
     if (!request) throw new Error("Solicitud no encontrada");
 
-    const allowed = ["type", "types", "notes", "status"];
+    const allowed = ["type", "types", "notes", "status", "certificate", "number"];
     const filtered = {};
     for (const key of allowed) {
       if (updateData[key] !== undefined) filtered[key] = updateData[key];
@@ -106,6 +108,12 @@ class ShipRequestsService {
     }
     if ((filtered.status === "Completado" || filtered.status === "Rechazado") && !updateData.completedAt) {
       filtered.completedAt = new Date();
+    }
+    if (filtered.certificate !== undefined) {
+      filtered.certificate = filtered.certificate != null ? String(filtered.certificate).trim() : null;
+    }
+    if (filtered.number !== undefined) {
+      filtered.number = filtered.number != null ? String(filtered.number).trim() : null;
     }
 
     return shipRequestsModel.updateOne(id, filtered);

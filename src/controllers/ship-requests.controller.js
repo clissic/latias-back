@@ -94,17 +94,14 @@ class ShipRequestsController {
         });
       }
 
-      const certRef = `Certificado: ${certificate.certificateType || ""} Nº ${certificate.number || ""}`;
-      const notes = (userNotes && String(userNotes).trim())
-        ? `${String(userNotes).trim()} | ${certRef}`
-        : certRef;
-
       const request = await shipRequestsService.create({
         ship: shipId,
         owner: userId,
         manager: managerId,
         type: types,
-        notes,
+        notes: (userNotes && String(userNotes).trim()) ? String(userNotes).trim() : null,
+        certificate: certificate.certificateType != null ? String(certificate.certificateType).trim() : null,
+        number: certificate.number != null ? String(certificate.number).trim() : null,
       });
 
       const boat = await boatsModel.findById(shipId);
