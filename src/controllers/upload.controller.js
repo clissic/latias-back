@@ -113,7 +113,7 @@ class UploadController {
   }
 
   // Subir imagen de perfil de instructor
-  async uploadProfessorImage(req, res) {
+  async uploadInstructorImage(req, res) {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -124,7 +124,7 @@ class UploadController {
       }
 
       // La ruta relativa desde public
-      const imagePath = `/uploads/professors/${req.file.filename}`;
+      const imagePath = `/uploads/instructors/${req.file.filename}`;
 
       logger.info(`Imagen de instructor subida: ${imagePath}`);
 

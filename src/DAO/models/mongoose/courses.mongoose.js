@@ -19,13 +19,7 @@ const schema = new Schema({
     certificateUrl: { type: String, default: null },
     credentialNumber: { type: String, default: null }
   },
-  professor: [
-    {
-      firstName: { type: String },
-      lastName: { type: String },
-      profession: { type: String }
-    }
-  ],
+  instructor: { type: Schema.Types.ObjectId, ref: "Instructor", default: null },
   modules: [
     {
       moduleId: { type: String, required: true },

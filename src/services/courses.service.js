@@ -1,5 +1,6 @@
 import { coursesModel } from "../DAO/models/courses.model.js";
 import { usersModel } from "../DAO/models/users.model.js";
+import { instructorsModel } from "../DAO/models/instructors.model.js";
 import { CourseCertificateMongoose } from "../DAO/models/mongoose/course-certificates.mongoose.js";
 
 const PARTIAL_AVG_MIN = 60;
@@ -51,6 +52,10 @@ class CoursesService {
     return result;
   }
 
+  async setInstructor(courseIdOrMongoId, instructorId) {
+    return coursesModel.setInstructor(courseIdOrMongoId, instructorId);
+  }
+
 
   async updateCertificate({ _id, certificate }) {
     const courseUpdated = await coursesModel.updateCertificate({ _id, certificate });
@@ -76,18 +81,10 @@ class CoursesService {
         throw new Error("Usuario no encontrado");
       }
 
-      // Verificar que el usuario no haya comprado ya este curso
       const purchasedCourses = user.purchasedCourses || [];
-      const alreadyPurchased = purchasedCourses.some(purchasedCourse => 
-        purchasedCourse.courseId === course.courseId
-      );
+      const courseIndex = purchasedCourses.findIndex((pc) => pc.courseId === course.courseId);
+      const alreadyPurchased = courseIndex !== -1;
 
-      if (alreadyPurchased) {
-        throw new Error("El usuario ya ha comprado este curso");
-      }
-
-      // Solo guardamos courseId y estructura de módulos/lecciones con IDs + datos de progreso.
-      // Los datos del curso (nombre, banner, etc.) se obtienen luego por courseId al listar.
       const now = new Date();
       const courseToAdd = {
         courseId: course.courseId,
@@ -100,6 +97,7 @@ class CoursesService {
         certificate: null,
         finalTestAttempts: 0,
         finalTestLastScore: null,
+        lastAccessedAt: null,
         modules: (course.modules || []).map((mod) => ({
           moduleId: mod.moduleId,
           testAttempts: 0,
@@ -112,18 +110,27 @@ class CoursesService {
         }))
       };
 
-      const updatedPurchasedCourses = [...purchasedCourses, courseToAdd];
+      let updatedPurchasedCourses;
+      let message;
+      if (alreadyPurchased) {
+        updatedPurchasedCourses = [...purchasedCourses];
+        updatedPurchasedCourses[courseIndex] = courseToAdd;
+        message = "Curso habilitado nuevamente. Progreso reiniciado.";
+      } else {
+        updatedPurchasedCourses = [...purchasedCourses, courseToAdd];
+        message = "Curso comprado exitosamente";
+      }
 
-      const userUpdated = await usersModel.updateOne({
+      await usersModel.updateOne({
         _id: userId,
         purchasedCourses: updatedPurchasedCourses
       });
 
       return {
         success: true,
-        message: "Curso comprado exitosamente",
+        message,
         course: courseToAdd,
-        userUpdated
+        userUpdated: true
       };
     } catch (error) {
       throw error;
@@ -187,7 +194,7 @@ class CoursesService {
       price: course.price,
       difficulty: course.difficulty,
       category: course.category,
-      professor: course.professor,
+      instructor: course.instructor,
       modulesCompleted,
       purchasedDate: purchasedItem.purchasedDate,
       enrolledDate: purchasedItem.enrolledDate ?? purchasedItem.purchasedDate,
@@ -199,8 +206,23 @@ class CoursesService {
       certificate: purchasedItem.certificate ?? null,
       certificateIssuedAt,
       finalTestAttempts: purchasedItem.finalTestAttempts ?? 0,
-      finalTestLastScore: purchasedItem.finalTestLastScore ?? null
+      finalTestLastScore: purchasedItem.finalTestLastScore ?? null,
+      lastAccessedAt: purchasedItem.lastAccessedAt ?? null
     };
+  }
+
+  /**
+   * Registra que el usuario accedió al curso (para "Continúa donde quedaste").
+   * Actualiza lastAccessedAt del ítem en user.purchasedCourses.
+   */
+  async recordCourseAccess(userId, courseId) {
+    const user = await usersModel.findById(userId);
+    if (!user) return;
+    const purchasedCourses = user.purchasedCourses || [];
+    const index = purchasedCourses.findIndex((c) => c.courseId === courseId);
+    if (index === -1) return;
+    purchasedCourses[index].lastAccessedAt = new Date();
+    await usersModel.updateOne({ _id: userId }, { purchasedCourses });
   }
 
   // Función para obtener los cursos comprados de un usuario (enriquecidos con datos del curso por courseId)
@@ -300,7 +322,7 @@ class CoursesService {
       les.completed = !!completed;
       les.completedAt = completed ? new Date() : null;
 
-      // Recalcular progreso global del curso (lecciones completadas / total lecciones)
+      // Recalcular progreso global del curso (lecciones + prueba final)
       const courseDoc = await coursesModel.findByCourseId(courseId);
       const totalLessons = (courseDoc?.modules || []).reduce(
         (acc, m) => acc + (m.lessons || []).length,
@@ -312,7 +334,10 @@ class CoursesService {
           if (l.completed) completedCount++;
         }
       }
-      const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+      const finalTestDone = course.finalTestLastScore != null;
+      const totalItems = totalLessons + 1;
+      const completedItems = completedCount + (finalTestDone ? 1 : 0);
+      const progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
       course.progress = progress;
       if (progress >= 100) {
         course.isFinished = true;
@@ -475,6 +500,25 @@ class CoursesService {
       const scoreToUse = course.finalTestLastScore ?? null;
       const alreadyHasCertificate = course.certificate != null && course.certificate !== "";
 
+      // Recalcular progreso del curso incluyendo la prueba final
+      const totalLessons = (course.modules || []).reduce(
+        (acc, m) => acc + (m.lessons || []).length,
+        0
+      );
+      let completedLessons = 0;
+      for (const m of course.modules || []) {
+        for (const l of m.lessons || []) {
+          if (l.completed) completedLessons++;
+        }
+      }
+      const totalItems = totalLessons + 1;
+      const completedItems = completedLessons + (scoreToUse != null ? 1 : 0);
+      course.progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+      if (course.progress >= 100) {
+        course.isFinished = true;
+        course.finishedDate = new Date();
+      }
+
       if (
         scoreToUse != null &&
         !alreadyHasCertificate &&
@@ -495,7 +539,11 @@ class CoursesService {
 
           if (avgPartial >= PARTIAL_AVG_MIN && scoreToUse >= FINAL_TEST_MIN) {
             const finalResult = Math.round((scoreToUse * 0.6 + avgPartial * 0.4) * 10) / 10;
-            const prof = courseDoc.professor && courseDoc.professor[0] ? courseDoc.professor[0] : {};
+            let prof = {};
+            if (courseDoc.instructor) {
+              const instructorDoc = await instructorsModel.findById(courseDoc.instructor);
+              if (instructorDoc) prof = { firstName: instructorDoc.firstName, lastName: instructorDoc.lastName, profession: instructorDoc.profession };
+            }
             const instructor = [prof.firstName, prof.lastName].filter(Boolean).join(" ").trim() || "Instructor";
             const userName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || "Usuario";
 
@@ -505,6 +553,7 @@ class CoursesService {
               profession: prof.profession || "",
               duration: courseDoc.duration ?? null,
               userName,
+              userCi: (user.ci ?? "").toString().trim(),
               resultsModules,
               resultFinalTest: scoreToUse,
               finalResult,
@@ -516,6 +565,7 @@ class CoursesService {
               _id: userId,
               purchasedCourses: purchasedCourses,
             });
+            await usersModel.incrementCertificatesQuantity(userId);
             return {
               success: true,
               message: "Resultado de prueba final actualizado. Certificado emitido.",
@@ -577,6 +627,12 @@ class CoursesService {
    * Obtiene el certificado (award) de curso del usuario para un curso dado.
    * Solo devuelve el certificado si el usuario tiene course.certificate guardado para ese curso.
    */
+  /** Lista todos los certificados de curso (solo administrador). */
+  async getAllCourseCertificates() {
+    const list = await CourseCertificateMongoose.find().sort({ issuedAt: -1 }).lean();
+    return list;
+  }
+
   async getCourseCertificate(userId, courseId) {
     const user = await usersModel.findById(userId);
     if (!user) throw new Error("Usuario no encontrado");

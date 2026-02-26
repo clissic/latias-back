@@ -6,7 +6,6 @@ class SessionDTO {
         this.lastName = session.user.last_name;
         this.birth = session.user.birth;
         this.phone = session.user.phone;
-        this.rank = session.user.rank;
         this.status = session.user.role;
         this.ci = session.user.ci;
         this.address = session.user.address;

@@ -92,49 +92,49 @@ export const uploadMultiple = upload.fields([
 ]);
 
 // Configuración para imágenes de instructores
-const professorsUploadsDir = join(__dirname, '../public/uploads/professors');
-  logger.info(`[Upload Middleware] Ruta del directorio de instructores: ${professorsUploadsDir}`);
+const instructorsUploadsDir = join(__dirname, '../public/uploads/instructors');
+logger.info(`[Upload Middleware] Ruta del directorio de instructores: ${instructorsUploadsDir}`);
 
-if (!existsSync(professorsUploadsDir)) {
+if (!existsSync(instructorsUploadsDir)) {
   try {
-    mkdirSync(professorsUploadsDir, { recursive: true });
-    logger.info(`[Upload Middleware] Directorio de uploads de instructores creado: ${professorsUploadsDir}`);
+    mkdirSync(instructorsUploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads de instructores creado: ${instructorsUploadsDir}`);
   } catch (error) {
     logger.error(`[Upload Middleware] Error al crear directorio de instructores: ${error.message}`);
     throw error;
   }
 } else {
-  logger.info(`[Upload Middleware] Directorio de uploads de instructores existe: ${professorsUploadsDir}`);
+  logger.info(`[Upload Middleware] Directorio de uploads de instructores existe: ${instructorsUploadsDir}`);
 }
 
-const professorStorage = multer.diskStorage({
+const instructorStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     logger.info(`[Multer Instructor] destination llamado para archivo: ${file.originalname}`);
-    logger.info(`[Multer Instructor] Guardando en: ${professorsUploadsDir}`);
-    
-    if (!existsSync(professorsUploadsDir)) {
+    logger.info(`[Multer Instructor] Guardando en: ${instructorsUploadsDir}`);
+
+    if (!existsSync(instructorsUploadsDir)) {
       try {
-        mkdirSync(professorsUploadsDir, { recursive: true });
-        logger.info(`[Multer Professor] Directorio creado en destination: ${professorsUploadsDir}`);
+        mkdirSync(instructorsUploadsDir, { recursive: true });
+        logger.info(`[Multer Instructor] Directorio creado en destination: ${instructorsUploadsDir}`);
       } catch (error) {
         logger.error(`[Multer Instructor] Error al crear directorio en destination: ${error.message}`);
         return cb(error);
       }
     }
-    
-    cb(null, professorsUploadsDir);
+
+    cb(null, instructorsUploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = file.originalname.split('.').pop();
     const filename = `instructor-${uniqueSuffix}.${ext}`;
-    logger.info(`[Multer Professor] Generando nombre de archivo: ${filename}`);
+    logger.info(`[Multer Instructor] Generando nombre de archivo: ${filename}`);
     cb(null, filename);
   }
 });
 
-export const uploadProfessor = multer({
-  storage: professorStorage,
+export const uploadInstructor = multer({
+  storage: instructorStorage,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB máximo
   },
@@ -142,7 +142,7 @@ export const uploadProfessor = multer({
 });
 
 // Middleware para subir imagen de instructor
-export const uploadProfessorImage = uploadProfessor.single('profileImage');
+export const uploadInstructorImage = uploadInstructor.single('profileImage');
 
 // Configuración para imágenes de eventos
 const eventsUploadsDir = join(__dirname, '../public/uploads/events');

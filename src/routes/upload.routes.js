@@ -1,7 +1,7 @@
 import express from "express";
 import { uploadController } from "../controllers/upload.controller.js";
 import { authenticateToken, authorizeByCategory } from "../middleware/auth.middleware.js";
-import { uploadSingle, uploadMultiple, uploadProfessorImage, uploadEventImage, uploadBoatImage, uploadCertificatePDF } from "../middleware/upload.middleware.js";
+import { uploadSingle, uploadMultiple, uploadInstructorImage, uploadEventImage, uploadBoatImage, uploadCertificatePDF } from "../middleware/upload.middleware.js";
 import { logger } from "../utils/logger.js";
 
 export const uploadRouter = express.Router();
@@ -38,11 +38,11 @@ uploadRouter.post(
 
 // Subir imagen de perfil de instructor
 uploadRouter.post(
-  "/professor-image",
+  "/instructor-image",
   authenticateToken,
   authorizeByCategory(['Administrador']),
   (req, res, next) => {
-    uploadProfessorImage(req, res, (err) => {
+    uploadInstructorImage(req, res, (err) => {
       if (err) {
         logger.error('Error en middleware de upload de instructor:', err);
         return res.status(400).json({
@@ -54,7 +54,7 @@ uploadRouter.post(
       next();
     });
   },
-  uploadController.uploadProfessorImage
+  uploadController.uploadInstructorImage
 );
 
 // Subir imagen de evento

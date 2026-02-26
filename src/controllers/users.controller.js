@@ -181,7 +181,6 @@ class UsersController {
         statistics,
         settings,
         preferences,
-        rank,
         category,
         purchasedCourses,
         finishedCourses,
@@ -230,7 +229,6 @@ class UsersController {
             statistics,
             settings,
             preferences,
-            rank,
             ...(categoryNormalized !== undefined && { category: categoryNormalized }),
             purchasedCourses,
             finishedCourses,
@@ -412,20 +410,16 @@ class UsersController {
       const userFound = await userService.updateOne(updatedUser);
       if (userFound) {
         logger.info(
-          `Usuario ${updatedUser.rank} ${updatedUser.firstName} ${
-            updatedUser.lastName
-          } actualizado con éxito por ${user.rank} ${user.firstName} ${
-            user.lastName
-          }: ${JSON.stringify(updatedUser)}`
+          `Usuario ${updatedUser.firstName} ${updatedUser.lastName} actualizado con éxito por ${user.firstName} ${user.lastName}: ${JSON.stringify(updatedUser)}`
         );
         res
           .status(200)
           .render("success", {
-            msg: `Usuario ${updatedUser.rank} ${updatedUser.firstName} ${updatedUser.lastName} actualizado con éxito.`,
+            msg: `Usuario ${updatedUser.firstName} ${updatedUser.lastName} actualizado con éxito.`,
           });
       } else {
         logger.info(
-          `No se encontró el usuario con el ID: ${id} por ${user.rank} ${user.firstName} ${user.lastName}.`
+          `No se encontró el usuario con el ID: ${id} por ${user.firstName} ${user.lastName}.`
         );
         res
           .status(200)
@@ -435,7 +429,7 @@ class UsersController {
       }
     } catch (error) {
       logger.error(
-        `Error de servidor al actualizar usuario con ID: ${id} por ${user.rank} ${user.firstName} ${user.lastName}:`,
+        `Error de servidor al actualizar usuario con ID: ${id} por ${user.firstName} ${user.lastName}:`,
         error
       );
       res
@@ -455,8 +449,8 @@ class UsersController {
       if ( userFound ) {
         const userDeleted = await userService.deleteOne({_id: id});
         if (userDeleted) {
-          logger.info(`Usuario ${userFound.rank} ${userFound.firstName} ${userFound.lastName} eliminado con éxito por ${user.rank} ${user.firstName} ${user.lastName} (${user.email}).` );
-          res.status(200).render("success", { msg: `Usuario ${userFound.rank} ${userFound.firstName} ${userFound.lastName} eliminado con éxito.`})
+          logger.info(`Usuario ${userFound.firstName} ${userFound.lastName} eliminado con éxito por ${user.firstName} ${user.lastName} (${user.email}).` );
+          res.status(200).render("success", { msg: `Usuario ${userFound.firstName} ${userFound.lastName} eliminado con éxito.`})
         } else {
           logger.info(`No se encontró el usuario con ID: ${id} en la base de datos.`);
           res.status(200).render("errorPage", { msg: `El usuario con ID: ${id} no pudo ser eliminado por no encontrarse en la base de datos.`})
@@ -538,7 +532,6 @@ class UsersController {
             lastName: user.lastName,
             email: user.email,
             category: user.category,
-            rank: user.rank,
             avatar: user.avatar,
             phone: user.phone,
             birth: user.birth,
@@ -673,7 +666,6 @@ class UsersController {
             lastName: user.lastName,
             email: user.email,
             category: user.category,
-            rank: user.rank,
             avatar: user.avatar,
             phone: user.phone,
             birth: user.birth,

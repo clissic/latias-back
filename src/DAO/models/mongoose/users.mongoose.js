@@ -14,10 +14,6 @@ const schema = new Schema({
     enum: ["Cadete", "Instructor", "Administrador", "Gestor", "checkin"],
     default: ["Cadete"],
   },
-  rank: {
-    title: { type: String, default: "Grumete" },
-    description: { type: String, default: "Recién embarcado en la travesía del aprendizaje, aprendiendo lo básico." },
-  },
   address: {
     street: { type: String, max: 100, default: "No definido" },
     city: { type: String, max: 100, default: "No definido" },

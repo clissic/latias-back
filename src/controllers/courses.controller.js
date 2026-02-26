@@ -1,7 +1,32 @@
 import { coursesService } from "../services/courses.service.js";
-import { professorsService } from "../services/professors.service.js";
+import { instructorsService } from "../services/instructors.service.js";
 import { logger } from "../utils/logger.js";
 import { transport } from "../utils/nodemailer.js";
+
+/** Solo persiste campos del modelo de curso (sin progreso). El progreso va en el objeto del usuario. */
+function sanitizeCourseModules(modules) {
+  if (!Array.isArray(modules)) return [];
+  return modules.map((mod) => ({
+    moduleId: mod.moduleId,
+    moduleName: mod.moduleName || "",
+    moduleDescription: mod.moduleDescription || "",
+    lessons: (mod.lessons || []).map((lesson) => ({
+      lessonId: lesson.lessonId,
+      lessonName: lesson.lessonName || "",
+      lessonDescription: lesson.lessonDescription || "",
+      videoUrl: lesson.videoUrl || "",
+    })),
+    questionBank: (mod.questionBank || []).map((q) => ({
+      questionId: q.questionId,
+      questionText: q.questionText || "",
+      options: (q.options || []).map((opt) => ({
+        optionId: opt.optionId,
+        optionText: opt.optionText || "",
+        isCorrect: !!opt.isCorrect,
+      })),
+    })),
+  }));
+}
 
 class CoursesController {
   // ========== FUNCIONES PARA ADMINISTRADORES ==========
@@ -53,16 +78,20 @@ class CoursesController {
     }
   }
 
-  // Obtener curso por courseId (para administradores)
+  // Obtener curso por courseId (público)
   async findByCourseId(req, res) {
     try {
       const { courseId } = req.params;
       const course = await coursesService.findByCourseId(courseId);
       if (course) {
+        const payload = course.toObject ? course.toObject() : { ...course };
+        if (payload.instructor && typeof payload.instructor !== "string") {
+          payload.instructor = payload.instructor._id ? String(payload.instructor._id) : String(payload.instructor);
+        }
         return res.status(200).json({
           status: "success",
           message: "Curso encontrado por courseId",
-          payload: course,
+          payload,
         });
       } else {
         return res.status(404).json({
@@ -75,7 +104,7 @@ class CoursesController {
       logger.info(error);
       return res.status(500).json({
         status: "error",
-        msg: "Error interno del servidor",
+        msg: error.message || "Error interno del servidor",
         payload: {},
       });
     }
@@ -126,7 +155,7 @@ class CoursesController {
         price,
         difficulty,
         category,
-        professor,
+        instructor: instructorId,
         modules,
         selectedInstructorId,
       } = req.body;
@@ -154,22 +183,22 @@ class CoursesController {
         price,
         difficulty,
         category,
-        professor,
-        modules,
+        instructor: instructorId || undefined,
+        modules: sanitizeCourseModules(modules || []),
       });
 
-      // Si se proporcionó un instructor, agregar el courseId del curso a su array courses
-      if (selectedInstructorId && courseCreated && courseCreated.courseId) {
+      const instructorIdToLink = instructorId || selectedInstructorId;
+      if (instructorIdToLink && courseCreated && courseCreated.courseId) {
         try {
-          const instructor = await professorsService.findById(selectedInstructorId);
+          const instructor = await instructorsService.findById(instructorIdToLink);
           if (instructor) {
             const courses = instructor.courses || [];
             const courseIdToAdd = String(courseCreated.courseId);
             // Solo agregar si no está ya en el array
             if (!courses.includes(courseIdToAdd)) {
               courses.push(courseIdToAdd);
-              await professorsService.updateOne({
-                _id: selectedInstructorId,
+              await instructorsService.updateOne({
+                _id: instructorIdToLink,
                 firstName: instructor.firstName,
                 lastName: instructor.lastName,
                 ci: instructor.ci,
@@ -222,12 +251,15 @@ class CoursesController {
         });
       }
 
-      const { selectedInstructorId, ...courseDataToUpdate } = courseData;
+      const { selectedInstructorId, instructor: instructorIdFromBody, ...restCourseData } = courseData;
+      const courseDataToUpdate = { ...restCourseData, instructor: instructorIdFromBody ?? selectedInstructorId };
       courseDataToUpdate._id = course._id;
       const courseIdToUse = String(course.courseId);
-      
+      if (Array.isArray(courseDataToUpdate.modules)) {
+        courseDataToUpdate.modules = sanitizeCourseModules(courseDataToUpdate.modules);
+      }
+
       // Guardar datos del curso antes de actualizar para comparación
-      // Convertir a objeto plano (JSON) para asegurar que todos los campos estén disponibles
       const coursePlain = course.toObject ? course.toObject() : JSON.parse(JSON.stringify(course));
       const courseBeforeUpdate = {
         sku: coursePlain.sku || "",
@@ -244,10 +276,14 @@ class CoursesController {
         shortImage: coursePlain.shortImage || "",
         modules: coursePlain.modules || [],
       };
-      
-      // Buscar el instructor anterior que tenía este curso asignado
-      const previousInstructors = await professorsService.findByCourseId(courseIdToUse);
-      
+
+      const previousInstructorId = course.instructor || coursePlain.instructor;
+      let previousInstructors = [];
+      if (previousInstructorId) {
+        const prev = await instructorsService.findById(previousInstructorId);
+        if (prev) previousInstructors = [prev];
+      }
+
       const courseUpdated = await coursesService.updateOne(courseDataToUpdate);
       
       // Obtener el curso actualizado para comparación
@@ -273,17 +309,16 @@ class CoursesController {
         modules: updatedCoursePlain.modules || [],
       };
 
-      // Si se proporcionó un instructor, actualizar su array courses
-      if (selectedInstructorId && course.courseId) {
+      const newInstructorId = courseDataToUpdate.instructor ?? selectedInstructorId;
+      if (newInstructorId && course.courseId) {
         try {
-          const newInstructor = await professorsService.findById(selectedInstructorId);
+          const newInstructor = await instructorsService.findById(newInstructorId);
           if (newInstructor) {
             const courses = newInstructor.courses || [];
-            // Solo agregar si no está ya en el array
             if (!courses.includes(courseIdToUse)) {
               courses.push(courseIdToUse);
-              await professorsService.updateOne({
-                _id: selectedInstructorId,
+              await instructorsService.updateOne({
+                _id: newInstructorId,
                 firstName: newInstructor.firstName,
                 lastName: newInstructor.lastName,
                 ci: newInstructor.ci,
@@ -305,14 +340,12 @@ class CoursesController {
         }
       }
 
-      // Remover el curso de los instructores anteriores si el instructor cambió
       if (previousInstructors && previousInstructors.length > 0) {
         for (const prevInstructor of previousInstructors) {
-          // Si el instructor anterior es diferente al nuevo, remover el curso
-          if (String(prevInstructor._id) !== String(selectedInstructorId)) {
+          if (String(prevInstructor._id) !== String(newInstructorId)) {
             try {
               const updatedCourses = (prevInstructor.courses || []).filter(id => String(id) !== courseIdToUse);
-              await professorsService.updateOne({
+              await instructorsService.updateOne({
                 _id: prevInstructor._id,
                 firstName: prevInstructor.firstName,
                 lastName: prevInstructor.lastName,
@@ -340,20 +373,12 @@ class CoursesController {
           // Determinar qué instructor notificar
           let instructorToNotify = null;
           
-          // Prioridad 1: Si se proporcionó un instructor nuevo en la actualización, notificar al nuevo
-          if (selectedInstructorId) {
-            instructorToNotify = await professorsService.findById(selectedInstructorId);
-          } 
-          // Prioridad 2: Si no se cambió el instructor, notificar al instructor que ya tenía el curso asignado
-          else if (previousInstructors && previousInstructors.length > 0) {
+          if (newInstructorId) {
+            instructorToNotify = await instructorsService.findById(newInstructorId);
+          } else if (previousInstructors && previousInstructors.length > 0) {
             instructorToNotify = previousInstructors[0];
-          }
-          // Prioridad 3: Buscar instructores que tengan este curso asignado después de la actualización
-          else {
-            const instructorsWithCourse = await professorsService.findByCourseId(courseIdToUse);
-            if (instructorsWithCourse && instructorsWithCourse.length > 0) {
-              instructorToNotify = instructorsWithCourse[0];
-            }
+          } else if (updatedCourse?.instructor) {
+            instructorToNotify = await instructorsService.findById(updatedCourse.instructor);
           }
           
           // Si hay un instructor asignado, enviar email
@@ -634,6 +659,26 @@ class CoursesController {
     }
   }
 
+  // Registrar acceso al curso (actualiza lastAccessedAt para "Continúa donde quedaste")
+  async recordCourseAccess(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      await coursesService.recordCourseAccess(userId, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Acceso registrado",
+        payload: {},
+      });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({
+        status: "error",
+        msg: error.message,
+        payload: {},
+      });
+    }
+  }
+
   // Actualizar progreso del curso del usuario (porcentaje 0-100)
   async updateUserCourseProgress(req, res) {
     try {
@@ -757,6 +802,17 @@ class CoursesController {
       const { userId, courseId } = req.params;
       await coursesService.startFinalTestAttempt(userId, courseId);
       return res.status(200).json({ status: "success", msg: "Intento de prueba final iniciado", payload: {} });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({ status: "error", msg: error.message, payload: {} });
+    }
+  }
+
+  // Listar todos los certificados de curso (solo Administrador)
+  async getAllCourseCertificates(req, res) {
+    try {
+      const list = await coursesService.getAllCourseCertificates();
+      return res.status(200).json({ status: "success", msg: "Certificados de curso", payload: list });
     } catch (error) {
       logger.info(error);
       return res.status(400).json({ status: "error", msg: error.message, payload: {} });

@@ -31,6 +31,11 @@ const schema = new Schema(
       required: true,
       trim: true,
     },
+    userCi: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     resultsModules: {
       type: [
         {

@@ -38,6 +38,9 @@ coursesRouter.delete("/delete/:courseId", authenticateToken, authorizeByCategory
 // Actualizar certificado
 coursesRouter.put("/certificate/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
 
+// Listar todos los certificados de curso (course_certificates)
+coursesRouter.get("/admin/certificates", authenticateToken, authorizeByCategory(['Administrador']), coursesController.getAllCourseCertificates);
+
 // ========== RUTAS PROTEGIDAS PARA USUARIOS ==========
 
 // Comprar curso (valida que el usuario solo compre para sí mismo, a menos que sea admin)
@@ -45,6 +48,9 @@ coursesRouter.post("/purchase/:userId", authenticateToken, validateUserOwnership
 
 // Obtener cursos comprados del usuario (valida que el usuario solo vea sus propios cursos, a menos que sea admin)
 coursesRouter.get("/user/:userId/purchased", authenticateToken, validateUserOwnership(), coursesController.getUserPurchasedCourses);
+
+// Registrar acceso al curso (actualiza lastAccessedAt; valida ownership)
+coursesRouter.put("/user/:userId/course/:courseId/access", authenticateToken, validateUserOwnership(), coursesController.recordCourseAccess);
 
 // Actualizar progreso del curso del usuario (valida que el usuario solo actualice su propio progreso, a menos que sea admin)
 coursesRouter.put("/user/:userId/course/:courseId/progress", authenticateToken, validateUserOwnership(), coursesController.updateUserCourseProgress);

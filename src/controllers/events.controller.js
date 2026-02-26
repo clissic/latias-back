@@ -155,10 +155,14 @@ class EventsController {
   // Actualizar evento (para administradores)
   async updateOne(req, res) {
     try {
-      const { eventId } = req.params;
+      const { eventId: eventIdParam } = req.params;
       const updateData = req.body;
 
-      const event = await eventsService.findByEventId(eventId);
+      // Aceptar tanto eventId (EVT-xxx) como _id (MongoDB ObjectId) en la URL
+      let event = await eventsService.findByEventId(eventIdParam);
+      if (!event && eventIdParam && /^[a-fA-F0-9]{24}$/.test(eventIdParam)) {
+        event = await eventsService.findById(eventIdParam);
+      }
       if (!event) {
         return res.status(404).json({
           status: "error",
@@ -182,25 +186,23 @@ class EventsController {
         }
       }
 
-      const eventUpdated = await eventsService.updateOne({
+      const updatedEvent = await eventsService.updateOne({
         _id: event._id,
         ...updateData,
       });
 
-      if (eventUpdated.matchedCount > 0) {
-        const updatedEvent = await eventsService.findById(event._id);
+      if (updatedEvent) {
         return res.status(200).json({
           status: "success",
           msg: "Evento actualizado exitosamente",
           payload: updatedEvent,
         });
-      } else {
-        return res.status(404).json({
-          status: "error",
-          msg: "Evento no encontrado",
-          payload: {},
-        });
       }
+      return res.status(404).json({
+        status: "error",
+        msg: "Evento no encontrado",
+        payload: {},
+      });
     } catch (e) {
       logger.error(e?.message || e || "Error desconocido");
       return res.status(500).json({

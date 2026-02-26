@@ -20,7 +20,7 @@ class CoursesModel {
         difficulty: true,
         category: true,
         certificate: true,
-        professor: true,
+        instructor: true,
         modules: true,
       }
     );
@@ -51,7 +51,7 @@ class CoursesModel {
         difficulty: true,
         category: true,
         certificate: true,
-        professor: true,
+        instructor: true,
         modules: true,
       }
     );
@@ -77,7 +77,7 @@ class CoursesModel {
         difficulty: true,
         category: true,
         certificate: true,
-        professor: true,
+        instructor: true,
         modules: true,
       }
     );
@@ -98,7 +98,7 @@ class CoursesModel {
     price,
     difficulty,
     category,
-    professor,
+    instructor,
     modules,
   }) {
     const courseCreated = await CoursesMongoose.create({
@@ -115,7 +115,7 @@ class CoursesModel {
       price,
       difficulty,
       category,
-      professor,
+      instructor: instructor || undefined,
       modules,
     });
     return courseCreated;
@@ -137,32 +137,28 @@ class CoursesModel {
     difficulty,
     category,
     certificate,
-    professor,
+    instructor,
     modules,
   }) {
-    const courseUpdated = await CoursesMongoose.updateOne(
-      {
-        _id: _id,
-      },
-      {
-        courseId,
-        sku,
-        courseName,
-        bannerUrl,
-        image,
-        shortImage,
-        currency,
-        shortDescription,
-        longDescription,
-        duration,
-        price,
-        difficulty,
-        category,
-        certificate,
-        professor,
-        modules,
-      }
-    );
+    const updateFields = {
+      courseId,
+      sku,
+      courseName,
+      bannerUrl,
+      image,
+      shortImage,
+      currency,
+      shortDescription,
+      longDescription,
+      duration,
+      price,
+      difficulty,
+      category,
+      certificate,
+      modules,
+    };
+    if (instructor !== undefined) updateFields.instructor = instructor || null;
+    const courseUpdated = await CoursesMongoose.updateOne({ _id }, { $set: updateFields });
     return courseUpdated;
   }
 
@@ -171,6 +167,22 @@ class CoursesModel {
     return result;
   }
 
+  /**
+   * Asigna o quita el instructor de un curso. courseIdOrMongoId puede ser el _id del curso o su courseId.
+   */
+  async setInstructor(courseIdOrMongoId, instructorId) {
+    if (!courseIdOrMongoId || typeof courseIdOrMongoId !== "string") return { matchedCount: 0 };
+    const idStr = String(courseIdOrMongoId).trim();
+    const isMongoId = /^[a-fA-F0-9]{24}$/.test(idStr);
+    const course = isMongoId
+      ? await CoursesMongoose.findById(idStr).select("_id").lean()
+      : await CoursesMongoose.findOne({ courseId: idStr }).select("_id").lean();
+    if (!course) return { matchedCount: 0 };
+    return CoursesMongoose.updateOne(
+      { _id: course._id },
+      { $set: { instructor: instructorId ?? null } }
+    );
+  }
 
   async updateCertificate({ _id, certificate }) {
     const courseUpdated = await CoursesMongoose.updateOne(
@@ -203,7 +215,7 @@ class CoursesModel {
         difficulty: true,
         category: true,
         certificate: true,
-        professor: true,
+        instructor: true,
         modules: true,
       }
     );
@@ -229,7 +241,7 @@ class CoursesModel {
         difficulty: true,
         category: true,
         certificate: true,
-        professor: true,
+        instructor: true,
         modules: true,
       }
     );

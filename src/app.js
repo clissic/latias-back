@@ -12,7 +12,7 @@ import { tokensRouter } from "./routes/tokens.routes.js";
 import { coursesRouter } from "./routes/courses.routes.js";
 import { mercadoPagoRouter } from "./routes/mercadopago.routes.js";
 import { uploadRouter } from "./routes/upload.routes.js";
-import { professorsRouter } from "./routes/professors.routes.js";
+import { instructorsRouter } from "./routes/instructors.routes.js";
 import { eventsRouter } from "./routes/events.routes.js";
 import { contactRouter } from "./routes/contact.routes.js";
 import { boatsRouter } from "./routes/boats.routes.js";
@@ -52,12 +52,12 @@ if (!existsSync(uploadsDir)) {
 }
 
 // Asegurar que el directorio de uploads de instructores existe
-const professorsUploadsDir = join(__dirname, "../public/uploads/professors");
-if (!existsSync(professorsUploadsDir)) {
-  mkdirSync(professorsUploadsDir, { recursive: true });
-  console.log(`Directorio de uploads de instructores creado: ${professorsUploadsDir}`);
+const instructorsUploadsDir = join(__dirname, "../public/uploads/instructors");
+if (!existsSync(instructorsUploadsDir)) {
+  mkdirSync(instructorsUploadsDir, { recursive: true });
+  console.log(`Directorio de uploads de instructores creado: ${instructorsUploadsDir}`);
 } else {
-  console.log(`Directorio de uploads de instructores ya existe: ${professorsUploadsDir}`);
+  console.log(`Directorio de uploads de instructores ya existe: ${instructorsUploadsDir}`);
 }
 
 // Asegurar que el directorio de uploads de barcos existe
@@ -85,18 +85,16 @@ app.use("/api/tokens", tokensRouter);
 app.use("/api/courses", coursesRouter);
 app.use("/api/mercadopago", mercadoPagoRouter);
 app.use("/api/upload", uploadRouter);
-app.use("/api/professors", professorsRouter);
+app.use("/api/instructors", instructorsRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/contact", contactRouter);
 app.use("/api/boats", boatsRouter);
 app.use("/api/certificates", certificatesRouter);
 app.use("/api/ship-requests", shipRequestsRouter);
 
-// Servir archivos estáticos desde public/uploads (para imágenes subidas)
-// Esto debe ir después de las rutas de API pero antes del catch-all de React
-app.use("/uploads", serveStatic(join(__dirname, "../public/uploads"), {
+// Opciones para servir uploads con MIME correcto
+const uploadsStaticOptions = {
   setHeaders: (res, path) => {
-    // Asegurar que las imágenes se sirvan con el tipo MIME correcto
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
       res.setHeader('Content-Type', 'image/jpeg');
     } else if (path.endsWith('.png')) {
@@ -107,7 +105,15 @@ app.use("/uploads", serveStatic(join(__dirname, "../public/uploads"), {
       res.setHeader('Content-Type', 'image/webp');
     }
   }
-}));
+};
+
+const uploadsPath = join(__dirname, "../public/uploads");
+
+// Servir uploads en /uploads (p. ej. backend directo)
+app.use("/uploads", serveStatic(uploadsPath, uploadsStaticOptions));
+
+// Servir uploads en /api/uploads (frontend en dev usa /api + path y el proxy envía a backend)
+app.use("/api/uploads", serveStatic(uploadsPath, uploadsStaticOptions));
 
 // Servir otros archivos estáticos desde public
 app.use(serveStatic(join(__dirname, "../public")));

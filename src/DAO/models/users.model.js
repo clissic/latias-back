@@ -18,7 +18,6 @@ class UsersModel {
         statistics: true,
         settings: true,
         preferences: true,
-        rank: true,
         category: true,
         purchasedCourses: true,
         finishedCourses: true,
@@ -46,7 +45,6 @@ class UsersModel {
         statistics: true,
         settings: true,
         preferences: true,
-        rank: true,
         category: true,
         purchasedCourses: true,
         finishedCourses: true,
@@ -75,7 +73,6 @@ class UsersModel {
         statistics: true,
         settings: true,
         preferences: true,
-        rank: true,
         category: true,
         purchasedCourses: true,
         finishedCourses: true,
@@ -108,7 +105,6 @@ class UsersModel {
         statistics: true,
         settings: true,
         preferences: true,
-        rank: true,
         category: true,
         purchasedCourses: true,
         finishedCourses: true,
@@ -152,7 +148,6 @@ class UsersModel {
         statistics: true,
         settings: true,
         preferences: true,
-        rank: true,
         category: true,
         purchasedCourses: true,
         finishedCourses: true,
@@ -194,6 +189,15 @@ class UsersModel {
 
   async deleteOne(_id) {
     const result = await UserMongoose.deleteOne({ _id: _id });
+    return result;
+  }
+
+  /** Incrementa statistics.certificatesQuantity en 1 (al emitir un certificado de curso). */
+  async incrementCertificatesQuantity(userId) {
+    const result = await UserMongoose.updateOne(
+      { _id: userId },
+      { $inc: { "statistics.certificatesQuantity": 1 } }
+    );
     return result;
   }
 
