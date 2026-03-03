@@ -201,6 +201,19 @@ class UsersModel {
     return result;
   }
 
+  /** Incrementa statistics.timeConnected en la cantidad de minutos indicada. */
+  async incrementTimeConnected(userId, minutes) {
+    const incMinutes = Number(minutes);
+    if (!Number.isFinite(incMinutes) || incMinutes <= 0) {
+      return null;
+    }
+    const result = await UserMongoose.updateOne(
+      { _id: userId },
+      { $inc: { "statistics.timeConnected": incMinutes } }
+    );
+    return result;
+  }
+
   async updatePassword({email, password}) {
     const userUpdated = await UserMongoose.updateOne(
       { email: email },

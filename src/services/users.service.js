@@ -64,6 +64,14 @@ class UserService {
         throw new Error("Failed to update user by ID");
       }
     }
+
+    async addConnectedTime(userId, minutes) {
+      try {
+        return await usersModel.incrementTimeConnected(userId, minutes);
+      } catch (error) {
+        throw new Error("Failed to update connected time");
+      }
+    }
   
     async deleteOne({ _id }) {
       try {

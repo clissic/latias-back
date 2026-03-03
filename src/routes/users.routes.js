@@ -17,6 +17,7 @@ usersRouter.post("/gestor/unlink-client", authenticateToken, authorizeByCategory
 usersRouter.patch("/profile/manager", authenticateToken, usersController.updateMyManager);
 usersRouter.post("/logout", authenticateToken, usersController.logout);
 usersRouter.put("/update-password", authenticateToken, usersController.updatePassword);
+usersRouter.post("/statistics/time-connected", authenticateToken, usersController.addConnectedTime);
 
 // Actualizar datos propios (cualquier usuario autenticado solo puede actualizar su propio perfil; Admin puede actualizar cualquiera)
 usersRouter.put("/update", authenticateToken, validateUserOwnership({ userIdParam: "_id" }), usersController.updateOne);

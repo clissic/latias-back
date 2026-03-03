@@ -24,6 +24,38 @@ class UsersController {
     }
   }
 
+  // Incrementar tiempo conectado (en minutos) para el usuario autenticado
+  async addConnectedTime(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { minutes } = req.body;
+      const incMinutes = Number(minutes);
+
+      if (!Number.isFinite(incMinutes) || incMinutes <= 0) {
+        return res.status(400).json({
+          status: "error",
+          msg: "minutes debe ser un número positivo",
+          payload: {},
+        });
+      }
+
+      await userService.addConnectedTime(userId, incMinutes);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Tiempo conectado actualizado",
+        payload: {},
+      });
+    } catch (error) {
+      logger.error("Error al actualizar tiempo conectado:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
   async findById(req, res) {
     try {
       const { id } = req.params;
