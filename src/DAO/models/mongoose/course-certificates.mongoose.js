@@ -65,4 +65,4 @@ const schema = new Schema(
 schema.index({ userName: 1 });
 schema.index({ issuedAt: -1 });
 
-export const CourseCertificateMongoose = model("course_certificates", schema);
+export const CourseCertificateMongoose = model("course-certificates", schema);

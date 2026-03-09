@@ -17,6 +17,9 @@ mercadoPagoRouter.get("/payment-methods", mercadoPagoController.getPaymentMethod
 // Crear preferencia de pago (valida que el usuario solo cree preferencias para sí mismo, a menos que sea admin)
 mercadoPagoRouter.post("/create-preference", authenticateToken, validateUserOwnership(), mercadoPagoController.createPreference);
 
+// Crear preferencia de pago para plan premium (gestoría)
+mercadoPagoRouter.post("/create-premium-preference", authenticateToken, mercadoPagoController.createPremiumPreference);
+
 // Obtener preferencia
 mercadoPagoRouter.get("/preference/:preferenceId", authenticateToken, mercadoPagoController.getPreference);
 
@@ -38,6 +41,15 @@ mercadoPagoRouter.post("/process-successful-payment", authenticateToken, mercado
 // ---------- SOLO DESARROLLO: simular compra sin Mercado Pago (sandbox no redirige a localhost).
 // En producción: eliminar esta ruta o no exponer el botón en el front. Ver MERCADOPAGO_SETUP.md.
 mercadoPagoRouter.post("/dev-complete-purchase", authenticateToken, mercadoPagoController.devCompletePurchase);
+
+// ---------- SOLO DESARROLLO: simular activación de plan premium sin Mercado Pago.
+mercadoPagoRouter.post("/dev-complete-premium", authenticateToken, mercadoPagoController.devCompletePremium);
+
+// ---------- SOLO DESARROLLO: simular pago de trámite de flota sin Mercado Pago.
+mercadoPagoRouter.post("/dev-complete-procedure", authenticateToken, mercadoPagoController.devCompleteProcedure);
+
+// Canjear curso gratuito (plan gestoría): verifica freeCourses, asigna curso, resta 1, registra pago $0.
+mercadoPagoRouter.post("/redeem-free-course", authenticateToken, mercadoPagoController.redeemFreeCourse);
 
 // Obtener pagos procesados (solo Administrador)
 mercadoPagoRouter.get("/processed-payments", authenticateToken, authorizeByCategory(["Administrador"]), mercadoPagoController.getProcessedPayments);

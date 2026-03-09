@@ -532,10 +532,14 @@ class UsersController {
         lastLogin: new Date()
       });
 
+      // Comprobar vigencia de suscripción premium; si está vencida, dar de baja (isActive false, maximumShips 0)
+      await userService.ensurePremiumValidity(user._id.toString());
+      const freshUser = await userService.findById(user._id.toString());
+
       logger.info(`Usuario ${user.email} inició sesión exitosamente`);
 
       // Enriquecer manager con datos del gestor si está asignado
-      let managerPayload = user.manager || { active: false, managerId: "" };
+      let managerPayload = (freshUser || user).manager || { active: false, managerId: "" };
       if (managerPayload.managerId) {
         try {
           const managerUser = await userService.findById(managerPayload.managerId);
@@ -554,29 +558,31 @@ class UsersController {
         }
       }
 
+      const payloadUser = freshUser || user;
       return res.status(200).json({
         status: "success",
         msg: "Login exitoso",
         payload: {
           user: {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            category: user.category,
-            avatar: user.avatar,
-            phone: user.phone,
-            birth: user.birth,
-            ci: user.ci,
-            address: user.address,
-            statistics: user.statistics,
-            settings: user.settings,
-            preferences: user.preferences,
-            purchasedCourses: await coursesService.getUserPurchasedCourses(user._id.toString()),
-            finishedCourses: user.finishedCourses,
-            approvedCourses: user.approvedCourses || [],
+            id: payloadUser._id,
+            firstName: payloadUser.firstName,
+            lastName: payloadUser.lastName,
+            email: payloadUser.email,
+            category: payloadUser.category,
+            avatar: payloadUser.avatar,
+            phone: payloadUser.phone,
+            birth: payloadUser.birth,
+            ci: payloadUser.ci,
+            address: payloadUser.address,
+            statistics: payloadUser.statistics,
+            settings: payloadUser.settings,
+            preferences: payloadUser.preferences,
+            premium: payloadUser.premium,
+            purchasedCourses: await coursesService.getUserPurchasedCourses(payloadUser._id.toString()),
+            finishedCourses: payloadUser.finishedCourses,
+            approvedCourses: payloadUser.approvedCourses || [],
             manager: managerPayload,
-            status: user.status || "Estudiante"
+            status: payloadUser.status || "Estudiante"
           },
           tokens: {
             accessToken: tokens.accessToken,
@@ -658,8 +664,9 @@ class UsersController {
   async getProfile(req, res) {
     try {
       const userId = req.user.userId;
+      await userService.ensurePremiumValidity(userId);
       const user = await userService.findById(userId);
-      
+
       if (!user) {
         return res.status(404).json({
           status: "error",
@@ -706,6 +713,7 @@ class UsersController {
             statistics: user.statistics,
             settings: user.settings,
             preferences: user.preferences,
+            premium: user.premium,
             purchasedCourses: await coursesService.getUserPurchasedCourses(userId),
             finishedCourses: user.finishedCourses,
             approvedCourses: user.approvedCourses || [],

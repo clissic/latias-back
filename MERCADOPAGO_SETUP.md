@@ -241,11 +241,23 @@ Puedes verificar el estado de los pagos desde:
   - Comprueba que `FRONTEND_URL` en el backend sea la URL donde corre tu front (ej. `http://localhost:5173`). Esa es la URL a la que MP enviará al usuario.
 
 ### Modo desarrollo: simular compra sin Mercado Pago
-Cuando el sandbox no redirige a localhost, puedes probar el flujo completo (curso asignado + página de éxito) con el **botón "Comprar (Dev mode)"** (azul), que aparece debajo del botón de Mercado Pago **solo en desarrollo** (`npm run dev`).
+Cuando el sandbox no redirige a localhost, puedes probar el flujo completo con el **botón "Comprar (Dev mode)"** (azul), que aparece en los checkouts **solo en desarrollo** (`npm run dev` o `VITE_DEV_PAYMENT=true`).
 
-- **Frontend**: El botón solo se muestra si `import.meta.env.DEV` es true (build de producción no lo incluye). Llama a `POST /mercadopago/dev-complete-purchase` con `courseId` y `userId`, luego redirige a `/payment/success?dev=1`.
-- **Backend**: La ruta `POST /mercadopago/dev-complete-purchase` solo responde si `NODE_ENV === 'development'` o `ENABLE_DEV_PAYMENT === 'true'`; en producción devuelve 404.
-- **Producción**: Eliminar o no exponer el botón y, si quieres, eliminar la ruta `dev-complete-purchase` en `mercadopago.routes.js` y el método `devCompletePurchase` en el controlador. Ver comentarios en el código.
+- **Cursos**: `POST /mercadopago/dev-complete-purchase` con `courseId` y `userId` → redirige a `/payment/success?dev=1`.
+- **Planes (gestoría)**: `POST /mercadopago/dev-complete-premium` con `planId` y `userId` → redirige a `/payment/success?dev=1&type=premium`.
+- **Trámites de flota**: `POST /mercadopago/dev-complete-procedure` con `pendingId` y `userId` → crea el ship-request, registra el pago y redirige a `/payment/success?dev=1&type=procedure`.
+- **Backend**: Las rutas `dev-complete-*` solo responden si `NODE_ENV === 'development'` o `ENABLE_DEV_PAYMENT === 'true'`; en producción devuelven 404.
+- **Producción**: No exponer los botones y, si se desea, eliminar las rutas y métodos correspondientes en el controlador.
+
+### Registro de pagos (processed-payments)
+Todos los pagos confirmados (cursos, suscripciones a planes, trámites de flota) se registran en la colección **processed-payments** con una estructura unificada:
+
+- **user**: datos del usuario (id, email, firstName, lastName).
+- **item**: tipo (`course`, `subscription`, `procedure`, `service`, `other`), id (opcional) y nombre del concepto.
+- **amount**: valor y moneda.
+- **paymentStatus**, **externalReference**, **provider** (p. ej. `mercadopago`), **processedAt**, **metadata** (opcional, ej. `alreadyPurchased` para cursos).
+
+El panel de **Gestión de pagos** (solo Administrador) consume `GET /api/mercadopago/processed-payments` con filtros por tipo de ítem, concepto, usuario, estado y moneda. Ver en el README del backend la sección [Modelos de datos > Pagos procesados](README.md#pagos-procesados-processed-payments).
 
 ## 📚 Recursos Adicionales
 

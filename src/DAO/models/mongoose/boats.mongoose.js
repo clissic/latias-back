@@ -31,6 +31,7 @@ const schema = new Schema({
   },
   currentPort: {
     type: String,
+    required: true,
     trim: true,
   },
   boatType: {
@@ -50,10 +51,12 @@ const schema = new Schema({
   },
   depth: {
     type: Number, // meters
+    required: true,
     min: 0,
   },
   displacement: {
     type: Number, // tons
+    required: true,
     min: 0,
   },
   image: {

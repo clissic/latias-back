@@ -638,6 +638,51 @@ class CoursesController {
     }
   }
 
+  /**
+   * Stream del video de una lección por proxy. Verifica que el usuario tenga el curso comprado,
+   * obtiene la URL real del video desde la BD y hace proxy al cliente. Así la URL real no se expone en el frontend.
+   */
+  async getLessonVideoStream(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      const { moduleId, lessonId } = req.query;
+      if (!moduleId || !lessonId) {
+        return res.status(400).json({ status: "error", msg: "Faltan moduleId o lessonId" });
+      }
+      const videoUrl = await coursesService.getLessonVideoUrl(userId, courseId, moduleId, lessonId);
+      if (!videoUrl) {
+        return res.status(404).json({ status: "error", msg: "Video no encontrado o sin acceso" });
+      }
+      const range = req.headers.range || "";
+      const fetchOpts = { headers: {} };
+      if (range) fetchOpts.headers.Range = range;
+      const response = await fetch(videoUrl, fetchOpts);
+      if (!response.ok) {
+        return res.status(response.status).json({ status: "error", msg: "Error al obtener el video" });
+      }
+      const contentType = response.headers.get("content-type") || "video/mp4";
+      const contentLength = response.headers.get("content-length");
+      const acceptRanges = response.headers.get("accept-ranges") || "bytes";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Accept-Ranges", acceptRanges);
+      if (contentLength) res.setHeader("Content-Length", contentLength);
+      if (response.status === 206) {
+        res.status(206);
+        const contentRange = response.headers.get("content-range");
+        if (contentRange) res.setHeader("Content-Range", contentRange);
+      }
+      if (!response.body) {
+        return res.status(502).json({ status: "error", msg: "Stream no disponible" });
+      }
+      response.body.pipe(res);
+    } catch (error) {
+      logger.info(error);
+      if (!res.headersSent) {
+        return res.status(500).json({ status: "error", msg: "Error al transmitir el video" });
+      }
+    }
+  }
+
   // Obtener cursos comprados del usuario
   async getUserPurchasedCourses(req, res) {
     try {

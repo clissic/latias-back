@@ -42,8 +42,8 @@ const schema = new Schema({
   },
   annualInspection: {
     type: String,
-    enum: ['realizada', 'no_realizada', 'no_corresponde'],
-    default: 'no_realizada',
+    enum: ['Realizada', 'No realizada', 'No corresponde'],
+    default: 'No corresponde',
   },
 }, {
   timestamps: true,

@@ -2,8 +2,9 @@ import { shipRequestsModel } from "../DAO/models/ship-requests.model.js";
 import { boatsModel } from "../DAO/models/boats.model.js";
 import { usersModel } from "../DAO/models/users.model.js";
 
-const VALID_STATUSES = ["Pendiente", "En progreso", "Completado", "Rechazado"];
-const VALID_TYPES = ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial"];
+const VALID_STATUSES = ["Pendiente", "Pendiente de pago", "En progreso", "Completado", "Rechazado"];
+const VALID_TYPES = ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial", "Solicitud de flota"];
+const VALID_PROCEDURE_TYPES_FLOTA = ["Emisión inicial", "Renovación por vencimiento", "Inspección intermedia", "Otro", "Asesoramiento técnico/legal"];
 
 function normalizeTypes(typeOrTypes) {
   const arr = Array.isArray(typeOrTypes) ? typeOrTypes : (typeOrTypes != null ? [String(typeOrTypes).trim()] : []);
@@ -13,7 +14,7 @@ function normalizeTypes(typeOrTypes) {
 
 class ShipRequestsService {
   async create(data) {
-    const { ship, owner, manager, type, types, notes, certificate, number } = data;
+    const { ship, owner, manager, type, types, notes, certificate, number, procedureTypes, status: requestStatus, certificateIssueDate, certificateExpirationDate } = data;
     const typeArray = normalizeTypes(types ?? type);
 
     if (!ship || !owner || !manager) {
@@ -36,15 +37,23 @@ class ShipRequestsService {
       throw new Error("El manager debe ser un usuario con categoría Gestor");
     }
 
+    const status = requestStatus && VALID_STATUSES.includes(requestStatus) ? requestStatus : "Pendiente";
+    const procedureTypesArr = Array.isArray(procedureTypes)
+      ? procedureTypes.filter((t) => typeof t === "string" && VALID_PROCEDURE_TYPES_FLOTA.includes(t.trim()))
+      : undefined;
+
     const request = await shipRequestsModel.create({
       ship,
       owner,
       manager,
       type: typeArray,
-      status: "Pendiente",
+      status,
       notes: notes != null ? String(notes).trim() : null,
       certificate: certificate != null ? String(certificate).trim() : null,
       number: number != null ? String(number).trim() : null,
+      procedureTypes: procedureTypesArr?.length ? procedureTypesArr : undefined,
+      certificateIssueDate: certificateIssueDate != null ? (certificateIssueDate instanceof Date ? certificateIssueDate : new Date(certificateIssueDate)) : null,
+      certificateExpirationDate: certificateExpirationDate != null ? (certificateExpirationDate instanceof Date ? certificateExpirationDate : new Date(certificateExpirationDate)) : null,
     });
 
     return request;

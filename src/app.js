@@ -18,6 +18,7 @@ import { contactRouter } from "./routes/contact.routes.js";
 import { boatsRouter } from "./routes/boats.routes.js";
 import { certificatesRouter } from "./routes/certificates.routes.js";
 import { shipRequestsRouter } from "./routes/ship-requests.routes.js";
+import { discountCodesRouter } from "./routes/discount-codes.routes.js";
 import { startEventsCron } from "./utils/events-cron.js";
 
 const app = express();
@@ -91,6 +92,7 @@ app.use("/api/contact", contactRouter);
 app.use("/api/boats", boatsRouter);
 app.use("/api/certificates", certificatesRouter);
 app.use("/api/ship-requests", shipRequestsRouter);
+app.use("/api/discount-codes", discountCodesRouter);
 
 // Opciones para servir uploads con MIME correcto
 const uploadsStaticOptions = {

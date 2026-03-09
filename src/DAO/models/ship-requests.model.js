@@ -9,7 +9,7 @@ class ShipRequestsModel {
   async findById(id) {
     return ShipRequestsMongoose.findById(id)
       .populate("ship", "name registrationNumber boatType")
-      .populate("owner", "firstName lastName email")
+      .populate("owner", "firstName lastName email phone")
       .populate("manager", "firstName lastName email");
   }
 
@@ -23,7 +23,7 @@ class ShipRequestsModel {
 
     return ShipRequestsMongoose.find(filter)
       .populate("ship", "name registrationNumber boatType")
-      .populate("owner", "firstName lastName email")
+      .populate("owner", "firstName lastName email phone")
       .populate("manager", "firstName lastName email")
       .sort({ requestedAt: -1 })
       .lean();
@@ -32,7 +32,7 @@ class ShipRequestsModel {
   async findByOwner(ownerId) {
     return ShipRequestsMongoose.find({ owner: ownerId })
       .populate("ship", "name registrationNumber boatType")
-      .populate("owner", "firstName lastName email")
+      .populate("owner", "firstName lastName email phone")
       .populate("manager", "firstName lastName email")
       .sort({ requestedAt: -1 })
       .lean();
@@ -41,7 +41,7 @@ class ShipRequestsModel {
   async findByManager(managerId) {
     return ShipRequestsMongoose.find({ manager: managerId })
       .populate("ship", "name registrationNumber boatType")
-      .populate("owner", "firstName lastName email")
+      .populate("owner", "firstName lastName email phone")
       .populate("manager", "firstName lastName email")
       .sort({ requestedAt: -1 })
       .lean();
@@ -50,7 +50,7 @@ class ShipRequestsModel {
   async findByShip(shipId) {
     return ShipRequestsMongoose.find({ ship: shipId })
       .populate("ship", "name registrationNumber boatType")
-      .populate("owner", "firstName lastName email")
+      .populate("owner", "firstName lastName email phone")
       .populate("manager", "firstName lastName email")
       .sort({ requestedAt: -1 })
       .lean();

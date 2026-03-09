@@ -50,6 +50,7 @@ class UsersModel {
         finishedCourses: true,
         paymentMethods: true,
         manager: true,
+        premium: true,
         lastLogin: true,
       }
     );
@@ -190,6 +191,117 @@ class UsersModel {
   async deleteOne(_id) {
     const result = await UserMongoose.deleteOne({ _id: _id });
     return result;
+  }
+
+  /**
+   * Activa plan premium de gestoría.
+   * basico: subscription "Básico", procedures +2, maximumShips +2, expires +366d.
+   * navegante: subscription "Navegante", procedures +5, maximumShips +5, freeCourses +1, expires +366d.
+   * capitan: subscription "Capitán", procedures +10, maximumShips +8, freeCourses +2, expires +366d.
+   */
+  async activatePremiumPlan(userId, planId) {
+    const user = await UserMongoose.findById(userId).select("premium").lean();
+    if (!user) throw new Error("Usuario no encontrado");
+    const currentProcedures = user.premium?.procedures ?? 0;
+    const currentMaximumShips = user.premium?.maximumShips ?? 0;
+    const currentFreeCourses = user.premium?.freeCourses ?? 0;
+    const expires = new Date(Date.now() + 366 * 24 * 60 * 60 * 1000);
+
+    if (planId === "basico") {
+      await UserMongoose.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            "premium.isActive": true,
+            "premium.subscription": "Básico",
+            "premium.expires": expires,
+            "premium.procedures": currentProcedures + 2,
+            "premium.maximumShips": currentMaximumShips + 2,
+          },
+        }
+      );
+      return { ok: true };
+    }
+    if (planId === "navegante") {
+      await UserMongoose.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            "premium.isActive": true,
+            "premium.subscription": "Navegante",
+            "premium.expires": expires,
+            "premium.procedures": currentProcedures + 5,
+            "premium.maximumShips": currentMaximumShips + 5,
+            "premium.freeCourses": currentFreeCourses + 1,
+          },
+        }
+      );
+      return { ok: true };
+    }
+    if (planId === "capitan") {
+      await UserMongoose.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            "premium.isActive": true,
+            "premium.subscription": "Capitán",
+            "premium.expires": expires,
+            "premium.procedures": currentProcedures + 10,
+            "premium.maximumShips": currentMaximumShips + 8,
+            "premium.freeCourses": currentFreeCourses + 2,
+          },
+        }
+      );
+      return { ok: true };
+    }
+    throw new Error(`Plan no implementado: ${planId}`);
+  }
+
+  /**
+   * Si la suscripción premium está vencida (expires < hoy), da de baja: isActive false, maximumShips 0.
+   * procedures y freeCourses se mantienen. Se llama al login y al obtener perfil.
+   */
+  async deactivateExpiredPremium(userId) {
+    const user = await UserMongoose.findById(userId).select("premium").lean();
+    if (!user?.premium?.isActive) return;
+    const expires = user.premium.expires ? new Date(user.premium.expires) : null;
+    if (!expires || Number.isNaN(expires.getTime()) || expires >= new Date()) return;
+    await UserMongoose.updateOne(
+      { _id: userId },
+      { $set: { "premium.isActive": false, "premium.maximumShips": 0 } }
+    );
+  }
+
+  /**
+   * Resta 1 a premium.freeCourses. Solo tiene efecto si freeCourses >= 1.
+   * Usado al canjear un curso gratuito por plan de gestoría.
+   * @returns {Promise<{ ok: boolean, updated: boolean }>} updated true si se restó.
+   */
+  async decrementFreeCourse(userId) {
+    const user = await UserMongoose.findById(userId).select("premium.freeCourses").lean();
+    const current = user?.premium?.freeCourses ?? 0;
+    if (current < 1) return { ok: true, updated: false };
+    await UserMongoose.updateOne(
+      { _id: userId },
+      { $inc: { "premium.freeCourses": -1 } }
+    );
+    return { ok: true, updated: true };
+  }
+
+  /**
+   * Resta 1 a premium.procedures. Solo tiene efecto si procedures >= 1.
+   * Usado al solicitar un trámite de flota con trámites disponibles.
+   * @returns {Promise<{ ok: boolean, updated: boolean }>} updated true si se restó.
+   */
+  async decrementProcedures(userId) {
+    const user = await UserMongoose.findById(userId).select("premium.procedures").lean();
+    const current = user?.premium?.procedures ?? 0;
+    if (current < 1) return { ok: true, updated: false };
+    await UserMongoose.updateOne(
+      { _id: userId },
+      { $inc: { "premium.procedures": -1 } }
+    );
+    return { ok: true, updated: true };
   }
 
   /** Incrementa statistics.certificatesQuantity en 1 (al emitir un certificado de curso). */

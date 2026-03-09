@@ -266,6 +266,128 @@ class MercadoPagoService {
     }
   }
 
+  /** Planes de gestoría: precio USD y nombre para la preferencia */
+  static PREMIUM_PLANS = {
+    basico: { price: 249, name: 'Plan Gestoría - Básico' },
+    navegante: { price: 359, name: 'Plan Gestoría - Navegante' },
+    capitan: { price: 699, name: 'Plan Gestoría - Capitán' },
+  };
+
+  /**
+   * Crea una preferencia de pago para un plan premium de gestoría.
+   * external_reference: "premium|planId|userId"
+   */
+  async createPremiumPreference({ planId, userId, payer }) {
+    const plan = MercadoPagoService.PREMIUM_PLANS[planId];
+    if (!plan) {
+      throw new Error(`Plan no válido: ${planId}. Debe ser basico, navegante o capitan.`);
+    }
+
+    let frontendUrl = process.env.FRONTEND_URL?.trim() || 'http://localhost:5173';
+    let backendUrl = process.env.BACKEND_URL?.trim() || 'http://localhost:3000';
+    const successUrl = `${frontendUrl}/payment/success`;
+    const failureUrl = `${frontendUrl}/payment/success`;
+    const pendingUrl = `${frontendUrl}/payment/success`;
+    const notificationUrl = `${backendUrl}/api/mercadopago/webhook`;
+
+    const preference = new Preference(client);
+    const externalReference = `premium|${planId}|${userId}`;
+    const preferenceData = {
+      items: [{
+        id: `premium-${planId}`,
+        title: plan.name,
+        description: `Suscripción gestoría: ${plan.name}`,
+        quantity: 1,
+        unit_price: plan.price,
+        currency_id: 'USD',
+      }],
+      back_urls: { success: successUrl, failure: failureUrl, pending: pendingUrl },
+      auto_return: 'approved',
+      external_reference: externalReference,
+      notification_url: notificationUrl,
+      statement_descriptor: 'LATIAS GESTORIA',
+      metadata: { planId: String(planId), userId: String(userId) },
+      payment_methods: { excluded_payment_methods: [], excluded_payment_types: [], installments: 12 },
+    };
+
+    if (payer?.email) {
+      preferenceData.payer = { email: String(payer.email) };
+      if (payer.name) preferenceData.payer.name = String(payer.name);
+      if (payer.surname) preferenceData.payer.surname = String(payer.surname);
+    }
+
+    let response;
+    try {
+      response = await preference.create({ body: preferenceData });
+    } catch (firstError) {
+      const msg = firstError?.message || '';
+      if (/back_url|auto_return|redirect|url/i.test(msg) && preferenceData.auto_return) {
+        delete preferenceData.auto_return;
+        response = await preference.create({ body: preferenceData });
+      } else {
+        throw firstError;
+      }
+    }
+
+    logger.info(`Preferencia premium creada: plan=${planId}, userId=${userId}, preferenceId=${response.id}`);
+    return response;
+  }
+
+  /** Precio en USD del trámite de flota (solicitud desde Mi gestor). */
+  static PROCEDURE_FLOTA_PRICE_USD = 30;
+
+  /**
+   * Crea una preferencia de pago para un trámite de flota (solicitud desde Mi gestor).
+   * external_reference: "procedure|requestId"
+   */
+  async createProcedurePreference({ requestId, userId, payer }) {
+    const price = MercadoPagoService.PROCEDURE_FLOTA_PRICE_USD;
+    let frontendUrl = process.env.FRONTEND_URL?.trim() || "http://localhost:5173";
+    let backendUrl = process.env.BACKEND_URL?.trim() || "http://localhost:3000";
+    const successUrl = `${frontendUrl}/payment/success`;
+    const failureUrl = `${frontendUrl}/payment/success`;
+    const pendingUrl = `${frontendUrl}/payment/success`;
+    const notificationUrl = `${backendUrl}/api/mercadopago/webhook`;
+    const externalReference = `procedure|${requestId}`;
+    const preference = new Preference(client);
+    const preferenceData = {
+      items: [{
+        id: "procedure-flota",
+        title: "Trámite de flota - Solicitud",
+        description: "Solicitud de trámite de flota para tu gestor (LATIAS)",
+        quantity: 1,
+        unit_price: price,
+        currency_id: "USD",
+      }],
+      back_urls: { success: successUrl, failure: failureUrl, pending: pendingUrl },
+      auto_return: "approved",
+      external_reference: externalReference,
+      notification_url: notificationUrl,
+      statement_descriptor: "LATIAS TRAMITE",
+      metadata: { requestId: String(requestId), userId: String(userId) },
+      payment_methods: { excluded_payment_methods: [], excluded_payment_types: [], installments: 12 },
+    };
+    if (payer?.email) {
+      preferenceData.payer = { email: String(payer.email) };
+      if (payer.name) preferenceData.payer.name = String(payer.name);
+      if (payer.surname) preferenceData.payer.surname = String(payer.surname);
+    }
+    let response;
+    try {
+      response = await preference.create({ body: preferenceData });
+    } catch (firstError) {
+      const msg = firstError?.message || "";
+      if (/back_url|auto_return|redirect|url/i.test(msg) && preferenceData.auto_return) {
+        delete preferenceData.auto_return;
+        response = await preference.create({ body: preferenceData });
+      } else {
+        throw firstError;
+      }
+    }
+    logger.info(`Preferencia trámite flota creada: requestId=${requestId}, preferenceId=${response.id}`);
+    return response;
+  }
+
   async getPreference(preferenceId) {
     try {
       const preference = new Preference(client);
@@ -381,9 +503,152 @@ class MercadoPagoService {
         return { success: false, error: 'No external_reference found' };
       }
 
-      // Parsear external_reference para obtener courseId y userId
+      const parts = externalReference.split('|');
+      const isPremium = parts[0] === 'premium';
+
+      if (isPremium) {
+        if (parts.length < 3 || !parts[1] || !parts[2]) {
+          logger.error('External reference premium malformado:', externalReference);
+          return { success: false, error: 'Invalid premium external_reference format' };
+        }
+        const planId = parts[1];
+        const userId = parts[2];
+        logger.info(`Procesando pago premium - Plan: ${planId}, Usuario: ${userId}, Payment ID: ${paymentId}`);
+        processedPayments.add(paymentId);
+        const { userService } = await import('./users.service.js');
+        const { usersModel } = await import('../DAO/models/users.model.js');
+        try {
+          await userService.activatePremiumPlan(userId, planId);
+        } catch (err) {
+          processedPayments.delete(paymentId);
+          throw err;
+        }
+        const user = await usersModel.findById(userId);
+        const planNames = { basico: 'Plan Básico', navegante: 'Plan Navegante', capitan: 'Plan Capitán' };
+        const courseName = planNames[planId] || `Plan ${planId}`;
+        try {
+          await model.create({
+            paymentId,
+            user: { id: userId, email: user?.email || '', firstName: user?.firstName || '', lastName: user?.lastName || '' },
+            item: { type: 'subscription', id: planId, name: courseName },
+            amount: { value: payment.transaction_amount || 0, currency: payment.currency_id || 'USD' },
+            paymentStatus: payment.status || 'approved',
+            paymentStatusDetail: payment.status_detail || '',
+            externalReference,
+            errorMessage: null,
+          });
+        } catch (dbError) {
+          logger.error(`Error al guardar pago premium ${paymentId} en BD:`, dbError);
+        }
+        return { success: true, premium: true };
+      }
+
+      // Trámite de flota: procedure|pendingId (o procedure|requestId en flujo antiguo)
+      const isProcedure = parts[0] === 'procedure';
+      if (isProcedure && parts.length >= 2 && parts[1]) {
+        const refId = parts[1];
+        logger.info(`Procesando pago trámite flota - refId: ${refId}, Payment ID: ${paymentId}`);
+        processedPayments.add(paymentId);
+        const { shipRequestsService } = await import('./ship-requests.service.js');
+        const { userService } = await import('./users.service.js');
+        const { boatsModel } = await import('../DAO/models/boats.model.js');
+        const { pendingProcedurePaymentsModel } = await import('../DAO/models/pending-procedure-payments.model.js');
+        const mongoose = await import('mongoose');
+        try {
+          let request;
+          const pending = await pendingProcedurePaymentsModel.findById(refId);
+          if (pending) {
+            // Flujo actual: crear ship-request desde pending (el trámite no existía hasta pagar)
+            request = await shipRequestsService.create({
+              ship: pending.ship,
+              owner: pending.owner,
+              manager: pending.manager,
+              type: pending.type || ['Solicitud de flota'],
+              procedureTypes: pending.procedureTypes,
+              notes: pending.notes,
+              certificate: pending.certificate,
+              number: pending.number,
+              certificateIssueDate: pending.certificateIssueDate,
+              certificateExpirationDate: pending.certificateExpirationDate,
+              status: 'Pendiente',
+            });
+            await pendingProcedurePaymentsModel.deleteOne(refId);
+          } else if (mongoose.default?.Types?.ObjectId?.isValid(refId)) {
+            // Flujo antiguo: ya existía ship-request en "Pendiente de pago"
+            await shipRequestsService.updateStatus(refId, 'Pendiente');
+            request = await shipRequestsService.getById(refId);
+          } else {
+            processedPayments.delete(paymentId);
+            logger.error(`Pago trámite ${paymentId}: pending/ship-request no encontrado para refId ${refId}`);
+            return { success: false, error: 'Pending or ship-request not found' };
+          }
+          const managerUser = request?.manager;
+          const owner = request?.owner;
+          const boat = request?.ship ? await boatsModel.findById(request.ship._id || request.ship) : null;
+          if (managerUser?.email && owner && boat) {
+            await userService.sendGestorFlotaProcedureRequestEmail({
+              to: managerUser.email,
+              requester: {
+                firstName: owner.firstName,
+                lastName: owner.lastName,
+                email: owner.email,
+                phone: owner.phone,
+              },
+              boat: {
+                name: boat.name,
+                registrationNumber: boat.registrationNumber,
+                boatType: boat.boatType,
+                displacement: boat.displacement,
+                registrationCountry: boat.registrationCountry,
+                currentPort: boat.currentPort,
+                registrationPort: boat.registrationPort,
+              },
+              certificate: {
+                certificateType: request.certificate,
+                number: request.number,
+                issueDate: request.certificateIssueDate || request.requestedAt,
+                expirationDate: request.certificateExpirationDate || null,
+              },
+              procedureTypes: request.procedureTypes || [],
+              notes: request.notes || '',
+            });
+          }
+          const ownerId = owner?._id || request?.owner;
+          if (ownerId) {
+            try {
+              const shipRef = request?.ship;
+              const shipId = shipRef?._id ?? shipRef;
+              await model.create({
+                paymentId,
+                user: { id: ownerId, email: owner?.email || '', firstName: owner?.firstName || '', lastName: owner?.lastName || '' },
+                item: { type: 'procedure', id: request?._id ? String(request._id) : undefined, name: 'Trámite de flota - Solicitud' },
+                amount: { value: payment.transaction_amount ?? 0, currency: payment.currency_id ?? 'USD' },
+                paymentStatus: payment.status ?? 'approved',
+                paymentStatusDetail: payment.status_detail ?? '',
+                externalReference,
+                metadata: {
+                  requestType: Array.isArray(request?.type) && request.type[0] ? request.type[0] : undefined,
+                  procedureTypes: request?.procedureTypes || [],
+                  shipId: shipId || undefined,
+                  shipName: shipRef?.name || undefined,
+                  registrationNumber: shipRef?.registrationNumber || undefined,
+                },
+                errorMessage: null,
+              });
+              logger.info(`Pago trámite ${paymentId} registrado en processed_payments (refId: ${refId})`);
+            } catch (dbError) {
+              logger.error(`Error al guardar pago trámite ${paymentId} en processed_payments:`, dbError);
+            }
+          }
+        } catch (err) {
+          processedPayments.delete(paymentId);
+          throw err;
+        }
+        return { success: true, procedure: true };
+      }
+
+      // Curso: courseId|userId
       const [courseId, userId] = externalReference.split('|');
-      
       if (!courseId || !userId) {
         logger.error('External reference malformado:', externalReference);
         return { success: false, error: 'Invalid external_reference format' };
@@ -437,19 +702,14 @@ class MercadoPagoService {
       try {
         await model.create({
           paymentId,
-          courseId,
-          courseName,
-          userId,
-          userEmail,
-          userFirstName,
-          userLastName,
-          transactionAmount,
-          currency,
+          user: { id: userId, email: userEmail, firstName: userFirstName, lastName: userLastName },
+          item: { type: 'course', id: courseId, name: courseName },
+          amount: { value: transactionAmount, currency },
           paymentStatus,
           paymentStatusDetail,
           externalReference,
-          alreadyPurchased,
-          errorMessage
+          metadata: alreadyPurchased ? { alreadyPurchased: true } : undefined,
+          errorMessage: errorMessage || null,
         });
         logger.info(`Pago ${paymentId} guardado en BD exitosamente`);
       } catch (dbError) {

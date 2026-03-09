@@ -2,7 +2,9 @@ import { shipRequestsService } from "../services/ship-requests.service.js";
 import { userService } from "../services/users.service.js";
 import { usersModel } from "../DAO/models/users.model.js";
 import { boatsModel } from "../DAO/models/boats.model.js";
+import { pendingProcedurePaymentsModel } from "../DAO/models/pending-procedure-payments.model.js";
 import { logger } from "../utils/logger.js";
+import { mercadoPagoService } from "../services/mercadopago.service.js";
 
 class ShipRequestsController {
   async create(req, res) {
@@ -132,6 +134,7 @@ class ShipRequestsController {
             expirationDate: certificate.expirationDate,
           },
           types,
+          notes: request.notes || "",
         });
       }
 
@@ -142,6 +145,133 @@ class ShipRequestsController {
       });
     } catch (e) {
       logger.error("ship-requests createFromCertificate:", e?.message || e);
+      return res.status(400).json({
+        status: "error",
+        msg: e?.message || "Error al crear la solicitud",
+        payload: {},
+      });
+    }
+  }
+
+  /**
+   * Crea una solicitud de trámite de flota (Mi gestor). Si premium.procedures > 0 descuenta 1 y envía email al gestor.
+   * Si procedures === 0 crea solicitud en "Pendiente de pago" y devuelve initPoint para checkout (30 USD).
+   * Body: { shipId, certificate: { certificateType, number, issueDate, expirationDate }, procedureTypes: string[], notes?: string }
+   */
+  async createFlotaProcedure(req, res) {
+    try {
+      const userId = req.user?.userId;
+      const { shipId, certificate, procedureTypes, notes: userNotes } = req.body;
+
+      if (!shipId || !certificate || !Array.isArray(procedureTypes) || procedureTypes.length === 0) {
+        return res.status(400).json({
+          status: "error",
+          msg: "shipId, certificate y procedureTypes (array no vacío) son requeridos",
+          payload: {},
+        });
+      }
+
+      const owner = await usersModel.findById(userId);
+      if (!owner) {
+        return res.status(404).json({ status: "error", msg: "Usuario no encontrado", payload: {} });
+      }
+      const managerId = owner.manager?.managerId || owner.manager?._id;
+      if (!managerId) {
+        return res.status(400).json({
+          status: "error",
+          msg: "No tienes un gestor asignado. Asigna un gestor desde General en Mi Latias.",
+          payload: {},
+        });
+      }
+
+      const procedures = owner.premium?.procedures ?? 0;
+      const notes = (userNotes != null && String(userNotes).trim() !== "") ? String(userNotes).trim() : null;
+
+      if (procedures > 0) {
+        const request = await shipRequestsService.create({
+          ship: shipId,
+          owner: userId,
+          manager: managerId,
+          type: ["Solicitud de flota"],
+          procedureTypes: procedureTypes.map((t) => String(t).trim()).filter(Boolean),
+          notes,
+          certificate: certificate.certificateType != null ? String(certificate.certificateType).trim() : null,
+          number: certificate.number != null ? String(certificate.number).trim() : null,
+          certificateIssueDate: certificate.issueDate != null ? certificate.issueDate : null,
+          certificateExpirationDate: certificate.expirationDate != null ? certificate.expirationDate : null,
+          status: "Pendiente",
+        });
+        const boat = await boatsModel.findById(shipId);
+        const managerUser = await userService.findById(managerId);
+        const { updated } = await usersModel.decrementProcedures(userId);
+        if (updated && managerUser?.email) {
+          await userService.sendGestorFlotaProcedureRequestEmail({
+            to: managerUser.email,
+            requester: {
+              firstName: owner.firstName,
+              lastName: owner.lastName,
+              email: owner.email,
+              phone: owner.phone,
+            },
+            boat: boat ? {
+              name: boat.name,
+              registrationNumber: boat.registrationNumber,
+              boatType: boat.boatType,
+              displacement: boat.displacement,
+              registrationCountry: boat.registrationCountry,
+              currentPort: boat.currentPort,
+              registrationPort: boat.registrationPort,
+            } : { name: "—", registrationNumber: "—", boatType: "—", displacement: "—", registrationCountry: "—", currentPort: "—", registrationPort: "—" },
+            certificate: {
+              certificateType: certificate.certificateType,
+              number: certificate.number,
+              issueDate: certificate.issueDate,
+              expirationDate: certificate.expirationDate,
+            },
+            procedureTypes: request.procedureTypes || procedureTypes,
+            notes: request.notes || "",
+          });
+        }
+        return res.status(201).json({
+          status: "success",
+          msg: "Solicitud de trámite de flota enviada. El gestor recibirá un correo con los datos.",
+          payload: request,
+        });
+      }
+
+      // procedures === 0: no guardar trámite hasta que se confirme el pago. Guardar en pending y crear preferencia.
+      const pending = await pendingProcedurePaymentsModel.create({
+        ship: shipId,
+        owner: userId,
+        manager: managerId,
+        type: ["Solicitud de flota"],
+        procedureTypes: procedureTypes.map((t) => String(t).trim()).filter(Boolean),
+        notes,
+        certificate: certificate.certificateType != null ? String(certificate.certificateType).trim() : null,
+        number: certificate.number != null ? String(certificate.number).trim() : null,
+        certificateIssueDate: certificate.issueDate != null ? certificate.issueDate : null,
+        certificateExpirationDate: certificate.expirationDate != null ? certificate.expirationDate : null,
+      });
+
+      const preference = await mercadoPagoService.createProcedurePreference({
+        requestId: String(pending._id),
+        userId: String(userId),
+        payer: owner.email ? { email: owner.email, name: owner.firstName, surname: owner.lastName } : undefined,
+      });
+
+      const initPoint = preference.sandbox_init_point || preference.init_point;
+      return res.status(200).json({
+        status: "success",
+        msg: "Debes abonar el trámite para completar la solicitud.",
+        requiresPayment: true,
+        amount: 30,
+        initPoint: initPoint || null,
+        preferenceId: preference.id || null,
+        requestId: String(pending._id),
+        payload: { _id: pending._id },
+      });
+    } catch (e) {
+      logger.error("ship-requests createFlotaProcedure:", e?.message || e);
       return res.status(400).json({
         status: "error",
         msg: e?.message || "Error al crear la solicitud",
@@ -277,6 +407,12 @@ class ShipRequestsController {
           to: request.owner.email,
           ownerName,
           boatName: request.ship?.name ?? "su barco",
+          boatRegistrationNumber: request.ship?.registrationNumber ?? null,
+          requestTypes: request.type ?? [],
+          requestedAt: request.requestedAt ?? null,
+          certificateType: request.certificate ?? null,
+          certificateNumber: request.number ?? null,
+          requestNotes: request.notes ?? null,
           newStatus: status,
           rejectionReason: status === "Rechazado" ? rejectionReason : undefined,
         });

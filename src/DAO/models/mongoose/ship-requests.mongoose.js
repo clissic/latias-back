@@ -23,18 +23,25 @@ const schema = new Schema(
     type: {
       type: [String],
       required: true,
-      enum: ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial"],
       validate: {
-        validator: (v) => Array.isArray(v) && v.length > 0 && v.every((t) => ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial"].includes(t)),
-        message: "type debe ser un array con al menos uno de: Renovación, Preparación, Asesoramiento, Solicitud especial",
+        validator: (v) => {
+          const allowed = ["Renovación", "Preparación", "Asesoramiento", "Solicitud especial", "Solicitud de flota"];
+          return Array.isArray(v) && v.length > 0 && v.every((t) => allowed.includes(t));
+        },
+        message: "type debe ser un array con al menos uno de: Renovación, Preparación, Asesoramiento, Solicitud especial, Solicitud de flota",
       },
     },
     status: {
       type: String,
       required: true,
-      enum: ["Pendiente", "En progreso", "Completado", "Rechazado"],
+      enum: ["Pendiente", "Pendiente de pago", "En progreso", "Completado", "Rechazado"],
       default: "Pendiente",
       index: true,
+    },
+    procedureTypes: {
+      type: [String],
+      default: null,
+      trim: true,
     },
     requestedAt: {
       type: Date,
@@ -61,6 +68,8 @@ const schema = new Schema(
       default: null,
       trim: true,
     },
+    certificateIssueDate: { type: Date, default: null },
+    certificateExpirationDate: { type: Date, default: null },
     rejectionReason: {
       type: String,
       default: null,

@@ -72,6 +72,29 @@ class UserService {
         throw new Error("Failed to update connected time");
       }
     }
+
+    /** Activa plan premium de gestoría (basico: isActive, subscription, expires +366d, procedures +2, maximumShips +2). */
+    async activatePremiumPlan(userId, planId) {
+      try {
+        return await usersModel.activatePremiumPlan(userId, planId);
+      } catch (error) {
+        throw new Error("Failed to activate premium plan: " + error.message);
+      }
+    }
+
+    /** Si la suscripción está vencida, da de baja: isActive false, maximumShips 0. Llamar al login y al obtener perfil. */
+    async ensurePremiumValidity(userId) {
+      try {
+        await usersModel.deactivateExpiredPremium(userId);
+      } catch (error) {
+        logger.error("ensurePremiumValidity:", error?.message);
+      }
+    }
+
+    /** Resta 1 a premium.freeCourses al canjear un curso gratuito. Retorna { ok, updated }. */
+    async decrementFreeCourse(userId) {
+      return await usersModel.decrementFreeCourse(userId);
+    }
   
     async deleteOne({ _id }) {
       try {
@@ -368,7 +391,7 @@ class UserService {
      * @param {Object} options.boat - Barco (name, registrationNumber, boatType, displacement, registrationCountry, currentPort)
      * @param {Object} [options.certificate] - Certificado (certificateType, number, issueDate, expirationDate); omitir para solicitud especial
      * @param {string[]} options.types - Tipos de trámite: Renovación, Preparación, Asesoramiento, Solicitud especial
-     * @param {string} [options.notes] - Cuerpo/detalle de la solicitud (usado en solicitud especial; reemplaza el bloque de certificado)
+     * @param {string} [options.notes] - Observaciones/detalle de la solicitud (solicitud especial o observaciones del cliente en trámite de certificado)
      */
     async sendGestorCertificateRequestEmail({ to, requester, boat, certificate, types, notes }) {
       if (!to) return false;
@@ -386,14 +409,16 @@ class UserService {
       const certIssue = certificate?.issueDate ? new Date(certificate.issueDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
       const certExp = certificate?.expirationDate ? new Date(certificate.expirationDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
       const typesStr = Array.isArray(types) && types.length > 0 ? types.join(", ") : "—";
-      const isSpecialRequest = notes != null && String(notes).trim() !== "";
+      const hasCertificate = certificate != null && (String(certificate?.certificateType ?? "").trim() !== "" || String(certificate?.number ?? "").trim() !== "");
+      const hasNotes = notes != null && String(notes).trim() !== "";
+      const isSpecialRequest = hasNotes && !hasCertificate;
       const escapeHtml = (s) => String(s ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/\n/g, "<br />");
-      const notesHtml = isSpecialRequest ? escapeHtml(notes).trim() : "";
+      const notesHtml = hasNotes ? escapeHtml(notes).trim() : "";
 
       const introText = isSpecialRequest
         ? "Un usuario de la plataforma ha realizado una solicitud especial relacionada con el siguiente barco."
@@ -407,11 +432,16 @@ class UserService {
                   <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Emisión:</strong> ${certIssue}</p>
                   <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Vencimiento:</strong> ${certExp}</p>
                 </div>`;
-      const notesBlock = isSpecialRequest ? `
+      const notesBlock = hasNotes ? `
                 <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
                   <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Detalle de la solicitud:</p>
                   <p style="margin: 0; color: #333; font-size: 15px; white-space: pre-wrap;">${notesHtml}</p>
                 </div>` : "";
+
+      const mainBlocks = [
+        hasCertificate ? certificateBlock : "",
+        notesBlock,
+      ].filter(Boolean).join("");
 
       try {
         await transport.sendMail({
@@ -446,7 +476,7 @@ class UserService {
                   <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Bandera:</strong> ${boatFlag}</p>
                   <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Ubicación:</strong> ${boatLocation}</p>
                 </div>
-                ${isSpecialRequest ? notesBlock : certificateBlock}
+                ${mainBlocks}
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
                   <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
                   <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
@@ -464,26 +494,168 @@ class UserService {
     }
 
     /**
-     * Envía email al cliente (owner) informando el cambio de estado de su solicitud al gestor.
+     * Envía email al gestor con solicitud de trámite de flota (barco + certificado + tipos de trámite + notas).
+     * @param {Object} options
+     * @param {string} options.to - Email del gestor
+     * @param {Object} options.requester - Usuario que solicita (firstName, lastName, email, phone)
+     * @param {Object} options.boat - Barco (name, registrationNumber, boatType, displacement, registrationCountry, currentPort, registrationPort)
+     * @param {Object} options.certificate - Certificado (certificateType, number, issueDate, expirationDate)
+     * @param {string[]} options.procedureTypes - Tipos: Emisión inicial, Renovación por vencimiento, Inspección intermedia, Asesoramiento técnico/legal
+     * @param {string} [options.notes] - Notas opcionales del cliente
+     */
+    async sendGestorFlotaProcedureRequestEmail({ to, requester, boat, certificate, procedureTypes, notes }) {
+      if (!to) return false;
+      const reqName = [requester?.firstName, requester?.lastName].filter(Boolean).join(" ") || "—";
+      const reqEmail = requester?.email ?? "—";
+      const reqPhone = requester?.phone ?? "No indicado";
+      const boatName = boat?.name ?? "—";
+      const boatReg = boat?.registrationNumber ?? "—";
+      const boatPort = boat?.registrationPort ?? boat?.currentPort ?? "—";
+      const boatType = boat?.boatType ?? "—";
+      const boatDisplacement = boat?.displacement != null && boat?.displacement !== "" ? String(boat.displacement) : "—";
+      const boatFlag = boat?.registrationCountry ?? "—";
+      const boatLocation = boat?.currentPort ?? "—";
+      const certType = certificate?.certificateType ?? "—";
+      const certNumber = certificate?.number ?? "—";
+      const certIssue = certificate?.issueDate ? new Date(certificate.issueDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+      const certExp = certificate?.expirationDate ? new Date(certificate.expirationDate).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+      const procedureTypesStr = Array.isArray(procedureTypes) && procedureTypes.length > 0 ? procedureTypes.join(", ") : "—";
+      const escapeHtml = (s) => String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/\n/g, "<br />");
+      const notesHtml = notes != null && String(notes).trim() !== "" ? escapeHtml(notes).trim() : "";
+      const notesBlock = notesHtml ? `
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Notas del solicitante:</p>
+                  <p style="margin: 0; color: #333; font-size: 15px; white-space: pre-wrap;">${notesHtml}</p>
+                </div>` : "";
+
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: "[LATIAS] Solicitud de trámite de flota",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Solicitud de trámite de flota</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a gestor/a,</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Un usuario de la plataforma ha realizado una <strong>solicitud de trámite de flota</strong> con el siguiente detalle.</p>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Tipos de trámite solicitados:</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;">${procedureTypesStr}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos del solicitante:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nombre:</strong> ${reqName}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Email:</strong> ${reqEmail}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Teléfono:</strong> ${reqPhone}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos del barco:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nombre:</strong> ${boatName}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Nº de registro:</strong> ${boatReg}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Puerto de registro:</strong> ${boatPort}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipo:</strong> ${boatType}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Desplazamiento:</strong> ${boatDisplacement} toneladas</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Bandera:</strong> ${boatFlag}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Ubicación:</strong> ${boatLocation}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Información del certificado:</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipo:</strong> ${certType}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Número:</strong> ${certNumber}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Emisión:</strong> ${certIssue}</p>
+                  <p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Vencimiento:</strong> ${certExp}</p>
+                </div>
+                ${notesBlock}
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 12px;">
+                  <p style="margin: 0;">Este es un correo automático. Por favor, no respondas a este mensaje.</p>
+                  <p style="margin: 8px 0 0 0;">LATIAS Academia</p>
+                </div>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de solicitud de trámite de flota enviado al gestor ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de solicitud de trámite de flota al gestor: " + error?.message);
+        return false;
+      }
+    }
+
+    /**
+     * Envía email al cliente (owner) informando cambio de estado de una solicitud por parte del gestor.
      * @param {Object} options
      * @param {string} options.to - Email del cliente
      * @param {string} options.ownerName - Nombre del cliente
      * @param {string} options.boatName - Nombre del barco
+     * @param {string} [options.boatRegistrationNumber] - Nº de registro del barco
+     * @param {string[]} [options.requestTypes] - Tipos de trámite (Renovación, Preparación, etc.)
+     * @param {Date|string} [options.requestedAt] - Fecha de la solicitud
+     * @param {string} [options.certificateType] - Tipo de certificado si aplica
+     * @param {string} [options.certificateNumber] - Número de certificado si aplica
+     * @param {string} [options.requestNotes] - Observaciones de la solicitud
      * @param {string} options.newStatus - Nuevo estado: "En progreso", "Completado", "Rechazado"
      * @param {string} [options.rejectionReason] - Motivo del rechazo (solo si newStatus === "Rechazado")
      */
-    async sendShipRequestStatusChangeEmail({ to, ownerName, boatName, newStatus, rejectionReason }) {
+    async sendShipRequestStatusChangeEmail({
+      to,
+      ownerName,
+      boatName,
+      boatRegistrationNumber,
+      requestTypes,
+      requestedAt,
+      certificateType,
+      certificateNumber,
+      requestNotes,
+      newStatus,
+      rejectionReason,
+    }) {
       if (!to) return false;
       const name = ownerName || "Cliente";
       const boat = boatName || "su barco";
+      const boatReg = boatRegistrationNumber ? ` (Nº registro: ${String(boatRegistrationNumber)})` : "";
       const statusLabel = { "En progreso": "en progreso", "Completado": "completado", "Rechazado": "rechazado" }[newStatus] || newStatus;
       const isRechazado = newStatus === "Rechazado";
+      const escape = (s) => String(s ?? "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const motivoBlock = isRechazado && rejectionReason
         ? `<div style="margin: 20px 0; padding: 15px; background-color: #fff3f3; border-left: 4px solid #dc3545; border-radius: 4px;">
              <p style="margin: 0 0 8px 0; color: #082b55; font-weight: bold; font-size: 16px;">Motivo del rechazo</p>
-             <p style="margin: 0; color: #333; font-size: 15px;">${String(rejectionReason).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+             <p style="margin: 0; color: #333; font-size: 15px;">${escape(rejectionReason)}</p>
            </div>`
         : "";
+
+      const typesStr = Array.isArray(requestTypes) && requestTypes.length > 0 ? requestTypes.join(", ") : "—";
+      const requestedAtStr = requestedAt
+        ? new Date(requestedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        : "—";
+      const certParts = [];
+      if (certificateType && String(certificateType).trim()) certParts.push(escape(certificateType));
+      if (certificateNumber && String(certificateNumber).trim()) certParts.push(`Nº ${escape(certificateNumber)}`);
+      const certLine = certParts.length > 0
+        ? `<p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Certificado:</strong> ${certParts.join(" - ")}</p>`
+        : "";
+      const notesLine = requestNotes && String(requestNotes).trim()
+        ? `<p style="margin: 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Observaciones:</strong> ${escape(requestNotes)}</p>`
+        : "";
+      const detailBlock = `
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Detalle de la solicitud</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Barco:</strong> ${escape(boat)}${boatReg}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Tipos de trámite:</strong> ${typesStr}</p>
+                  <p style="margin: 0 0 8px 0; color: #333; font-size: 15px;"><strong style="color: #082b55;">Fecha de solicitud:</strong> ${requestedAtStr}</p>
+                  ${certLine}
+                  ${notesLine}
+                </div>`;
+
       try {
         await transport.sendMail({
           from: process.env.GOOGLE_EMAIL,
@@ -497,7 +669,8 @@ class UserService {
               </div>
               <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Estimado/a ${name},</p>
-                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Su gestor ha actualizado el estado de la solicitud relacionada con el barco <strong>${boat}</strong>.</p>
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Su gestor ha actualizado el estado de la solicitud que se detalla a continuación.</p>
+                ${detailBlock}
                 <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
                   <p style="margin: 0 0 8px 0; color: #082b55; font-weight: bold; font-size: 16px;">Nuevo estado</p>
                   <p style="margin: 0; color: #333; font-size: 15px;">La solicitud ha sido marcada como <strong>${statusLabel}</strong>.</p>

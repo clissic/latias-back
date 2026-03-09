@@ -225,6 +225,25 @@ class CoursesService {
     await usersModel.updateOne({ _id: userId }, { purchasedCourses });
   }
 
+  /**
+   * Obtiene la URL del video de una lección solo si el usuario tiene el curso comprado.
+   * Usado por el endpoint de stream para hacer proxy del video sin exponer la URL al cliente.
+   */
+  async getLessonVideoUrl(userId, courseId, moduleId, lessonId) {
+    const user = await usersModel.findById(userId);
+    if (!user) return null;
+    const purchasedCourses = user.purchasedCourses || [];
+    const hasCourse = purchasedCourses.some((c) => String(c?.courseId) === String(courseId));
+    if (!hasCourse) return null;
+    const course = await coursesModel.findByCourseId(courseId);
+    if (!course?.modules) return null;
+    const mod = course.modules.find((m) => String(m.moduleId) === String(moduleId));
+    if (!mod?.lessons) return null;
+    const lesson = mod.lessons.find((l) => String(l.lessonId) === String(lessonId));
+    const videoUrl = lesson?.videoUrl?.trim();
+    return videoUrl || null;
+  }
+
   // Función para obtener los cursos comprados de un usuario (enriquecidos con datos del curso por courseId)
   async getUserPurchasedCourses(userId) {
     try {

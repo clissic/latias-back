@@ -38,6 +38,9 @@ shipRequestsRouter.post("/", shipRequestsController.create);
 // Crear solicitud desde certificado (flota) y enviar email al gestor
 shipRequestsRouter.post("/certificate", shipRequestsController.createFromCertificate);
 
+// Solicitud de trámite de flota (Mi gestor): descuenta procedure o devuelve checkout 30 USD
+shipRequestsRouter.post("/flota", shipRequestsController.createFlotaProcedure);
+
 // Listar todas (solo Administrador o Gestor) - debe ir antes de /:id
 shipRequestsRouter.get("/", authorizeByCategory(["Administrador", "Gestor"]), shipRequestsController.getAll);
 

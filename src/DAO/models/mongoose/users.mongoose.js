@@ -61,6 +61,15 @@ const schema = new Schema({
     active: { type: Boolean, default: false },
     managerId: { type: String, default: "" }
   },
+  // Gestoría: subscription (basico|navegante|capitan|flota). procedures: trámites; al pagar sumar basico 2, navegante 5, capitan 8, flota 99999. freeCourses: al pagar navegante +1, capitan +2
+  premium: {
+    isActive: { type: Boolean, default: false },
+    subscription: { type: String, default: "" },
+    procedures: { type: Number, default: 0 },
+    freeCourses: { type: Number, default: 0 },
+    expires: { type: Date, default: null },
+    maximumShips: { type: Number, default: null }
+  },
   lastLogin: { type: Date }
 });
 

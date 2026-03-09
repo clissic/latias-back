@@ -7,17 +7,11 @@ class ProcessedPaymentsModel {
   }
 
   async findByPaymentId(paymentId) {
-    const payment = await ProcessedPaymentsMongoose.findOne({ paymentId });
-    return payment;
+    return ProcessedPaymentsMongoose.findOne({ paymentId });
   }
 
   async getAll(filters = {}, limit = 100, skip = 0, sort = { processedAt: -1 }) {
-    const payments = await ProcessedPaymentsMongoose.find(filters)
-      .populate('userId', 'firstName lastName email ci')
-      .sort(sort)
-      .limit(limit)
-      .skip(skip);
-    return payments;
+    return ProcessedPaymentsMongoose.find(filters).sort(sort).limit(limit).skip(skip).lean();
   }
 
   async count(filters = {}) {
@@ -25,32 +19,22 @@ class ProcessedPaymentsModel {
   }
 
   async getByUserId(userId, limit = 100) {
-    const payments = await ProcessedPaymentsMongoose.find({ userId })
-      .populate('userId', 'firstName lastName email ci')
+    return ProcessedPaymentsMongoose.find({ "user.id": userId })
       .sort({ processedAt: -1 })
-      .limit(limit);
-    return payments;
+      .limit(limit)
+      .lean();
   }
 
+  /** Buscar por item tipo course y item.id (courseId) */
   async getByCourseId(courseId, limit = 100) {
-    const payments = await ProcessedPaymentsMongoose.find({ courseId })
-      .populate('userId', 'firstName lastName email ci')
+    return ProcessedPaymentsMongoose.find({ "item.type": "course", "item.id": courseId })
       .sort({ processedAt: -1 })
-      .limit(limit);
-    return payments;
+      .limit(limit)
+      .lean();
   }
 
   async getPaginated(filters = {}, page = 1, limit = 20, sort = { processedAt: -1 }) {
-    const options = {
-      page: page,
-      limit: limit,
-      sort: sort,
-      populate: {
-        path: 'userId',
-        select: 'firstName lastName email ci'
-      }
-    };
-    
+    const options = { page, limit, sort };
     const result = await ProcessedPaymentsMongoose.paginate(filters, options);
     return result;
   }

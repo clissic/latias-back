@@ -52,8 +52,10 @@ class BoatsService {
 
     // Validar campos requeridos
     if (!boatData.name || !boatData.registrationNumber || !boatData.registrationCountry || 
-        !boatData.registrationPort || !boatData.boatType || !boatData.lengthOverall || !boatData.beam) {
-      throw new Error("Todos los campos requeridos deben estar presentes");
+        !boatData.registrationPort || !boatData.currentPort?.trim() || !boatData.boatType || 
+        !boatData.lengthOverall || !boatData.beam || boatData.depth == null || boatData.depth === "" || 
+        boatData.displacement == null || boatData.displacement === "") {
+      throw new Error("Todos los campos requeridos deben estar presentes (incl. Puerto actual, Calado y Desplazamiento)");
     }
 
     // Validar que boatType esté en el enum
@@ -95,8 +97,10 @@ class BoatsService {
 
     // Validar campos requeridos
     if (!boatData.name || !boatData.registrationNumber || !boatData.registrationCountry || 
-        !boatData.registrationPort || !boatData.boatType || !boatData.lengthOverall || !boatData.beam) {
-      throw new Error("Todos los campos requeridos deben estar presentes");
+        !boatData.registrationPort || !boatData.currentPort?.trim() || !boatData.boatType || 
+        !boatData.lengthOverall || !boatData.beam || boatData.depth == null || boatData.depth === "" || 
+        boatData.displacement == null || boatData.displacement === "") {
+      throw new Error("Todos los campos requeridos deben estar presentes (incl. Puerto actual, Calado y Desplazamiento)");
     }
 
     // Validar que boatType esté en el enum

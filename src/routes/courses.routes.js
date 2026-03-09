@@ -38,7 +38,7 @@ coursesRouter.delete("/delete/:courseId", authenticateToken, authorizeByCategory
 // Actualizar certificado
 coursesRouter.put("/certificate/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
 
-// Listar todos los certificados de curso (course_certificates)
+// Listar todos los certificados de curso (course-certificates)
 coursesRouter.get("/admin/certificates", authenticateToken, authorizeByCategory(['Administrador']), coursesController.getAllCourseCertificates);
 
 // ========== RUTAS PROTEGIDAS PARA USUARIOS ==========
@@ -66,6 +66,9 @@ coursesRouter.put("/user/:userId/course/:courseId/module/:moduleId/test-result",
 // Prueba final del curso: iniciar intento y guardar puntaje
 coursesRouter.post("/user/:userId/course/:courseId/test-final-start", authenticateToken, validateUserOwnership(), coursesController.startFinalTestAttempt);
 coursesRouter.put("/user/:userId/course/:courseId/test-final-result", authenticateToken, validateUserOwnership(), coursesController.updateFinalTestResult);
+
+// Stream del video de una lección (proxy; la URL real no se expone al cliente)
+coursesRouter.get("/user/:userId/course/:courseId/lesson-video", authenticateToken, validateUserOwnership(), coursesController.getLessonVideoStream);
 
 // Obtener certificado de curso del usuario (award)
 coursesRouter.get("/user/:userId/course/:courseId/certificate", authenticateToken, validateUserOwnership(), coursesController.getCourseCertificate);

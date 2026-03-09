@@ -2,79 +2,104 @@ import { Schema, model } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const schema = new Schema({
-  paymentId: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    index: true 
-  },
-  courseId: { 
-    type: String, 
-    required: true, 
-    index: true 
-  },
-  courseName: { 
-    type: String, 
-    required: true 
-  },
-  userId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'users', 
-    required: true, 
-    index: true 
-  },
-  userEmail: { 
-    type: String, 
-    required: true 
-  },
-  userFirstName: { 
-    type: String 
-  },
-  userLastName: { 
-    type: String 
-  },
-  transactionAmount: { 
-    type: Number, 
-    required: true 
-  },
-  currency: { 
-    type: String, 
-    required: true 
-  },
-  paymentStatus: { 
-    type: String, 
+  paymentId: {
+    type: String,
     required: true,
-    enum: ['approved', 'pending', 'rejected', 'cancelled', 'refunded'],
-    default: 'approved'
+    unique: true,
+    index: true,
   },
-  paymentStatusDetail: { 
-    type: String 
+
+  user: {
+    id: {
+      type: Schema.Types.ObjectId,
+      ref: "users",
+      required: true,
+      index: true,
+    },
+    email: {
+      type: String,
+      required: true,
+    },
+    firstName: {
+      type: String,
+    },
+    lastName: {
+      type: String,
+    },
   },
-  externalReference: { 
-    type: String, 
+
+  item: {
+    type: {
+      type: String,
+      required: true,
+      enum: ["course", "subscription", "procedure", "service", "other"],
+      index: true,
+    },
+    id: {
+      type: String,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+  },
+
+  amount: {
+    value: {
+      type: Number,
+      required: true,
+    },
+    currency: {
+      type: String,
+      required: true,
+    },
+  },
+
+  paymentStatus: {
+    type: String,
     required: true,
-    index: true
+    enum: ["approved", "pending", "rejected", "cancelled", "refunded"],
+    default: "pending",
+    index: true,
   },
-  processedAt: { 
-    type: Date, 
+
+  paymentStatusDetail: {
+    type: String,
+  },
+
+  externalReference: {
+    type: String,
+    required: true,
+    index: true,
+  },
+
+  provider: {
+    type: String,
+    default: "mercadopago",
+  },
+
+  processedAt: {
+    type: Date,
     default: Date.now,
-    index: true
+    index: true,
   },
-  alreadyPurchased: { 
-    type: Boolean, 
-    default: false 
+
+  metadata: {
+    type: Schema.Types.Mixed,
   },
-  errorMessage: { 
-    type: String 
-  }
+
+  errorMessage: {
+    type: String,
+  },
 }, {
-  timestamps: true
+  timestamps: true,
 });
 
-// Índices compuestos para búsquedas rápidas
 schema.index({ paymentId: 1, processedAt: -1 });
-schema.index({ userId: 1, processedAt: -1 });
-schema.index({ courseId: 1, processedAt: -1 });
+schema.index({ "user.id": 1, processedAt: -1 });
+schema.index({ "item.type": 1, processedAt: -1 });
+schema.index({ "item.id": 1, processedAt: -1 });
 schema.index({ processedAt: -1 });
 schema.index({ paymentStatus: 1, processedAt: -1 });
 
