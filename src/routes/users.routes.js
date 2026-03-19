@@ -34,5 +34,8 @@ usersRouter.put("/fleet/update-status", authenticateToken, authorizeByCategory([
 usersRouter.get("/", authenticateToken, authorizeByCategory(['Administrador']), usersController.getAll);
 usersRouter.get("/findByEmail", authenticateToken, authorizeByCategory(['Administrador']), usersController.findByEmail);
 usersRouter.get("/findByCi", authenticateToken, authorizeByCategory(['Administrador']), usersController.findByCi);
+// Wallet y transacciones: el usuario solo puede ver los suyos; Administrador puede ver cualquiera
+usersRouter.get("/:id/wallet", authenticateToken, validateUserOwnership({ userIdParam: "id" }), usersController.getWallet);
+usersRouter.get("/:id/transactions", authenticateToken, validateUserOwnership({ userIdParam: "id" }), usersController.getTransactions);
 usersRouter.get("/:id", authenticateToken, authorizeByCategory(['Administrador']), usersController.findById);
 usersRouter.delete("/:id", authenticateToken, authorizeByCategory(['Administrador']), usersController.deleteOne);

@@ -10,12 +10,51 @@ function sanitizeCourseModules(modules) {
     moduleId: mod.moduleId,
     moduleName: mod.moduleName || "",
     moduleDescription: mod.moduleDescription || "",
-    lessons: (mod.lessons || []).map((lesson) => ({
-      lessonId: lesson.lessonId,
-      lessonName: lesson.lessonName || "",
-      lessonDescription: lesson.lessonDescription || "",
-      videoUrl: lesson.videoUrl || "",
-    })),
+    lessons: (mod.lessons || []).map((lesson) => {
+      const filesFromLesson = Array.isArray(lesson.lessonFiles)
+        ? lesson.lessonFiles
+        : Array.isArray(lesson.attachments)
+        ? lesson.attachments
+        : [];
+      const normalizedFiles = filesFromLesson
+        .map((file) => {
+          if (!file) return null;
+          if (typeof file === "string") {
+            return { url: file, name: "" };
+          }
+          const url = (file.url || file.pdfFile || "").trim();
+          if (!url) return null;
+          const name =
+            file.name ||
+            file.label ||
+            file.filename ||
+            (file.originalName || "").trim();
+          return { url, name };
+        })
+        .filter((f) => f && f.url);
+
+      const supportPdfUrl = (lesson.supportPdfUrl || "").trim();
+      const supportPdfName = (lesson.supportPdfName || "").trim();
+      if (supportPdfUrl) {
+        const already = normalizedFiles.some((f) => f.url === supportPdfUrl);
+        if (!already) {
+          normalizedFiles.push({
+            url: supportPdfUrl,
+            name: supportPdfName,
+          });
+        }
+      }
+
+      return {
+        lessonId: lesson.lessonId,
+        lessonName: lesson.lessonName || "",
+        lessonDescription: lesson.lessonDescription || "",
+        videoUrl: lesson.videoUrl || "",
+        supportPdfUrl: supportPdfUrl || undefined,
+        supportPdfName: supportPdfName || undefined,
+        lessonFiles: normalizedFiles,
+      };
+    }),
     questionBank: (mod.questionBank || []).map((q) => ({
       questionId: q.questionId,
       questionText: q.questionText || "",

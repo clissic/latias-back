@@ -235,7 +235,8 @@ class UploadController {
         msg: "PDF subido exitosamente",
         payload: {
           pdfFile: pdfPath,
-          filename: req.file.filename
+          filename: req.file.filename,
+          originalName: req.file.originalname,
         },
       });
     } catch (error) {
@@ -243,6 +244,39 @@ class UploadController {
       return res.status(500).json({
         status: "error",
         msg: "Error al subir el PDF",
+        payload: {},
+      });
+    }
+  }
+
+  async uploadWithdrawalProof(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          status: "error",
+          msg: "No se proporcionó ningún comprobante",
+          payload: {},
+        });
+      }
+
+      const proofUrl = `/uploads/withdrawals/${req.file.filename}`;
+
+      logger.info(`Comprobante de retiro subido: ${proofUrl}`);
+
+      return res.status(200).json({
+        status: "success",
+        msg: "Comprobante subido exitosamente",
+        payload: {
+          proofUrl,
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+        },
+      });
+    } catch (error) {
+      logger.error("Error al subir comprobante de retiro:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error al subir el comprobante",
         payload: {},
       });
     }

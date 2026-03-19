@@ -42,6 +42,7 @@ class UsersModel {
         phone: true,
         birth: true,
         address: true,
+        bankAccount: true,
         statistics: true,
         settings: true,
         preferences: true,
@@ -50,6 +51,7 @@ class UsersModel {
         finishedCourses: true,
         paymentMethods: true,
         manager: true,
+        wallet: true,
         premium: true,
         lastLogin: true,
       }
@@ -302,6 +304,77 @@ class UsersModel {
       { $inc: { "premium.procedures": -1 } }
     );
     return { ok: true, updated: true };
+  }
+
+  /**
+   * Incrementa wallet.pendingBalance y totalEarnings en netAmount.
+   * No almacena transacciones dentro del usuario; solo campos agregados.
+   */
+  async incrementWalletPending(userId, netAmount, currency) {
+    const inc = Number(netAmount);
+    if (!Number.isFinite(inc) || inc === 0) return null;
+    const update = {
+      $inc: {
+        "wallet.pendingBalance": inc,
+        "wallet.totalEarnings": inc,
+      },
+    };
+    if (currency) {
+      update.$set = { "wallet.currency": String(currency) };
+    }
+    return UserMongoose.updateOne({ _id: userId }, update);
+  }
+
+  /**
+   * Mueve fondos desde pendingBalance a balance cuando las transacciones pasan a "available".
+   */
+  async moveWalletPendingToAvailable(userId, netAmount, currency) {
+    const inc = Number(netAmount);
+    if (!Number.isFinite(inc) || inc === 0) return null;
+    const update = {
+      $inc: {
+        "wallet.pendingBalance": -inc,
+        "wallet.balance": inc,
+      },
+    };
+    if (currency) {
+      update.$set = { "wallet.currency": String(currency) };
+    }
+    return UserMongoose.updateOne({ _id: userId }, update);
+  }
+
+  /**
+   * Obtiene solo el objeto wallet del usuario (para endpoint GET wallet).
+   */
+  async getWallet(userId) {
+    const user = await UserMongoose.findById(userId).select("wallet").lean();
+    return user?.wallet ?? null;
+  }
+
+  /**
+   * Resta amount del balance (para reembolsos). No modifica totalEarnings.
+   */
+  async decrementWalletBalance(userId, amount, currency) {
+    const dec = Number(amount);
+    if (!Number.isFinite(dec) || dec <= 0) return null;
+    const update = { $inc: { "wallet.balance": -dec } };
+    if (currency) update.$set = { "wallet.currency": String(currency) };
+    return UserMongoose.updateOne({ _id: userId }, update);
+  }
+
+  /**
+   * Retiro: resta amount del balance e incrementa totalWithdrawn. Actualiza lastPayoutDate.
+   */
+  async withdrawFromWallet(userId, amount, currency) {
+    const dec = Number(amount);
+    if (!Number.isFinite(dec) || dec <= 0) return null;
+    const now = new Date();
+    const update = {
+      $inc: { "wallet.balance": -dec, "wallet.totalWithdrawn": dec },
+      $set: { "wallet.lastPayoutDate": now },
+    };
+    if (currency) update.$set["wallet.currency"] = String(currency);
+    return UserMongoose.updateOne({ _id: userId }, update);
   }
 
   /** Incrementa statistics.certificatesQuantity en 1 (al emitir un certificado de curso). */

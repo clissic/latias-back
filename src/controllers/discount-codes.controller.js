@@ -161,7 +161,7 @@ class DiscountCodesController {
   async apply(req, res) {
     try {
       const { code } = req.body;
-      const userId = req.user?._id ?? req.user?.id;
+      const userId = req.user?._id ?? req.user?.id ?? req.user?.userId;
       if (!userId) {
         return res.status(401).json({
           status: "error",
@@ -176,7 +176,8 @@ class DiscountCodesController {
           payload: {},
         });
       }
-      const result = await discountCodesService.applyCode(String(code).trim(), userId);
+      // Solo validar el código para este usuario, sin marcarlo todavía como utilizado.
+      const result = await discountCodesService.validateCodeForUser(String(code).trim(), userId);
       return res.status(200).json({
         status: "success",
         msg: "Código aplicado",

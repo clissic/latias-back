@@ -55,9 +55,10 @@ class MercadoPagoService {
    * @param {string} params.currency - Código de moneda (USD, UYU, etc.)
    * @param {string} params.userId - ID del usuario que realiza la compra
    * @param {Object} params.payer - Información del pagador (opcional)
+   * @param {string} [params.discountCode] - Código de descuento aplicado (opcional)
    * @returns {Promise<Object>} - Respuesta de Mercado Pago con la preferencia creada
    */
-  async createPreference({ courseId, courseName, price, currency = 'USD', userId, payer }) {
+  async createPreference({ courseId, courseName, price, currency = 'USD', userId, payer, discountCode }) {
     let preferenceData = null; // Declarar fuera del try para que esté disponible en el catch
     
     try {
@@ -154,6 +155,15 @@ class MercadoPagoService {
 
       logger.info(`Precio formateado: ${finalPrice}, Moneda: ${currencyCode}`);
 
+      // Construir external_reference: courseId|userId|DISCOUNT_CODE? (el código es opcional)
+      const normalizedDiscountCode =
+        typeof discountCode === 'string' && discountCode.trim() !== ''
+          ? discountCode.trim().toUpperCase()
+          : null;
+      const externalReference = normalizedDiscountCode
+        ? `${courseId}|${userId}|${normalizedDiscountCode}`
+        : `${courseId}|${userId}`;
+
       // Preferencia Checkout Pro (doc: https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/create-payment-preference)
       preferenceData = {
         items: [
@@ -172,13 +182,19 @@ class MercadoPagoService {
           pending: backUrls.pending
         },
         auto_return: 'approved',
-        external_reference: `${courseId}|${userId}`,
+        external_reference: externalReference,
         notification_url: String(notificationUrl).trim(),
         statement_descriptor: 'LATIAS ACADEMIA',
         metadata: {
           courseId: String(courseId),
           courseName: String(courseName),
           userId: String(userId),
+          ...(normalizedDiscountCode
+            ? {
+                discountCode: normalizedDiscountCode,
+                originalPrice: finalPrice,
+              }
+            : {}),
         },
         payment_methods: {
           excluded_payment_methods: [],
@@ -647,8 +663,11 @@ class MercadoPagoService {
         return { success: true, procedure: true };
       }
 
-      // Curso: courseId|userId
-      const [courseId, userId] = externalReference.split('|');
+      // Curso: courseId|userId o courseId|userId|DISCOUNT_CODE
+      const partsForCourse = externalReference.split('|');
+      const courseId = partsForCourse[0];
+      const userId = partsForCourse[1];
+      const discountCodeFromRef = partsForCourse.length >= 3 ? partsForCourse[2] : null;
       if (!courseId || !userId) {
         logger.error('External reference malformado:', externalReference);
         return { success: false, error: 'Invalid external_reference format' };
@@ -716,6 +735,23 @@ class MercadoPagoService {
         // Si falla la persistencia pero el curso se agregó, loguear pero no fallar
         logger.error(`Error al guardar pago ${paymentId} en BD:`, dbError);
         // No lanzar error para no afectar el flujo principal
+      }
+
+      // Si hay un código de descuento asociado en el external_reference, marcarlo como utilizado por el usuario.
+      if (discountCodeFromRef) {
+        try {
+          const { discountCodesService } = await import('./discount-codes.service.js');
+          await discountCodesService.applyCode(discountCodeFromRef, userId);
+          logger.info(
+            `Código de descuento ${discountCodeFromRef} aplicado para el usuario ${userId} en el pago ${paymentId}`
+          );
+        } catch (discountError) {
+          // No interrumpir el flujo principal si falla la aplicación del código.
+          logger.error(
+            `Error al aplicar código de descuento ${discountCodeFromRef} para el usuario ${userId} en el pago ${paymentId}:`,
+            discountError?.message || discountError
+          );
+        }
       }
 
       // Enviar email de confirmación al usuario (webhook: cuando el pago se procesa solo por notificación)

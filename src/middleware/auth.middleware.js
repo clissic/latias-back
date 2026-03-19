@@ -1,4 +1,5 @@
 import { jwtService } from '../services/jwt.service.js';
+import { withdrawalAdminTokenService } from '../services/withdrawal-admin-token.service.js';
 import { usersModel } from '../DAO/models/users.model.js';
 import { logger } from '../utils/logger.js';
 
@@ -134,6 +135,47 @@ export const optionalAuth = async (req, res, next) => {
     // En caso de error, continuar sin usuario autenticado
     req.user = null;
     next();
+  }
+};
+
+export const verifyAdminWithdrawalToken = (req, res, next) => {
+  try {
+    const token = req.query.token;
+
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        msg: "Token de retiro requerido",
+        payload: {},
+      });
+    }
+
+    const decoded = withdrawalAdminTokenService.verifyToken(token);
+    const { withdrawalId, role } = decoded || {};
+
+    if (!withdrawalId || role !== "admin") {
+      return res.status(401).json({
+        status: "error",
+        msg: "Token de retiro inválido",
+        payload: {},
+      });
+    }
+
+    req.withdrawalId = String(withdrawalId);
+    next();
+  } catch (error) {
+    logger.error("Error al validar token administrativo de retiro:", error);
+
+    const msg =
+      error?.name === "TokenExpiredError"
+        ? "Token de retiro expirado"
+        : "Token de retiro inválido";
+
+    return res.status(401).json({
+      status: "error",
+      msg,
+      payload: {},
+    });
   }
 };
 

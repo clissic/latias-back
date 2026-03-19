@@ -30,7 +30,17 @@ const schema = new Schema({
           lessonId: { type: String, required: true },
           lessonName: { type: String, required: true },
           lessonDescription: { type: String },
-          videoUrl: { type: String }
+          videoUrl: { type: String },
+          // Material de apoyo en PDF para la lección
+          supportPdfUrl: { type: String },
+          supportPdfName: { type: String },
+          // Lista de archivos asociados a la lección (por ahora se usará para PDFs)
+          lessonFiles: [
+            {
+              url: { type: String, required: true },
+              name: { type: String },
+            },
+          ],
         }
       ],
       questionBank: [

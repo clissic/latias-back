@@ -1,4 +1,5 @@
 import { usersModel } from "../DAO/models/users.model.js";
+import { transactionsModel } from "../DAO/models/transactions.model.js";
 import { boatsService } from "../services/boats.service.js";
 import { transport } from "../utils/nodemailer.js";
 import { logger } from "../utils/logger.js";
@@ -20,6 +21,22 @@ class UserService {
         throw new Error("Failed to find user by ID: " + error);
       }
     }
+
+    async getWallet(userId) {
+      try {
+        return await usersModel.getWallet(userId);
+      } catch (error) {
+        throw new Error("Failed to get wallet: " + error);
+      }
+    }
+
+    async getTransactions(userId, { status, type, limit } = {}) {
+      try {
+        return await transactionsModel.getByUser(userId, { status, type, limit });
+      } catch (error) {
+        throw new Error("Failed to get transactions: " + error);
+      }
+    }
   
     async create({ firstName, lastName, birth, ci, email, password, category }) {
       try {
@@ -38,7 +55,7 @@ class UserService {
       }
     }
   
-    async updateOne({ _id, password, avatar, firstName, lastName, status, email, ci, phone, birth, address, statistics, settings, preferences, purchasedCourses, finishedCourses, manager })
+    async updateOne({ _id, password, avatar, firstName, lastName, status, email, ci, phone, birth, address, bankAccount, statistics, settings, preferences, purchasedCourses, finishedCourses, manager })
     {
       try {
         return await usersModel.updateOne({
@@ -53,6 +70,7 @@ class UserService {
             phone,
             birth,
             address,
+            bankAccount,
             statistics,
             settings,
             preferences,
@@ -787,6 +805,159 @@ class UserService {
         return true;
       } catch (error) {
         logger.error("Error al enviar email de desvinculación al gestor: " + error?.message);
+        return false;
+      }
+    }
+
+    async sendAdminWithdrawalRequestEmail({ to, user, withdrawal, payoutDetails, wallet, adminProcessLink }) {
+      if (!to) return false;
+      const userName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Usuario";
+      const amount = Number(withdrawal?.amount || 0).toFixed(2);
+      const currency = wallet?.currency || user?.wallet?.currency || "USD";
+      const payoutSummary = [payoutDetails?.bank, payoutDetails?.type, payoutDetails?.number]
+        .filter(Boolean)
+        .join(" - ");
+      const categories = Array.isArray(user?.category) ? user.category.join(", ") : (user?.category || "—");
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: `[LATIAS] Nueva solicitud de retiro por ${amount} ${currency}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Nueva solicitud de retiro</h2>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">LATIAS Academia</p>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="margin: 0 0 15px 0; color: #333; font-size: 16px;">Se registró una nueva solicitud de retiro.</p>
+                <div style="margin: 20px 0; padding: 18px; background-color: #f9f9f9; border-left: 4px solid #ffa500; border-radius: 4px;">
+                  <p style="margin: 0; color: #082b55; font-size: 18px; font-weight: bold;">Monto solicitado: ${amount} ${currency}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos del usuario</p>
+                  <p style="margin: 0 0 8px 0; color: #333;"><strong>Nombre:</strong> ${userName}</p>
+                  <p style="margin: 0 0 8px 0; color: #333;"><strong>Email:</strong> ${user?.email || "—"}</p>
+                  <p style="margin: 0 0 8px 0; color: #333;"><strong>CI:</strong> ${user?.ci || "—"}</p>
+                  <p style="margin: 0; color: #333;"><strong>Categoría:</strong> ${categories}</p>
+                </div>
+                <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #082b55; border-radius: 4px;">
+                  <p style="margin: 0 0 10px 0; color: #082b55; font-weight: bold; font-size: 16px;">Datos de pago</p>
+                  <p style="margin: 0 0 8px 0; color: #333;"><strong>Método:</strong> ${withdrawal?.payoutMethod || "—"}</p>
+                  <p style="margin: 0; color: #333;"><strong>Detalle:</strong> ${payoutSummary || "—"}</p>
+                </div>
+                <p style="margin: 20px 0 0 0;">
+                  <a href="${adminProcessLink}" style="display: inline-block; background-color: #ffa500; color: #082b55; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Procesar retiro</a>
+                </p>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de solicitud de retiro enviado al admin ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de solicitud de retiro al admin: " + error?.message);
+        return false;
+      }
+    }
+
+    async sendWithdrawalCompletedEmail({ to, userName, amount, currency, payoutMethod, payoutDetails, proofUrl }) {
+      if (!to) return false;
+      const payoutSummary = [payoutDetails?.bank || payoutMethod, payoutDetails?.type, payoutDetails?.number]
+        .filter(Boolean)
+        .join(" - ");
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: `[LATIAS] Tu retiro fue procesado`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Retiro procesado</h2>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+                <p style="margin: 0 0 15px 0; color: #333;">Estimado/a ${userName || "usuario"},</p>
+                <p style="margin: 0 0 15px 0; color: #333;">Tu solicitud de retiro fue procesada correctamente.</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Monto:</strong> ${Number(amount || 0).toFixed(2)} ${currency || "USD"}</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Método:</strong> ${payoutMethod || "—"}</p>
+                <p style="margin: 0 0 20px 0; color: #333;"><strong>Cuenta:</strong> ${payoutSummary || "—"}</p>
+                ${proofUrl ? `<p style="margin: 0;"><a href="${proofUrl}" style="display: inline-block; background-color: #ffa500; color: #082b55; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Ver comprobante</a></p>` : ""}
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de retiro procesado enviado a ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de retiro procesado: " + error?.message);
+        return false;
+      }
+    }
+
+    async sendWithdrawalRejectedEmail({ to, userName, amount, currency, payoutMethod, payoutDetails, reason }) {
+      if (!to) return false;
+      const payoutSummary = [payoutDetails?.bank || payoutMethod, payoutDetails?.type, payoutDetails?.number]
+        .filter(Boolean)
+        .join(" - ");
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: `[LATIAS] Tu retiro fue rechazado`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Retiro rechazado</h2>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+                <p style="margin: 0 0 15px 0; color: #333;">Estimado/a ${userName || "usuario"},</p>
+                <p style="margin: 0 0 15px 0; color: #333;">Tu solicitud de retiro fue rechazada y los fondos se devolvieron a tu balance disponible.</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Monto:</strong> ${Number(amount || 0).toFixed(2)} ${currency || "USD"}</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Método:</strong> ${payoutMethod || "—"}</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Cuenta:</strong> ${payoutSummary || "—"}</p>
+                ${reason ? `<p style="margin: 0; color: #333;"><strong>Motivo:</strong> ${String(reason).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>` : ""}
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de retiro rechazado enviado a ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de retiro rechazado: " + error?.message);
+        return false;
+      }
+    }
+
+    async sendWithdrawalExpiredEmail({ to, userName, amount, currency, payoutMethod, payoutDetails }) {
+      if (!to) return false;
+      const payoutSummary = [payoutDetails?.bank || payoutMethod, payoutDetails?.type, payoutDetails?.number]
+        .filter(Boolean)
+        .join(" - ");
+      try {
+        await transport.sendMail({
+          from: process.env.GOOGLE_EMAIL,
+          to,
+          subject: `[LATIAS] Tu retiro expiró`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+              <div style="background-color: #082b55; color: #ffffff; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: #ffa500;">Retiro expirado</h2>
+              </div>
+              <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+                <p style="margin: 0 0 15px 0; color: #333;">Estimado/a ${userName || "usuario"},</p>
+                <p style="margin: 0 0 15px 0; color: #333;">Tu solicitud de retiro no fue procesada dentro del plazo y expiró automáticamente. Los fondos volvieron a tu balance disponible.</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Monto:</strong> ${Number(amount || 0).toFixed(2)} ${currency || "USD"}</p>
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Método:</strong> ${payoutMethod || "—"}</p>
+                <p style="margin: 0; color: #333;"><strong>Cuenta:</strong> ${payoutSummary || "—"}</p>
+              </div>
+            </div>
+          `,
+        });
+        logger.info(`Email de retiro expirado enviado a ${to}`);
+        return true;
+      } catch (error) {
+        logger.error("Error al enviar email de retiro expirado: " + error?.message);
         return false;
       }
     }

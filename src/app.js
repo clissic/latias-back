@@ -20,6 +20,8 @@ import { certificatesRouter } from "./routes/certificates.routes.js";
 import { shipRequestsRouter } from "./routes/ship-requests.routes.js";
 import { discountCodesRouter } from "./routes/discount-codes.routes.js";
 import { startEventsCron } from "./utils/events-cron.js";
+import { withdrawalsRouter } from "./routes/withdrawals.routes.js";
+import { startWithdrawalsCron } from "./utils/withdrawals-cron.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +43,7 @@ connectMongo();
 
 // Iniciar cron job para desactivar eventos vencidos
 startEventsCron();
+startWithdrawalsCron();
 
 // Asegurar que el directorio de uploads existe
 // __dirname es latias-back/src, entonces ../public es latias-back/public
@@ -79,6 +82,14 @@ if (!existsSync(certificatesUploadsDir)) {
   console.log(`Directorio de uploads de certificados ya existe: ${certificatesUploadsDir}`);
 }
 
+const withdrawalsUploadsDir = join(__dirname, "../public/uploads/withdrawals");
+if (!existsSync(withdrawalsUploadsDir)) {
+  mkdirSync(withdrawalsUploadsDir, { recursive: true });
+  console.log(`Directorio de uploads de retiros creado: ${withdrawalsUploadsDir}`);
+} else {
+  console.log(`Directorio de uploads de retiros ya existe: ${withdrawalsUploadsDir}`);
+}
+
 // ENDPOINTS (deben ir antes de los archivos estáticos)
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
@@ -93,6 +104,7 @@ app.use("/api/boats", boatsRouter);
 app.use("/api/certificates", certificatesRouter);
 app.use("/api/ship-requests", shipRequestsRouter);
 app.use("/api/discount-codes", discountCodesRouter);
+app.use("/api/withdrawals", withdrawalsRouter);
 
 // Opciones para servir uploads con MIME correcto
 const uploadsStaticOptions = {

@@ -77,7 +77,15 @@ class DiscountCodesService {
     return await discountCodesModel.deleteOne(id);
   }
 
-  async applyCode(codeValue, userId) {
+  /**
+   * Valida un código de descuento para un usuario sin marcarlo como utilizado.
+   * Lanza errores si:
+   * - No existe
+   * - Está inactivo
+   * - Se agotaron los usos
+   * - El usuario ya lo utilizó
+   */
+  async validateCodeForUser(codeValue, userId) {
     const doc = await discountCodesModel.findByCode(codeValue);
     if (!doc) {
       throw new Error("CODE_NOT_FOUND");
@@ -93,11 +101,21 @@ class DiscountCodesService {
     if (doc.usedBy && doc.usedBy.some((id) => String(id) === uid)) {
       throw new Error("ALREADY_USED");
     }
-    const updated = await discountCodesModel.addUse(doc._id, userId);
+    return { percentage: doc.percentage, code: doc.code, _id: doc._id };
+  }
+
+  /**
+   * Marca el código como utilizado por el usuario (se debe llamar solo tras un pago exitoso).
+   * Revalida el estado del código antes de aplicarlo.
+   */
+  async applyCode(codeValue, userId) {
+    // Reutilizar validaciones básicas (existencia, activo, cantidad, ya usado)
+    const validated = await this.validateCodeForUser(codeValue, userId);
+    const updated = await discountCodesModel.addUse(validated._id, userId);
     if (!updated) {
       throw new Error("CODE_EXHAUSTED");
     }
-    return { percentage: doc.percentage, code: doc.code, _id: doc._id };
+    return { percentage: updated.percentage, code: updated.code, _id: updated._id };
   }
 }
 

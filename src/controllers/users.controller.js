@@ -77,6 +77,54 @@ class UsersController {
     }
   }
 
+  async getWallet(req, res) {
+    try {
+      const { id } = req.params;
+      const wallet = await userService.getWallet(id);
+      if (wallet === null) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario no encontrado o sin wallet",
+          payload: {},
+        });
+      }
+      return res.status(200).json({
+        status: "success",
+        msg: "Wallet obtenida",
+        payload: wallet,
+      });
+    } catch (error) {
+      logger.error("Error en getWallet:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error.message || "Error al obtener wallet",
+        payload: {},
+      });
+    }
+  }
+
+  async getTransactions(req, res) {
+    try {
+      const { id } = req.params;
+      const status = (req.query.status || "").trim() || undefined;
+      const type = (req.query.type || "").trim() || undefined;
+      const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+      const transactions = await userService.getTransactions(id, { status, type, limit });
+      return res.status(200).json({
+        status: "success",
+        msg: "Transacciones obtenidas",
+        payload: transactions,
+      });
+    } catch (error) {
+      logger.error("Error en getTransactions:", error);
+      return res.status(500).json({
+        status: "error",
+        msg: error.message || "Error al obtener transacciones",
+        payload: {},
+      });
+    }
+  }
+
   async findByEmail(req,res) {
     try {
       const email = req.query.email;
@@ -210,6 +258,7 @@ class UsersController {
         phone,
         birth,
         address,
+        bankAccount,
         statistics,
         settings,
         preferences,
@@ -219,7 +268,17 @@ class UsersController {
         manager,
       } = req.body;
 
-      if (!firstName || !lastName || !email || !_id) {
+      const hasBankAccountOnlyUpdate =
+        bankAccount !== undefined &&
+        firstName === undefined &&
+        lastName === undefined &&
+        email === undefined &&
+        ci === undefined &&
+        phone === undefined &&
+        birth === undefined &&
+        address === undefined;
+
+      if ((!firstName || !lastName || !email || !_id) && !hasBankAccountOnlyUpdate) {
         logger.info(
           "Validation error: please complete firstName, lastName and email."
         );
@@ -258,6 +317,7 @@ class UsersController {
             phone,
             birth,
             address,
+            bankAccount,
             statistics,
             settings,
             preferences,
@@ -275,6 +335,7 @@ class UsersController {
             phone,
             birth,
             address,
+            bankAccount,
           };
 
       try {
@@ -719,6 +780,8 @@ class UsersController {
             approvedCourses: user.approvedCourses || [],
             fleet: user.fleet || [],
             manager: managerPayload,
+            bankAccount: user.bankAccount,
+            wallet: user.wallet,
             status: user.status || "Estudiante"
           }
         },

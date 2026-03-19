@@ -22,6 +22,19 @@ const schema = new Schema({
     number: { type: Number, max: 10, default: null},
     zipCode: { type: Number, max: 10, default: null },
   },
+  bankAccount: {
+    bank: {
+      type: String,
+      enum: ["", "MERCADO PAGO", "BROU", "SCOTIABANK", "PREX", "OCA BLUE", "CITI", "ITAU", "HSBC", "BHU", "SANTANDER", "HERITAGE", "BANDES", "BBVA", "NACION ARGENTINA", "MIDINERO"],
+      default: "",
+    },
+    number: { type: Number, default: null },
+    type: {
+      type: String,
+      enum: ["", "CA USD", "CA UYU", "CC USD", "CC UYU", "FINTECH"],
+      default: "",
+    },
+  },
   preferences: {
     language: { type: String, default: "es" },
     notifications: { type: Boolean, default: true },
@@ -69,6 +82,15 @@ const schema = new Schema({
     freeCourses: { type: Number, default: 0 },
     expires: { type: Date, default: null },
     maximumShips: { type: Number, default: null }
+  },
+  wallet: {
+    balance: { type: Number, default: 0 },
+    pendingBalance: { type: Number, default: 0 },
+    lockedBalance: { type: Number, default: 0 },
+    totalEarnings: { type: Number, default: 0 },
+    totalWithdrawn: { type: Number, default: 0 },
+    currency: { type: String, default: "USD" },
+    lastPayoutDate: { type: Date, default: null }
   },
   lastLogin: { type: Date }
 });

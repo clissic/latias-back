@@ -315,3 +315,59 @@ export const uploadCertificate = multer({
 
 // Middleware para subir PDF de certificado
 export const uploadCertificatePDF = uploadCertificate.single('pdfFile');
+
+const withdrawalsUploadsDir = join(__dirname, '../public/uploads/withdrawals');
+logger.info(`[Upload Middleware] Ruta del directorio de retiros: ${withdrawalsUploadsDir}`);
+
+if (!existsSync(withdrawalsUploadsDir)) {
+  try {
+    mkdirSync(withdrawalsUploadsDir, { recursive: true });
+    logger.info(`[Upload Middleware] Directorio de uploads de retiros creado: ${withdrawalsUploadsDir}`);
+  } catch (error) {
+    logger.error(`[Upload Middleware] Error al crear directorio de retiros: ${error.message}`);
+    throw error;
+  }
+} else {
+  logger.info(`[Upload Middleware] Directorio de uploads de retiros existe: ${withdrawalsUploadsDir}`);
+}
+
+const withdrawalProofStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!existsSync(withdrawalsUploadsDir)) {
+      try {
+        mkdirSync(withdrawalsUploadsDir, { recursive: true });
+      } catch (error) {
+        return cb(error);
+      }
+    }
+
+    cb(null, withdrawalsUploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = file.originalname.split('.').pop();
+    cb(null, `withdrawal-proof-${uniqueSuffix}.${ext}`);
+  }
+});
+
+const withdrawalProofFileFilter = (req, file, cb) => {
+  const allowedTypes = /pdf|jpeg|jpg|png|webp/;
+  const extname = allowedTypes.test(file.originalname.toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  }
+
+  cb(new Error('Solo se permiten comprobantes PDF o imágenes (jpeg, jpg, png, webp)'));
+};
+
+export const uploadWithdrawalProof = multer({
+  storage: withdrawalProofStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+  fileFilter: withdrawalProofFileFilter
+});
+
+export const uploadWithdrawalProofFile = uploadWithdrawalProof.single('proofFile');

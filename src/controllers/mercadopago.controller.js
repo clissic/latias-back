@@ -7,6 +7,7 @@ import { pendingProcedurePaymentsModel } from "../DAO/models/pending-procedure-p
 import { usersModel } from "../DAO/models/users.model.js";
 import { boatsModel } from "../DAO/models/boats.model.js";
 import { logger } from "../utils/logger.js";
+import { walletService } from "../services/wallet.service.js";
 
 /**
  * Controlador de Mercado Pago
@@ -21,7 +22,7 @@ class MercadoPagoController {
   // Crear preferencia de pago
   async createPreference(req, res) {
     try {
-      const { courseId, courseName, price, currency, userId } = req.body;
+      const { courseId, courseName, price, currency, userId, discountCode } = req.body;
 
       // Validar datos requeridos
       if (!courseId || !courseName || !price || !userId) {
@@ -68,11 +69,14 @@ class MercadoPagoController {
         price: numericPrice,
         currency: finalCurrency,
         userId,
-        payer: userEmail ? {
-          email: userEmail,
-          name: userFirstName || undefined,
-          surname: userLastName || undefined,
-        } : undefined,
+        payer: userEmail
+          ? {
+              email: userEmail,
+              name: userFirstName || undefined,
+              surname: userLastName || undefined,
+            }
+          : undefined,
+        discountCode,
       });
 
       return res.status(200).json({
@@ -121,6 +125,36 @@ class MercadoPagoController {
           msg: "No tienes permisos para crear esta preferencia",
           payload: {},
         });
+      }
+      // Verificar si el usuario ya tiene un plan activo igual o superior
+      try {
+        const user = await usersModel.findById(userId);
+        if (user?.premium?.isActive && user.premium?.subscription) {
+          const current = String(user.premium.subscription || "").toLowerCase();
+          const target = String(planId || "").toLowerCase();
+          const rankOf = (planName) => {
+            if (!planName) return 0;
+            if (planName.includes("capitan") || planName.includes("capitán")) return 3;
+            if (planName.includes("navegante")) return 2;
+            if (planName.includes("basico") || planName.includes("básico")) return 1;
+            return 0;
+          };
+          const currentRank = rankOf(current);
+          const targetRank = rankOf(target);
+          if (currentRank > 0 && targetRank > 0 && currentRank >= targetRank) {
+            return res.status(400).json({
+              status: "error",
+              msg: "Ya cuentas con un plan igual o con mayores beneficios.",
+              payload: {
+                code: "PLAN_ALREADY_BETTER_OR_EQUAL",
+                currentSubscription: user.premium.subscription,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        logger.error("Error verificando plan premium existente:", e?.message || e);
+        // No bloqueamos la compra si hay un error de lectura, solo lo registramos.
       }
       const userEmail = req.user?.email || null;
       const userFirstName = req.user?.firstName || null;
@@ -375,6 +409,38 @@ class MercadoPagoController {
 
       const refund = await mercadoPagoService.refundPayment(paymentId, amount);
 
+      if (payment.live_mode === true && payment.external_reference) {
+        const parts = payment.external_reference.split("|");
+        const isCourse = parts.length >= 2 && parts[0] !== "premium" && parts[0] !== "procedure";
+        if (isCourse) {
+          const [courseId, userIdBuyer] = parts;
+          try {
+            const course = await coursesService.findByCourseId(courseId);
+            const instructorId = course?.instructor?._id ?? course?.instructor;
+            if (instructorId) {
+              const refundAmount = amount != null ? Number(amount) : payment.transaction_amount ?? 0;
+              if (Number.isFinite(refundAmount) && refundAmount > 0) {
+                const { transactionsModel } = await import("../DAO/models/transactions.model.js");
+                const existingRefund = await transactionsModel.findByPaymentId(`refund-${paymentId}`);
+                if (!existingRefund) {
+                  await walletService.registerRefund({
+                    userId: instructorId,
+                    amount: refundAmount,
+                    currency: payment.currency_id || "USD",
+                    paymentId: `refund-${paymentId}`,
+                    sourceType: "course",
+                    sourceId: course._id ?? courseId,
+                  });
+                  logger.info(`Reembolso ${paymentId} registrado en wallet para instructor ${instructorId}`);
+                }
+              }
+            }
+          } catch (walletErr) {
+            logger.error(`Error registrando reembolso en wallet para paymentId ${paymentId}:`, walletErr);
+          }
+        }
+      }
+
       return res.status(200).json({
         status: "success",
         msg: "Reembolso creado exitosamente",
@@ -601,6 +667,18 @@ class MercadoPagoController {
             logger.error(`Error al guardar pago trámite ${paymentId} en processed_payments:`, dbError);
           }
         }
+        if (payment.live_mode === true && request?.manager) {
+          try {
+            await walletService.registerServicePaymentForGestor({
+              requestId: request?._id ?? refId,
+              request,
+              payment,
+              paymentId,
+            });
+          } catch (walletErr) {
+            logger.error(`Error registrando wallet gestoría para paymentId ${paymentId}:`, walletErr);
+          }
+        }
         if (pending && request?.manager?.email && owner && request?.ship) {
           const boat = await boatsModel.findById(request.ship._id || request.ship);
           if (boat) {
@@ -691,6 +769,26 @@ class MercadoPagoController {
         } catch (dbError) {
           logger.error(`Error al guardar pago ${paymentId} en processed_payments:`, dbError);
         }
+      }
+
+      // Registrar ingreso para el instructor (wallet), solo si es un pago real (no dev / free)
+      try {
+        if (payment.status === "approved" && payment.live_mode === true) {
+          await walletService.registerCourseSaleForInstructor({
+            courseId,
+            payment,
+            paymentId,
+          });
+        } else {
+          logger.info(
+            `processSuccessfulPayment: pago ${paymentId} no registra wallet (status=${payment.status}, live_mode=${payment.live_mode})`
+          );
+        }
+      } catch (walletErr) {
+        logger.error(
+          `Error registrando transacción de wallet para paymentId ${paymentId}, courseId ${courseId}:`,
+          walletErr
+        );
       }
 
       if (userEmail && !alreadyPurchased) {
