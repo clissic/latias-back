@@ -38,6 +38,14 @@ coursesRouter.delete("/delete/:courseId", authenticateToken, authorizeByCategory
 // Actualizar certificado
 coursesRouter.put("/certificate/:courseId", authenticateToken, authorizeByCategory(['Administrador']), coursesController.updateCertificate);
 
+// Curso completo para edición (admin o instructor titular)
+coursesRouter.get(
+  "/manage/course/:courseId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getCourseForEditor
+);
+
 // Listar todos los certificados de curso (course-certificates)
 coursesRouter.get("/admin/certificates", authenticateToken, authorizeByCategory(['Administrador']), coursesController.getAllCourseCertificates);
 
@@ -67,8 +75,13 @@ coursesRouter.put("/user/:userId/course/:courseId/module/:moduleId/test-result",
 coursesRouter.post("/user/:userId/course/:courseId/test-final-start", authenticateToken, validateUserOwnership(), coursesController.startFinalTestAttempt);
 coursesRouter.put("/user/:userId/course/:courseId/test-final-result", authenticateToken, validateUserOwnership(), coursesController.updateFinalTestResult);
 
-// Stream del video de una lección (proxy; la URL real no se expone al cliente)
-coursesRouter.get("/user/:userId/course/:courseId/lesson-video", authenticateToken, validateUserOwnership(), coursesController.getLessonVideoStream);
+// Metadatos de reproducción (embed Gumlet)
+coursesRouter.get(
+  "/user/:userId/course/:courseId/lesson-playback",
+  authenticateToken,
+  validateUserOwnership(),
+  coursesController.getLessonPlayback
+);
 
 // Obtener certificado de curso del usuario (award)
 coursesRouter.get("/user/:userId/course/:courseId/certificate", authenticateToken, validateUserOwnership(), coursesController.getCourseCertificate);

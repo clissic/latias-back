@@ -42,6 +42,17 @@ export const instructorsModel = {
     return doc ? toPlain(doc) : null;
   },
 
+  /** Coincidencia por email de contacto (comparación insensible a mayúsculas). */
+  async findByContactEmail(email) {
+    const e = String(email || "").trim();
+    if (!e) return null;
+    const escaped = e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const doc = await InstructorsMongoose.findOne({
+      "contact.email": { $regex: new RegExp(`^${escaped}$`, "i") },
+    }).lean();
+    return doc ? toPlain(doc) : null;
+  },
+
   async findByCourseId(courseId) {
     const list = await InstructorsMongoose.find({ courses: String(courseId) }).lean();
     return (list || []).map((d) => ({ ...d, _id: String(d._id) }));

@@ -226,10 +226,29 @@ class CoursesService {
   }
 
   /**
-   * Obtiene la URL del video de una lección solo si el usuario tiene el curso comprado.
-   * Usado por el endpoint de stream para hacer proxy del video sin exponer la URL al cliente.
+   * Quita identificadores de video de las lecciones (respuestas públicas de catálogo).
    */
-  async getLessonVideoUrl(userId, courseId, moduleId, lessonId) {
+  stripPublicVideoFieldsFromCourse(course) {
+    if (!course) return course;
+    const plain =
+      typeof course.toObject === "function"
+        ? course.toObject({ flattenMaps: true })
+        : JSON.parse(JSON.stringify(course));
+    if (!Array.isArray(plain.modules)) return plain;
+    plain.modules = plain.modules.map((m) => ({
+      ...m,
+      lessons: (m.lessons || []).map((l) => {
+        const { gumletAssetId, ...rest } = l;
+        return rest;
+      }),
+    }));
+    return plain;
+  }
+
+  /**
+   * Información de reproducción para cadetes con curso comprado (embed Gumlet).
+   */
+  async getLessonPlaybackInfo(userId, courseId, moduleId, lessonId) {
     const user = await usersModel.findById(userId);
     if (!user) return null;
     const purchasedCourses = user.purchasedCourses || [];
@@ -240,8 +259,32 @@ class CoursesService {
     const mod = course.modules.find((m) => String(m.moduleId) === String(moduleId));
     if (!mod?.lessons) return null;
     const lesson = mod.lessons.find((l) => String(l.lessonId) === String(lessonId));
-    const videoUrl = lesson?.videoUrl?.trim();
-    return videoUrl || null;
+    if (!lesson) return null;
+
+    const gumlet = (lesson.gumletAssetId || "").trim();
+    if (!gumlet) return null;
+    return {
+      kind: "gumlet",
+      embedUrl: `https://play.gumlet.io/embed/${encodeURIComponent(gumlet)}`,
+    };
+  }
+
+  async userCanLoadFullCourseForEditing(userEmail, userCategories, courseId) {
+    const cats = Array.isArray(userCategories)
+      ? userCategories
+      : userCategories != null
+        ? [userCategories]
+        : [];
+    if (cats.includes("Administrador")) return true;
+    if (!cats.includes("Instructor")) return false;
+    const course = await coursesModel.findByCourseId(courseId);
+    if (!course) return false;
+    const inst = await instructorsModel.findByContactEmail(userEmail);
+    if (!inst) return false;
+    const raw = course.instructor;
+    const cidStr =
+      raw && typeof raw === "object" && raw._id ? String(raw._id) : String(raw || "");
+    return cidStr === String(inst._id);
   }
 
   // Función para obtener los cursos comprados de un usuario (enriquecidos con datos del curso por courseId)

@@ -45,11 +45,13 @@ function sanitizeCourseModules(modules) {
         }
       }
 
+      const gumletAssetId = (lesson.gumletAssetId || "").trim();
+
       return {
         lessonId: lesson.lessonId,
         lessonName: lesson.lessonName || "",
         lessonDescription: lesson.lessonDescription || "",
-        videoUrl: lesson.videoUrl || "",
+        gumletAssetId: gumletAssetId || "",
         supportPdfUrl: supportPdfUrl || undefined,
         supportPdfName: supportPdfName || undefined,
         lessonFiles: normalizedFiles,
@@ -74,10 +76,13 @@ class CoursesController {
   async getAll(req, res) {
     try {
       const courses = await coursesService.getAll();
+      const payload = Array.isArray(courses)
+        ? courses.map((c) => coursesService.stripPublicVideoFieldsFromCourse(c))
+        : courses;
       return res.status(200).json({
         status: "success",
         msg: "Todos los cursos obtenidos",
-        payload: courses,
+        payload,
       });
     } catch (e) {
       logger.info(e);
@@ -95,10 +100,11 @@ class CoursesController {
       const { id } = req.params;
       const course = await coursesService.findById(id);
       if (course) {
+        const payload = coursesService.stripPublicVideoFieldsFromCourse(course);
         return res.status(200).json({
           status: "success",
           message: "Curso encontrado por ID",
-          payload: course,
+          payload,
         });
       } else {
         return res.status(404).json({
@@ -123,10 +129,11 @@ class CoursesController {
       const { courseId } = req.params;
       const course = await coursesService.findByCourseId(courseId);
       if (course) {
-        const payload = course.toObject ? course.toObject() : { ...course };
-        if (payload.instructor && typeof payload.instructor !== "string") {
-          payload.instructor = payload.instructor._id ? String(payload.instructor._id) : String(payload.instructor);
+        const raw = course.toObject ? course.toObject() : { ...course };
+        if (raw.instructor && typeof raw.instructor !== "string") {
+          raw.instructor = raw.instructor._id ? String(raw.instructor._id) : String(raw.instructor);
         }
+        const payload = coursesService.stripPublicVideoFieldsFromCourse(raw);
         return res.status(200).json({
           status: "success",
           message: "Curso encontrado por courseId",
@@ -155,10 +162,11 @@ class CoursesController {
       const { sku } = req.params;
       const course = await coursesService.findBySku(sku);
       if (course) {
+        const payload = coursesService.stripPublicVideoFieldsFromCourse(course);
         return res.status(200).json({
           status: "success",
           message: "Curso encontrado por SKU",
-          payload: course,
+          payload,
         });
       } else {
         return res.status(404).json({
@@ -167,6 +175,49 @@ class CoursesController {
           payload: {},
         });
       }
+    } catch (error) {
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /** Curso completo con IDs de video (solo administrador o instructor titular). */
+  async getCourseForEditor(req, res) {
+    try {
+      const { courseId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const allowed = await coursesService.userCanLoadFullCourseForEditing(email, categories, courseId);
+      if (!allowed) {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver los datos completos de este curso",
+          payload: {},
+        });
+      }
+      const course = await coursesService.findByCourseId(courseId);
+      if (!course) {
+        return res.status(404).json({
+          status: "error",
+          message: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      const payload = course.toObject ? course.toObject() : { ...course };
+      if (payload.instructor && typeof payload.instructor !== "string") {
+        payload.instructor = payload.instructor._id
+          ? String(payload.instructor._id)
+          : String(payload.instructor);
+      }
+      return res.status(200).json({
+        status: "success",
+        message: "Curso para edición",
+        payload,
+      });
     } catch (error) {
       logger.info(error);
       return res.status(500).json({
@@ -611,10 +662,13 @@ class CoursesController {
     try {
       const { category } = req.params;
       const courses = await coursesService.findByCategory(category);
+      const payload = Array.isArray(courses)
+        ? courses.map((c) => coursesService.stripPublicVideoFieldsFromCourse(c))
+        : courses;
       return res.status(200).json({
         status: "success",
         msg: "Cursos encontrados por categoría",
-        payload: courses,
+        payload,
       });
     } catch (e) {
       logger.info(e);
@@ -631,10 +685,13 @@ class CoursesController {
     try {
       const { difficulty } = req.params;
       const courses = await coursesService.findByDifficulty(difficulty);
+      const payload = Array.isArray(courses)
+        ? courses.map((c) => coursesService.stripPublicVideoFieldsFromCourse(c))
+        : courses;
       return res.status(200).json({
         status: "success",
         msg: "Cursos encontrados por dificultad",
-        payload: courses,
+        payload,
       });
     } catch (e) {
       logger.info(e);
@@ -678,47 +735,30 @@ class CoursesController {
   }
 
   /**
-   * Stream del video de una lección por proxy. Verifica que el usuario tenga el curso comprado,
-   * obtiene la URL real del video desde la BD y hace proxy al cliente. Así la URL real no se expone en el frontend.
+   * Metadatos de reproducción (embed Gumlet). Solo con curso comprado.
    */
-  async getLessonVideoStream(req, res) {
+  async getLessonPlayback(req, res) {
     try {
       const { userId, courseId } = req.params;
       const { moduleId, lessonId } = req.query;
       if (!moduleId || !lessonId) {
         return res.status(400).json({ status: "error", msg: "Faltan moduleId o lessonId" });
       }
-      const videoUrl = await coursesService.getLessonVideoUrl(userId, courseId, moduleId, lessonId);
-      if (!videoUrl) {
-        return res.status(404).json({ status: "error", msg: "Video no encontrado o sin acceso" });
+      const info = await coursesService.getLessonPlaybackInfo(userId, courseId, moduleId, lessonId);
+      if (!info) {
+        return res.status(404).json({
+          status: "error",
+          msg: "Video no disponible o sin acceso al curso",
+        });
       }
-      const range = req.headers.range || "";
-      const fetchOpts = { headers: {} };
-      if (range) fetchOpts.headers.Range = range;
-      const response = await fetch(videoUrl, fetchOpts);
-      if (!response.ok) {
-        return res.status(response.status).json({ status: "error", msg: "Error al obtener el video" });
-      }
-      const contentType = response.headers.get("content-type") || "video/mp4";
-      const contentLength = response.headers.get("content-length");
-      const acceptRanges = response.headers.get("accept-ranges") || "bytes";
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Accept-Ranges", acceptRanges);
-      if (contentLength) res.setHeader("Content-Length", contentLength);
-      if (response.status === 206) {
-        res.status(206);
-        const contentRange = response.headers.get("content-range");
-        if (contentRange) res.setHeader("Content-Range", contentRange);
-      }
-      if (!response.body) {
-        return res.status(502).json({ status: "error", msg: "Stream no disponible" });
-      }
-      response.body.pipe(res);
+      return res.status(200).json({
+        status: "success",
+        msg: "Playback",
+        payload: info,
+      });
     } catch (error) {
       logger.info(error);
-      if (!res.headersSent) {
-        return res.status(500).json({ status: "error", msg: "Error al transmitir el video" });
-      }
+      return res.status(500).json({ status: "error", msg: "Error al obtener el video" });
     }
   }
 

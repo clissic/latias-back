@@ -30,7 +30,8 @@ const schema = new Schema({
           lessonId: { type: String, required: true },
           lessonName: { type: String, required: true },
           lessonDescription: { type: String },
-          videoUrl: { type: String },
+          /** ID del asset en Gumlet (reproductor embebido). */
+          gumletAssetId: { type: String },
           // Material de apoyo en PDF para la lección
           supportPdfUrl: { type: String },
           supportPdfName: { type: String },
