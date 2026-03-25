@@ -11,7 +11,7 @@ LATIAS Academia es una plataforma de aprendizaje online enfocada en cursos de n�
 - Creación y gestión de cursos (CRUD).  
 - Utilización de plataformas externas de IA para generar avatares, diálogos y voces de los instructores.  
 - Vídeos alojados en **Gumlet** (`gumletAssetId` por lección): el catálogo público no expone el ID; el embed solo se entrega por API autenticada (`lesson-playback`) a cadetes con el curso comprado.  
-- Evaluaciones automáticas tipo test.  
+- Evaluaciones tipo test (banco por módulo): corrección y puntaje **en el servidor** a partir de las respuestas enviadas; límite de **2 intentos** por prueba parcial y por prueba final aplicado también en API; en fichas y listados **públicos** de curso (`courseId`, categoría, dificultad) **no** se expone `isCorrect` en las opciones del banco de preguntas.  
 - Generación automática de diplomas en PDF.  
 - Pagos con Mercado Pago (con posibilidad de agregar otras pasarelas más adelante) e integración con **wallet** interna para instructores y gestores (saldos pendientes, disponibles, totales y retiros).  
 - Panel de administración para gestión de usuarios, cursos y entregables, con historial unificado de pagos y transacciones.  
@@ -25,10 +25,10 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 ✔️ CUMPLIDO (1% cada uno) - 🟡 EN DESARROLLO (0.5% cada uno) - ❌ INCUMPLIDO (0%)
 
-**Progreso del proyecto: 58,5% completado**
-- ✔️ Completados: 58 puntos (58%)
+**Progreso del proyecto: 70,5% completado**
+- ✔️ Completados: 70 puntos (70%)
 - 🟡 En desarrollo: 1 punto (0,5%)
-- ❌ Pendientes: 41 puntos (0%)
+- ❌ Pendientes: 29 puntos (0%)
 
 ### Preparación del proyecto (1-10)
 ✔️ 1. Crear el repositorio en GitHub.  
@@ -86,22 +86,22 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 ❌ 47. Establecer pautas para que los instructores mantengan sus videos privados.  
 ❌ 48. Validar que los videos sean compatibles con la app y reproducibles en todos los dispositivos.  
 ❌ 49. Asegurar consistencia entre videos, módulos y evaluaciones en la app.  
-✔️ 50. Catálogo público sin exponer `gumletAssetId`; playback solo con JWT y compra del curso.  
+✔️ 50. Catálogo público sin exponer `gumletAssetId` ni marcas de respuesta correcta (`isCorrect`) en APIs de ficha/listados públicos; playback solo con JWT y compra del curso.  
 
 ### Evaluaciones y corrección automática (51-65)
-❌ 51. Crear modelo de evaluación (preguntas tipo test).  
-❌ 52. Crear endpoints para CRUD de evaluaciones.  
-❌ 53. Crear interfaz de instructor para crear exámenes.  
-❌ 54. Implementar preguntas de opción múltiple.  
-❌ 55. Guardar respuestas de cadetes.  
-❌ 56. Implementar corrección automática de test.  
-❌ 57. Guardar resultados en base de datos.  
-❌ 58. Mostrar resultados a cadetes.  
+✔️ 51. Crear modelo de evaluación (preguntas tipo test).  
+✔️ 52. Crear endpoints para CRUD de evaluaciones (embebido en CRUD de curso / solicitud de modificación).  
+✔️ 53. Crear interfaz de instructor para crear exámenes.  
+✔️ 54. Implementar preguntas de opción múltiple.  
+✔️ 55. Guardar respuestas de cadetes (envío por intento al corregir; persistencia del puntaje y mejor puntaje en el usuario; histórico por pregunta no almacenado).  
+✔️ 56. Implementar corrección automática de test (cálculo del % en servidor a partir de `answers`).  
+✔️ 57. Guardar resultados en base de datos.  
+✔️ 58. Mostrar resultados a cadetes.  
 ❌ 59. Crear ranking o listado de resultados (opcional inicial).  
 ❌ 60. Probar flujo completo de evaluación.  
-❌ 61. Manejar reintentos y límites de exámenes.  
+✔️ 61. Manejar reintentos y límites de exámenes (máx. 2 intentos en API y UI).  
 ❌ 62. Testear seguridad de evaluaciones.  
-❌ 63. Documentar flujo de evaluación.  
+✔️ 63. Documentar flujo de evaluación (README API + frontend).  
 ✔️ 64. Integrar generación automática de diplomas (PDF).  
 ✔️ 65. Subir diplomas generados a perfil del cadete.  
 
@@ -152,7 +152,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 # Documentación de la API - LATIAS Backend
 
-Documentación de los endpoints del backend de LATIAS Academia. El servidor expone la API bajo el prefijo `/api` y utiliza tokens Bearer (JWT) para autenticación en rutas protegidas. Incluye: usuarios y roles (Cadete, Instructor, Administrador, Gestor, checkin), cursos (CRUD, compras, progreso, pruebas, **vídeo Gumlet** con `lesson-playback` y curso completo para edición vía `manage/course`), eventos, barcos y flota, certificados, **solicitudes a gestor** (ship-requests), instructores, contacto, **códigos de descuento** (solo Administrador), **wallet** y **retiros** (withdrawals), Mercado Pago y subida de archivos.
+Documentación de los endpoints del backend de LATIAS Academia. El servidor expone la API bajo el prefijo `/api` y utiliza tokens Bearer (JWT) para autenticación en rutas protegidas. Incluye: usuarios y roles (Cadete, Instructor, Administrador, Gestor, checkin), cursos (CRUD, compras, progreso, **pruebas con corrección en servidor** y límites de intento, **vídeo Gumlet** con `lesson-playback` y curso completo para edición vía `manage/course`), eventos, barcos y flota, certificados, **solicitudes a gestor** (ship-requests), instructores, contacto, **códigos de descuento** (solo Administrador), **wallet** y **retiros** (withdrawals), Mercado Pago y subida de archivos.
 
 > **Uso recomendado:** Esta documentación está pensada para equipos de desarrollo e integración autorizados. En producción, evita publicarla en sitios o repositorios públicos; si la expones, no incluyas datos sensibles (URLs internas, cuentas de correo, detalles de implementación interna).
 
@@ -682,10 +682,10 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 | PUT | `/user/:userId/course/:courseId/access` | Sí | Propietario/Admin | Registrar acceso al curso (actualiza lastAccessedAt para "Continúa donde quedaste"). |
 | PUT | `/user/:userId/course/:courseId/progress` | Sí | Propietario/Admin | Actualizar progreso. |
 | PUT | `/user/:userId/course/:courseId/module/:moduleId/lesson/:lessonId/progress` | Sí | Propietario/Admin | Marcar lección completada (recalcula progreso). |
-| POST | `/user/:userId/course/:courseId/module/:moduleId/test-start` | Sí | Propietario/Admin | Iniciar intento de prueba parcial. |
-| PUT | `/user/:userId/course/:courseId/module/:moduleId/test-result` | Sí | Propietario/Admin | Guardar puntaje de prueba parcial. |
-| POST | `/user/:userId/course/:courseId/test-final-start` | Sí | Propietario/Admin | Iniciar intento de prueba final. |
-| PUT | `/user/:userId/course/:courseId/test-final-result` | Sí | Propietario/Admin | Guardar puntaje de prueba final. |
+| POST | `/user/:userId/course/:courseId/module/:moduleId/test-start` | Sí | Propietario/Admin | Iniciar intento de prueba parcial (incrementa contador). Máximo **2** intentos por módulo; si se alcanza el límite, 400. |
+| PUT | `/user/:userId/course/:courseId/module/:moduleId/test-result` | Sí | Propietario/Admin | Enviar resultado de prueba parcial: body `{ "answers": { "<questionId>": "<optionId>", ... } }`. El servidor calcula el % con el curso en BD. Respuesta 200: `payload`: `{ "course": ..., "score": number }`. |
+| POST | `/user/:userId/course/:courseId/test-final-start` | Sí | Propietario/Admin | Iniciar intento de prueba final. Máximo **2** intentos; elige hasta **25** preguntas en servidor y guarda `pendingFinalExam.questionIds` en el ítem del curso comprado. Si ya hay intento pendiente, devuelve los mismos IDs sin consumir otro intento. Respuesta 200: `payload`: `{ "questionIds": string[] }`. |
+| PUT | `/user/:userId/course/:courseId/test-final-result` | Sí | Propietario/Admin | Enviar resultado de la prueba final: body `{ "answers": { "<moduleId>-<questionId>": "<optionId>", ... } }` (claves alineadas con `questionIds` del inicio). Requiere `pendingFinalExam` activo. Corrige en servidor, limpia el pendiente. Respuesta 200: `payload`: `{ "course": ..., "score": number }`. |
 | GET | `/user/:userId/course/:courseId/lesson-playback` | Sí | Propietario/Admin | Metadatos de reproducción Gumlet (ver abajo). Query: `moduleId`, `lessonId`. |
 | GET | `/user/:userId/course/:courseId/certificate` | Sí | Propietario/Admin | Certificado (award) del usuario en el curso. |
 | PUT | `/user/:userId/course/:courseId/attempt` | Sí | Propietario/Admin | Agregar intento de examen. |
@@ -694,7 +694,8 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 
 ### Detalle (resumen)
 
-- **GET públicos** (`/`, `/id/:id`, `/courseId/:courseId`, `/sku/:sku`, `/category/:category`, `/difficulty/:difficulty`): Devuelven curso(s) en `payload`. En cada lección de `modules` **no** se incluye `gumletAssetId` (catálogo y fichas públicas sin identificadores de vídeo). 404 si no hay resultados.
+- **GET públicos de catálogo / ficha abierta** (`/courseId/:courseId`, `/category/:category`, `/difficulty/:difficulty`): Devuelven curso(s) en `payload` con sanitización **completa** para cadetes: en cada lección **no** se incluye `gumletAssetId`; en `questionBank` las opciones **no** incluyen `isCorrect` (no filtran respuestas correctas por API). 404 si no hay resultados.
+- **GET** `/`, `/id/:id`, `/sku/:sku` (uso típico administración): omiten `gumletAssetId` en lecciones; el banco de preguntas puede incluir `isCorrect` para edición/gestión. Asegurar que solo los roles autorizados consuman estas rutas si se expone el listado completo.
 - **POST `/create`:** Body con `courseId`, `sku`, `courseName`, `price`, `category` requeridos; opcionales: `bannerUrl`, `image`, `shortImage`, `currency`, `shortDescription`, `longDescription`, `duration`, `difficulty`, `professor` (datos del **instructor**, ver modelo), `modules`, `selectedInstructorId`. Cada lección puede incluir `gumletAssetId` (ID del asset en Gumlet). Respuesta 201 con curso creado.
 - **PUT `/update/:courseId`:** Body con campos a actualizar (misma normalización de `modules` y `gumletAssetId` que en create). 200 con curso actualizado, 404 si no existe.
 - **DELETE `/delete/:courseId`:** 200 al eliminar, 404 si no existe.
@@ -706,7 +707,7 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 - **PUT `.../access`:** Registra acceso al curso (actualiza `lastAccessedAt` en el ítem de `purchasedCourses`; usado para "Continúa donde quedaste"). Solo el propio usuario o un administrador.
 - **PUT `.../progress`:** Body con progreso (módulos/lecciones completadas). Solo el propio usuario o un administrador puede consultar.
 - **PUT `.../module/:moduleId/lesson/:lessonId/progress`:** Body `{ "completed": true|false }`. Marca lección y recalcula progreso del curso en el usuario.
-- **POST/PUT pruebas parciales y final** (`test-start`, `test-result`, `test-final-start`, `test-final-result`): Gestionan intentos y puntajes de evaluaciones en curso; validan compra del curso y límites de intentos según lógica del servicio.
+- **POST/PUT pruebas parciales y final** (`test-start`, `test-result`, `test-final-start`, `test-final-result`): Requieren curso en `purchasedCourses`. Límite de **2** intentos por prueba parcial (por `moduleId`) y **2** por prueba final (en servidor). La **corrección** se hace en servidor: `test-result` y `test-final-result` reciben `answers` (mapa pregunta → `optionId`); no se acepta un puntaje enviado a mano por el cliente. La prueba final usa el subconjunto de preguntas fijado al `test-final-start` (`pendingFinalExam` en el usuario).
 - **GET `.../lesson-playback`:** Query obligatorios: `moduleId`, `lessonId`. Solo si el usuario tiene el curso en `purchasedCourses`. Respuesta 200: `payload`: `{ "kind": "gumlet", "embedUrl": "https://play.gumlet.io/embed/<gumletAssetId>" }`. 404 si no hay asset, sin compra o lección inexistente. El reproductor en cliente usa `embedUrl` en un iframe.
 - **GET `.../certificate`:** Obtiene el certificado (award) generado para el usuario en ese curso (PDF/metadata según implementación).
 - **PUT `.../attempt`:** Registra intento de examen. Solo el propio usuario o un administrador puede consultar.
@@ -716,7 +717,7 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 ### Vídeo con Gumlet (modelo y seguridad)
 
 - **Proveedor:** Gumlet (`https://play.gumlet.io/embed/{assetId}`). En MongoDB cada lección guarda `gumletAssetId` (string).
-- **Privacidad:** Los listados y detalles **públicos** de cursos omiten `gumletAssetId` para que el catálogo no exponga IDs de reproducción. Quien compra el curso obtiene la URL de embed solo vía `lesson-playback` autenticado.
+- **Privacidad:** Los listados y fichas **públicas** usadas como catálogo (`courseId`, `category`, `difficulty`) omiten `gumletAssetId` y **no** envían `isCorrect` en opciones de exámenes. Quien compra el curso obtiene la URL de embed solo vía `lesson-playback` autenticado.
 - **Configuración en Gumlet:** restricciones de dominio o visibilidad del embed conviene definirlas en el panel de Gumlet además de la lógica de la API.
 
 Todos los códigos de error estándar (400, 401, 403, 404, 500) aplican según validaciones y permisos.
@@ -1048,7 +1049,7 @@ Resumen de las entidades y campos principales de la API (para referencia al inte
 - `preferences`: `{ language, notifications, newsLetter }`.
 - `statistics`: `{ eventsAttended: [{ eventId, attendedAt }], timeConnected, certificatesQuantity }`.
 - `settings`: `{ theme, twoStepVerification }`.
-- `purchasedCourses`, `finishedCourses`, `paymentMethods`: arrays.
+- `purchasedCourses`, `finishedCourses`, `paymentMethods`: arrays. Cada ítem de `purchasedCourses` incluye progreso por curso (`modules` con lecciones completadas, `testAttempts` / `lastTestScore` por módulo, `finalTestAttempts`, `finalTestLastScore`, etc.). Durante un intento de prueba final abierto puede existir **`pendingFinalExam`**: `{ questionIds: string[], startedAt }` (subconjunto fijado en servidor).
 - `fleet`: `[{ boatId, requestedAt, status: pending|approved|rejected }]`.
 - `manager`: `{ active, managerId }`.
 - `bankAccount`: `{ bank, number, type }` — datos de cobro (banco o billetera/fintech) para instructores y gestores.
@@ -1060,7 +1061,7 @@ Resumen de las entidades y campos principales de la API (para referencia al inte
 - `courseId`, `sku`, `courseName` — identificadores y nombre; `bannerUrl`, `image`, `shortImage`, `currency`, `shortDescription`, `longDescription`, `duration`, `price`, `difficulty`, `category`.
 - `certificate`: `{ certificateId, certificateUrl, credentialNumber }`.
 - `professor`: array de `{ firstName, lastName, profession }` — datos del **instructor** (nombre, apellido, profesión). *(Se conserva el nombre técnico `professor` por compatibilidad del modelo/API.)*
-- `modules`: array de módulos con `moduleId`, `moduleName`, `moduleDescription`, `lessons` (lessonId, lessonName, lessonDescription, `gumletAssetId`), `questionBank` (preguntas y opciones).
+- `modules`: array de módulos con `moduleId`, `moduleName`, `moduleDescription`, `lessons` (lessonId, lessonName, lessonDescription, `gumletAssetId`), `questionBank` (preguntas con `questionId`, `questionText`, opciones con `optionId`, `optionText`, `isCorrect` en BD; en respuestas públicas de catálogo las opciones van sin `isCorrect`).
 
 ### Evento (events)
 

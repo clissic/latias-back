@@ -6,6 +6,11 @@ import { CourseCertificateMongoose } from "../DAO/models/mongoose/course-certifi
 const PARTIAL_AVG_MIN = 60;
 const FINAL_TEST_MIN = 70;
 
+/** Máximo de intentos por prueba parcial y por prueba final (coincide con la UI). */
+const MAX_MODULE_TEST_ATTEMPTS = 2;
+const MAX_FINAL_TEST_ATTEMPTS = 2;
+const MAX_FINAL_EXAM_QUESTIONS = 25;
+
 class CoursesService {
   async getAll() {
     const courses = await coursesModel.getAll();
@@ -97,6 +102,7 @@ class CoursesService {
         certificate: null,
         finalTestAttempts: 0,
         finalTestLastScore: null,
+        pendingFinalExam: null,
         lastAccessedAt: null,
         modules: (course.modules || []).map((mod) => ({
           moduleId: mod.moduleId,
@@ -243,6 +249,83 @@ class CoursesService {
       }),
     }));
     return plain;
+  }
+
+  /**
+   * Oculta respuestas correctas en el banco de preguntas (catálogo / APIs públicas).
+   */
+  stripQuestionBankSolutionsFromCourse(course) {
+    if (!course) return course;
+    const plain =
+      typeof course.toObject === "function"
+        ? course.toObject({ flattenMaps: true })
+        : JSON.parse(JSON.stringify(course));
+    if (!Array.isArray(plain.modules)) return plain;
+    plain.modules = plain.modules.map((m) => ({
+      ...m,
+      questionBank: (m.questionBank || []).map((q) => ({
+        ...q,
+        options: (q.options || []).map((opt) => {
+          const { isCorrect, ...rest } = opt;
+          return rest;
+        }),
+      })),
+    }));
+    return plain;
+  }
+
+  /** Video + banco sin soluciones (listados y ficha pública de curso). */
+  sanitizeCourseForPublicCatalog(course) {
+    const step1 = this.stripPublicVideoFieldsFromCourse(course);
+    return this.stripQuestionBankSolutionsFromCourse(step1);
+  }
+
+  _toPlainCourseDoc(course) {
+    if (!course) return null;
+    return typeof course.toObject === "function"
+      ? course.toObject({ flattenMaps: true })
+      : JSON.parse(JSON.stringify(course));
+  }
+
+  computeModuleTestScoreFromDoc(courseDoc, moduleId, answers) {
+    const plain = this._toPlainCourseDoc(courseDoc);
+    const mod = (plain?.modules || []).find((m) => String(m.moduleId) === String(moduleId));
+    const bank = mod?.questionBank || [];
+    if (bank.length === 0) return 0;
+    const answersObj = answers && typeof answers === "object" && !Array.isArray(answers) ? answers : {};
+    let correct = 0;
+    for (const q of bank) {
+      const selected = answersObj[q.questionId];
+      const correctOpt = (q.options || []).find((o) => o.isCorrect);
+      if (correctOpt && selected === correctOpt.optionId) correct += 1;
+    }
+    return Math.round((correct / bank.length) * 100);
+  }
+
+  computeFinalTestScoreFromDoc(courseDoc, questionIds, answers) {
+    if (!Array.isArray(questionIds) || questionIds.length === 0) return 0;
+    const plain = this._toPlainCourseDoc(courseDoc);
+    const answersObj = answers && typeof answers === "object" && !Array.isArray(answers) ? answers : {};
+    let correct = 0;
+    for (const compositeKey of questionIds) {
+      let found = null;
+      for (const mod of plain.modules || []) {
+        for (const q of mod.questionBank || []) {
+          if (`${mod.moduleId}-${q.questionId}` === compositeKey) {
+            found = q;
+            break;
+          }
+        }
+        if (found) break;
+      }
+      if (!found) {
+        throw new Error("El conjunto de preguntas del intento no coincide con el curso");
+      }
+      const selected = answersObj[compositeKey];
+      const correctOpt = (found.options || []).find((o) => o.isCorrect);
+      if (correctOpt && selected === correctOpt.optionId) correct += 1;
+    }
+    return Math.round((correct / questionIds.length) * 100);
   }
 
   /**
@@ -450,6 +533,9 @@ class CoursesService {
         mod = { moduleId, lessons: [], testAttempts: 0, lastTestScore: null };
         course.modules.push(mod);
       }
+      if ((mod.testAttempts || 0) >= MAX_MODULE_TEST_ATTEMPTS) {
+        throw new Error("Límite de intentos de prueba del módulo alcanzado");
+      }
       mod.testAttempts = (mod.testAttempts || 0) + 1;
 
       await usersModel.updateOne({
@@ -469,9 +555,9 @@ class CoursesService {
   }
 
   /**
-   * Guarda el puntaje de la prueba parcial (el intento ya fue descontado al abrir la prueba).
+   * Guarda el puntaje de la prueba parcial (corregido en servidor a partir de respuestas).
    */
-  async updateModuleTestResult(userId, courseId, moduleId, { score }) {
+  async updateModuleTestResult(userId, courseId, moduleId, { answers }) {
     try {
       const user = await usersModel.findById(userId);
       if (!user) {
@@ -485,6 +571,13 @@ class CoursesService {
         throw new Error("El usuario no ha comprado este curso");
       }
 
+      const courseDoc = await coursesModel.findByCourseId(courseId);
+      if (!courseDoc) {
+        throw new Error("Curso no encontrado");
+      }
+
+      const score = this.computeModuleTestScoreFromDoc(courseDoc, moduleId, answers);
+
       const course = purchasedCourses[courseIndex];
       if (!course.modules) {
         course.modules = [];
@@ -495,9 +588,8 @@ class CoursesService {
         mod = { moduleId, lessons: [], testAttempts: 0, lastTestScore: null };
         course.modules.push(mod);
       }
-      // Solo se actualiza el puntaje si es mayor que el anterior (en el segundo intento se mantiene el mejor resultado)
       const current = mod.lastTestScore ?? null;
-      if (score != null && (current === null || score > current)) {
+      if (current === null || score > current) {
         mod.lastTestScore = score;
       }
 
@@ -510,7 +602,8 @@ class CoursesService {
         success: true,
         message: "Resultado de prueba parcial actualizado",
         course: purchasedCourses[courseIndex],
-        userUpdated: true
+        userUpdated: true,
+        score
       };
     } catch (error) {
       throw error;
@@ -518,7 +611,8 @@ class CoursesService {
   }
 
   /**
-   * Inicia un intento de la prueba final del curso (descuenta el intento al abrir).
+   * Inicia un intento de la prueba final: elige preguntas en servidor y fija pendingFinalExam.
+   * Si ya hay un intento pendiente (mismo curso), devuelve las mismas preguntas sin consumir otro intento.
    */
   async startFinalTestAttempt(userId, courseId) {
     try {
@@ -530,21 +624,66 @@ class CoursesService {
       if (courseIndex === -1) throw new Error("El usuario no ha comprado este curso");
 
       const course = purchasedCourses[courseIndex];
+      const pending = course.pendingFinalExam;
+
+      const courseDoc = await coursesModel.findByCourseId(courseId);
+      if (!courseDoc) throw new Error("Curso no encontrado");
+
+      const pool = [];
+      for (const mod of courseDoc.modules || []) {
+        for (const q of mod.questionBank || []) {
+          pool.push(`${mod.moduleId}-${q.questionId}`);
+        }
+      }
+      if (pool.length === 0) {
+        throw new Error("No hay preguntas configuradas para la prueba final");
+      }
+
+      if (pending?.questionIds?.length > 0) {
+        return {
+          success: true,
+          message: "Continuás la prueba final pendiente",
+          questionIds: pending.questionIds,
+          course: purchasedCourses[courseIndex],
+          userUpdated: false,
+          resumed: true,
+        };
+      }
+
+      if ((course.finalTestAttempts || 0) >= MAX_FINAL_TEST_ATTEMPTS) {
+        throw new Error("Límite de intentos de la prueba final alcanzado");
+      }
+
       course.finalTestAttempts = (course.finalTestAttempts || 0) + 1;
 
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      const take = Math.min(MAX_FINAL_EXAM_QUESTIONS, pool.length);
+      const questionIds = pool.slice(0, take);
+      course.pendingFinalExam = { questionIds, startedAt: new Date() };
+
       await usersModel.updateOne({ _id: userId, purchasedCourses: purchasedCourses });
-      return { success: true, message: "Intento de prueba final iniciado", course: course, userUpdated: true };
+      return {
+        success: true,
+        message: "Intento de prueba final iniciado",
+        questionIds,
+        course: purchasedCourses[courseIndex],
+        userUpdated: true,
+        resumed: false,
+      };
     } catch (error) {
       throw error;
     }
   }
 
   /**
-   * Guarda el puntaje de la prueba final (solo si es mayor al anterior).
+   * Guarda el puntaje de la prueba final (corregido en servidor). Limpia pendingFinalExam.
    * Si se cumplen condiciones de aprobación (promedio parciales >= 60% y prueba final >= 70%),
    * emite un certificado (award) y guarda su _id en user.purchasedCourses[].certificate.
    */
-  async updateFinalTestResult(userId, courseId, { score }) {
+  async updateFinalTestResult(userId, courseId, { answers }) {
     try {
       const user = await usersModel.findById(userId);
       if (!user) throw new Error("Usuario no encontrado");
@@ -554,8 +693,19 @@ class CoursesService {
       if (courseIndex === -1) throw new Error("El usuario no ha comprado este curso");
 
       const course = purchasedCourses[courseIndex];
+      const pending = course.pendingFinalExam;
+      if (!pending?.questionIds?.length) {
+        throw new Error("No hay una prueba final iniciada. Iniciá la prueba antes de enviar las respuestas.");
+      }
+
+      const courseDoc = await coursesModel.findByCourseId(courseId);
+      if (!courseDoc) throw new Error("Curso no encontrado");
+
+      const score = this.computeFinalTestScoreFromDoc(courseDoc, pending.questionIds, answers);
+      course.pendingFinalExam = null;
+
       const current = course.finalTestLastScore ?? null;
-      if (score != null && (current === null || score > current)) {
+      if (current === null || score > current) {
         course.finalTestLastScore = score;
       }
 
@@ -634,13 +784,14 @@ class CoursesService {
               course: course,
               userUpdated: true,
               certificateId: newCertificate._id,
+              score,
             };
           }
         }
       }
 
       await usersModel.updateOne({ _id: userId, purchasedCourses: purchasedCourses });
-      return { success: true, message: "Resultado de prueba final actualizado", course: course, userUpdated: true };
+      return { success: true, message: "Resultado de prueba final actualizado", course: course, userUpdated: true, score };
     } catch (error) {
       throw error;
     }

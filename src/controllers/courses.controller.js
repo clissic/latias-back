@@ -133,7 +133,7 @@ class CoursesController {
         if (raw.instructor && typeof raw.instructor !== "string") {
           raw.instructor = raw.instructor._id ? String(raw.instructor._id) : String(raw.instructor);
         }
-        const payload = coursesService.stripPublicVideoFieldsFromCourse(raw);
+        const payload = coursesService.sanitizeCourseForPublicCatalog(raw);
         return res.status(200).json({
           status: "success",
           message: "Curso encontrado por courseId",
@@ -663,7 +663,7 @@ class CoursesController {
       const { category } = req.params;
       const courses = await coursesService.findByCategory(category);
       const payload = Array.isArray(courses)
-        ? courses.map((c) => coursesService.stripPublicVideoFieldsFromCourse(c))
+        ? courses.map((c) => coursesService.sanitizeCourseForPublicCatalog(c))
         : courses;
       return res.status(200).json({
         status: "success",
@@ -686,7 +686,7 @@ class CoursesController {
       const { difficulty } = req.params;
       const courses = await coursesService.findByDifficulty(difficulty);
       const payload = Array.isArray(courses)
-        ? courses.map((c) => coursesService.stripPublicVideoFieldsFromCourse(c))
+        ? courses.map((c) => coursesService.sanitizeCourseForPublicCatalog(c))
         : courses;
       return res.status(200).json({
         status: "success",
@@ -893,22 +893,22 @@ class CoursesController {
   async updateModuleTestResult(req, res) {
     try {
       const { userId, courseId, moduleId } = req.params;
-      const { score } = req.body;
+      const { answers } = req.body;
 
-      if (score == null || typeof score !== "number" || score < 0 || score > 100) {
+      if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
         return res.status(400).json({
           status: "error",
-          msg: "El puntaje (score) debe ser un número entre 0 y 100",
+          msg: "Se requiere un objeto answers (questionId → optionId)",
           payload: {},
         });
       }
 
-      const result = await coursesService.updateModuleTestResult(userId, courseId, moduleId, { score });
+      const result = await coursesService.updateModuleTestResult(userId, courseId, moduleId, { answers });
 
       return res.status(200).json({
         status: "success",
         msg: result.message,
-        payload: result.course,
+        payload: { course: result.course, score: result.score },
       });
     } catch (error) {
       logger.info(error);
@@ -924,8 +924,12 @@ class CoursesController {
   async startFinalTestAttempt(req, res) {
     try {
       const { userId, courseId } = req.params;
-      await coursesService.startFinalTestAttempt(userId, courseId);
-      return res.status(200).json({ status: "success", msg: "Intento de prueba final iniciado", payload: {} });
+      const result = await coursesService.startFinalTestAttempt(userId, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: result.message,
+        payload: { questionIds: result.questionIds ?? [] },
+      });
     } catch (error) {
       logger.info(error);
       return res.status(400).json({ status: "error", msg: error.message, payload: {} });
@@ -962,16 +966,20 @@ class CoursesController {
   async updateFinalTestResult(req, res) {
     try {
       const { userId, courseId } = req.params;
-      const { score } = req.body;
-      if (score == null || typeof score !== "number" || score < 0 || score > 100) {
+      const { answers } = req.body;
+      if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
         return res.status(400).json({
           status: "error",
-          msg: "El puntaje (score) debe ser un número entre 0 y 100",
+          msg: "Se requiere un objeto answers (pregunta compuesta → optionId)",
           payload: {},
         });
       }
-      const result = await coursesService.updateFinalTestResult(userId, courseId, { score });
-      return res.status(200).json({ status: "success", msg: result.message, payload: result.course });
+      const result = await coursesService.updateFinalTestResult(userId, courseId, { answers });
+      return res.status(200).json({
+        status: "success",
+        msg: result.message,
+        payload: { course: result.course, score: result.score },
+      });
     } catch (error) {
       logger.info(error);
       return res.status(400).json({ status: "error", msg: error.message, payload: {} });
