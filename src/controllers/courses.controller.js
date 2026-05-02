@@ -228,6 +228,305 @@ class CoursesController {
     }
   }
 
+  /** Métricas agregadas del curso (compras, finalizados, aprobados). Instructor titular o administrador. */
+  async getInstructorCourseMetrics(req, res) {
+    try {
+      const { courseId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const metrics = await coursesService.getInstructorCourseMetrics(email, categories, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Métricas del curso",
+        payload: metrics,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver las métricas de este curso",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /** Lista de usuarios que compraron el curso (instructor titular o administrador). */
+  async getInstructorCoursePurchasers(req, res) {
+    try {
+      const { courseId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const payload = await coursesService.getInstructorCoursePurchasers(email, categories, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Compradores del curso",
+        payload,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver los compradores de este curso",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /** Lista de cadetes que finalizaron el curso (instructor titular o administrador). */
+  async getInstructorCourseFinished(req, res) {
+    try {
+      const { courseId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const payload = await coursesService.getInstructorCourseFinished(email, categories, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Cadetes que finalizaron el curso",
+        payload,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver esta información del curso",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /** Progreso por módulos/lecciones de un cadete (instructor titular o administrador). */
+  async getInstructorPurchaserProgress(req, res) {
+    try {
+      const { courseId, userId: cadetUserId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const payload = await coursesService.getInstructorPurchaserProgress(
+        email,
+        categories,
+        courseId,
+        cadetUserId
+      );
+      return res.status(200).json({
+        status: "success",
+        msg: "Progreso del cadete en el curso",
+        payload,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver el progreso en este curso",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      if (error?.code === "USER_NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Usuario no encontrado",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_ENROLLED") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Este usuario no tiene el curso comprado",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /** Valoraciones del curso (colección ratings; instructor titular o administrador). */
+  async getInstructorCourseRatings(req, res) {
+    try {
+      const { courseId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const payload = await coursesService.getInstructorCourseRatings(email, categories, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Valoraciones del curso",
+        payload,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver las valoraciones de este curso",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
+  /** Actualiza `featured` de una valoración (instructor titular o administrador). */
+  async patchInstructorCourseRatingFeatured(req, res) {
+    try {
+      const { courseId, userId: ratedUserId } = req.params;
+      const { featured } = req.body;
+      if (typeof featured !== "boolean") {
+        return res.status(400).json({
+          status: "error",
+          msg: "Se requiere featured (boolean)",
+          payload: {},
+        });
+      }
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const actor = {
+        userId: req.user?.userId,
+        email: req.user?.email,
+        firstName: req.user?.firstName,
+        lastName: req.user?.lastName,
+      };
+      const payload = await coursesService.setInstructorCourseRatingFeatured(
+        email,
+        categories,
+        courseId,
+        ratedUserId,
+        featured,
+        actor
+      );
+      return res.status(200).json({
+        status: "success",
+        msg: "Valoración actualizada",
+        payload,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para modificar esta valoración",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      if (error?.code === "RATING_NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Valoración no encontrada",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(400).json({
+        status: "error",
+        msg: error.message || "Error al actualizar",
+        payload: {},
+      });
+    }
+  }
+
+  /** Lista de cadetes que aprobaron el curso (certificado; instructor titular o administrador). */
+  async getInstructorCourseApproved(req, res) {
+    try {
+      const { courseId } = req.params;
+      const email = req.user?.email;
+      const categories = req.user?.category;
+      const payload = await coursesService.getInstructorCourseApproved(email, categories, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: "Cadetes que aprobaron el curso",
+        payload,
+      });
+    } catch (error) {
+      if (error?.code === "FORBIDDEN") {
+        return res.status(403).json({
+          status: "error",
+          msg: "No tienes permiso para ver esta información del curso",
+          payload: {},
+        });
+      }
+      if (error?.code === "NOT_FOUND") {
+        return res.status(404).json({
+          status: "error",
+          msg: "Curso no encontrado",
+          payload: {},
+        });
+      }
+      logger.info(error);
+      return res.status(500).json({
+        status: "error",
+        msg: "Error interno del servidor",
+        payload: {},
+      });
+    }
+  }
+
   // Crear nuevo curso (solo administradores)
   async create(req, res) {
     try {
@@ -956,6 +1255,53 @@ class CoursesController {
         return res.status(200).json({ status: "success", msg: "Certificado obtenido", payload: certificate });
       }
       return res.status(404).json({ status: "error", msg: "Certificado no encontrado", payload: {} });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({ status: "error", msg: error.message, payload: {} });
+    }
+  }
+
+  /** Obtiene la valoración del usuario autenticado para un curso (o null). */
+  async getMyCourseRating(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      const rating = await coursesService.getMyCourseRating(userId, courseId);
+      return res.status(200).json({
+        status: "success",
+        msg: rating ? "Valoración obtenida" : "Sin valoración",
+        payload: { rating },
+      });
+    } catch (error) {
+      logger.info(error);
+      return res.status(400).json({ status: "error", msg: error.message, payload: {} });
+    }
+  }
+
+  /** Valorar curso (1–5 estrellas + comentario), solo con certificado emitido. Guarda en colección `ratings`. */
+  async rateCourse(req, res) {
+    try {
+      const { userId, courseId } = req.params;
+      const { stars, comment } = req.body;
+      if (stars == null || stars === "") {
+        return res.status(400).json({
+          status: "error",
+          msg: "Se requiere stars (número entre 1 y 5)",
+          payload: {},
+        });
+      }
+      if (comment == null || String(comment).trim() === "") {
+        return res.status(400).json({
+          status: "error",
+          msg: "Se requiere un comentario sobre el curso",
+          payload: {},
+        });
+      }
+      const result = await coursesService.rateCourse(userId, courseId, { stars, comment });
+      return res.status(200).json({
+        status: "success",
+        msg: result.message,
+        payload: result,
+      });
     } catch (error) {
       logger.info(error);
       return res.status(400).json({ status: "error", msg: error.message, payload: {} });

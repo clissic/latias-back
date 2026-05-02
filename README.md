@@ -152,7 +152,7 @@ La siguiente lista detalla los **100 pasos** planeados para el desarrollo comple
 
 # Documentación de la API - LATIAS Backend
 
-Documentación de los endpoints del backend de LATIAS Academia. El servidor expone la API bajo el prefijo `/api` y utiliza tokens Bearer (JWT) para autenticación en rutas protegidas. Incluye: usuarios y roles (Cadete, Instructor, Administrador, Gestor, checkin), cursos (CRUD, compras, progreso, **pruebas con corrección en servidor** y límites de intento, **vídeo Gumlet** con `lesson-playback` y curso completo para edición vía `manage/course`), eventos, barcos y flota, certificados, **solicitudes a gestor** (ship-requests), instructores, contacto, **códigos de descuento** (solo Administrador), **wallet** y **retiros** (withdrawals), Mercado Pago y subida de archivos.
+Documentación de los endpoints del backend de LATIAS Academia. El servidor expone la API bajo el prefijo `/api` y utiliza tokens Bearer (JWT) para autenticación en rutas protegidas. Incluye: usuarios y roles (Cadete, Instructor, Administrador, Gestor, checkin), cursos (CRUD, compras, progreso, **pruebas con corrección en servidor** y límites de intento, **vídeo Gumlet** con `lesson-playback` y curso completo para edición vía `manage/course`, **valoraciones de curso** en la colección `ratings` y **métricas / listados para instructores**: agregados, compradores, finalizados, aprobados, progreso por cadete y reseñas con destacados), eventos, barcos y flota, certificados, **solicitudes a gestor** (ship-requests), instructores, contacto, **códigos de descuento** (solo Administrador), **wallet** y **retiros** (withdrawals), Mercado Pago y subida de archivos.
 
 > **Uso recomendado:** Esta documentación está pensada para equipos de desarrollo e integración autorizados. En producción, evita publicarla en sitios o repositorios públicos; si la expones, no incluyas datos sensibles (URLs internas, cuentas de correo, detalles de implementación interna).
 
@@ -676,6 +676,13 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 | DELETE | `/delete/:courseId` | Sí | Administrador | Eliminar curso. |
 | PUT | `/certificate/:courseId` | Sí | Administrador | Actualizar certificado del curso. |
 | GET | `/manage/course/:courseId` | Sí | Administrador / Instructor | Curso completo para edición (incluye `gumletAssetId` por lección). El instructor solo si es titular del curso (coincidencia por email de contacto en `instructors`). |
+| GET | `/instructor/metrics/:courseId` | Sí | Administrador / Instructor titular | Métricas agregadas: conteos de compradores, finalizados (`isFinished`), aprobados (certificado emitido), promedio global `rating` y `ratingCount` del documento curso. |
+| GET | `/instructor/purchasers/:courseId` | Sí | Administrador / Instructor titular | Lista de cadetes que compraron el curso (nombre, apellido, CI). |
+| GET | `/instructor/finished/:courseId` | Sí | Administrador / Instructor titular | Lista de cadetes con curso finalizado; incluye nota ponderada, intentos de final y flag estimado de aprobación. |
+| GET | `/instructor/approved/:courseId` | Sí | Administrador / Instructor titular | Lista de cadetes con certificado de curso emitido (`certificate` en `purchasedCourses`). |
+| GET | `/instructor/purchaser-progress/:courseId/:userId` | Sí | Administrador / Instructor titular | Progreso detallado del cadete: módulos/lecciones completadas, puntajes de parciales e intentos (alineado con la vista del alumno). |
+| GET | `/instructor/ratings/:courseId` | Sí | Administrador / Instructor titular | Valoraciones del curso desde la colección `ratings` (estrellas, comentario, `featured`). |
+| PATCH | `/instructor/ratings/:courseId/:userId/featured` | Sí | Administrador / Instructor titular | Body `{ "featured": true|false }`. Marca o quita una reseña como destacada. |
 | GET | `/admin/certificates` | Sí | Administrador | Listar certificados de curso emitidos (colección course-certificates). |
 | POST | `/purchase/:userId` | Sí | Propietario/Admin | Comprar curso para userId. |
 | GET | `/user/:userId/purchased` | Sí | Propietario/Admin | Cursos comprados del usuario. |
@@ -688,6 +695,8 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 | PUT | `/user/:userId/course/:courseId/test-final-result` | Sí | Propietario/Admin | Enviar resultado de la prueba final: body `{ "answers": { "<moduleId>-<questionId>": "<optionId>", ... } }` (claves alineadas con `questionIds` del inicio). Requiere `pendingFinalExam` activo. Corrige en servidor, limpia el pendiente. Respuesta 200: `payload`: `{ "course": ..., "score": number }`. |
 | GET | `/user/:userId/course/:courseId/lesson-playback` | Sí | Propietario/Admin | Metadatos de reproducción Gumlet (ver abajo). Query: `moduleId`, `lessonId`. |
 | GET | `/user/:userId/course/:courseId/certificate` | Sí | Propietario/Admin | Certificado (award) del usuario en el curso. |
+| GET | `/user/:userId/course/:courseId/my-rating` | Sí | Propietario/Admin | Valoración propia del usuario para ese curso: `payload.rating` con `{ stars, comment }` o `null` si no existe. |
+| POST | `/user/:userId/course/:courseId/rate` | Sí | Propietario/Admin | Body `{ "stars": 1-5, "comment": "..." }`. Crea o actualiza valoración (requiere certificado emitido). Actualiza promedio del curso y `courseRating` en el usuario. Al modificar, `featured` pasa a `false`. |
 | PUT | `/user/:userId/course/:courseId/attempt` | Sí | Propietario/Admin | Agregar intento de examen. |
 | PUT | `/user/:userId/course/:courseId/certificate` | Sí | Propietario/Admin | Actualizar certificado del usuario en el curso. |
 | POST | `/request-modification/:courseId` | Sí | Instructor | Solicitar modificación de curso. |
@@ -713,6 +722,28 @@ Valida que el token exista en BD y no haya expirado. Se usa para mostrar el form
 - **PUT `.../attempt`:** Registra intento de examen. Solo el propio usuario o un administrador puede consultar.
 - **PUT `.../certificate`:** Actualiza certificado del usuario en ese curso. Solo el propio usuario o un administrador puede consultar.
 - **POST `/request-modification/:courseId`:** Solo Instructor; envía solicitud de modificación por correo (comparación de campos propuestos vs actuales).
+
+### Valoraciones de curso (cadetes) y reseñas / métricas (instructores)
+
+#### Persistencia y reglas (colección `ratings`)
+
+- Un documento por par (`courseId` string + `userId` ObjectId), índice único. Campos: `stars` (1–5), `comment` (texto obligatorio, máx. 4000), `firstName` / `lastName` del cadete (snapshot), `featured` (boolean; reseña destacada en vitrina del instructor).
+- **Alta o cambio de valoración:** `POST .../rate` — solo si el cadete tiene **certificado** del curso en `purchasedCourses`. Operación **upsert**: no se duplican valoraciones; una nueva solicitud actualiza la anterior. Se recalcula el promedio global del curso (`rating` / `ratingCount` en el documento `courses`) y se guarda `courseRating` en el ítem del curso comprado del usuario.
+- **Modificación:** si el cadete cambia estrellas o comentario, el campo `featured` del documento en `ratings` se fuerza a **`false`** (la reseña deja de estar destacada hasta que el instructor la vuelva a marcar).
+- **Consulta propia:** `GET .../my-rating` devuelve `{ stars, comment }` o `rating: null`.
+- **Instructor / administrador:** `GET .../instructor/ratings/:courseId` lista todas las valoraciones del curso (orden por última actualización). `PATCH .../featured` permite destacar o quitar destacado; las acciones quedan registradas en el logger del servidor (`[Valoraciones]`). Una **modificación** posterior por el cadete también se registra en log con texto anterior/nuevo resumido.
+
+#### Métricas agregadas (`GET .../instructor/metrics/:courseId`)
+
+- **Autorización:** mismo criterio que `manage/course` (administrador o instructor titular del curso vía email en `instructors`).
+- **Respuesta (`payload`):** `courseId`, `courseName`, `purchased`, `finished`, `approved` (conteos desde usuarios con ítem en `purchasedCourses`), y `rating: { average, count, implemented }` — el promedio y cantidad provienen del documento curso (mantenidos coherentes con la colección `ratings`).
+
+#### Listados para paneles y filtros
+
+- **Compradores:** usuarios con el curso comprado (datos mínimos para tabla).
+- **Finalizados:** `isFinished: true` en el ítem del curso; la respuesta puede incluir nota ponderada (60% final + 40% parciales), intentos de prueba final y un criterio de “aprobado” coherente con la vista del alumno (≥60% en media de parciales y ≥70% final o certificado presente según reglas del servicio).
+- **Aprobados:** cadetes con `certificate` asignado en ese curso comprado (certificado emitido).
+- **Progreso por cadete:** `GET .../purchaser-progress/:courseId/:userId` devuelve la misma mezcla curso + avance que usa el cadete (módulos, lecciones completadas, fechas, puntajes parciales), para el modal de detalle en el panel del instructor.
 
 ### Vídeo con Gumlet (modelo y seguridad)
 
@@ -1059,9 +1090,14 @@ Resumen de las entidades y campos principales de la API (para referencia al inte
 ### Curso (courses)
 
 - `courseId`, `sku`, `courseName` — identificadores y nombre; `bannerUrl`, `image`, `shortImage`, `currency`, `shortDescription`, `longDescription`, `duration`, `price`, `difficulty`, `category`.
+- **Valoración global:** `rating` (promedio 0–5, un decimal) y `ratingCount` (cantidad de valoraciones en la colección `ratings`). Se actualizan al crear o modificar una valoración (`POST .../rate`).
 - `certificate`: `{ certificateId, certificateUrl, credentialNumber }`.
 - `professor`: array de `{ firstName, lastName, profession }` — datos del **instructor** (nombre, apellido, profesión). *(Se conserva el nombre técnico `professor` por compatibilidad del modelo/API.)*
 - `modules`: array de módulos con `moduleId`, `moduleName`, `moduleDescription`, `lessons` (lessonId, lessonName, lessonDescription, `gumletAssetId`), `questionBank` (preguntas con `questionId`, `questionText`, opciones con `optionId`, `optionText`, `isCorrect` en BD; en respuestas públicas de catálogo las opciones van sin `isCorrect`).
+
+### Valoración de curso — colección `ratings`
+
+- **courseId** (string, índice), **userId** (ObjectId ref users), **stars** (1–5), **comment** (requerido), **firstName**, **lastName**, **featured** (boolean; destacado visible para instructores). Índice único `(courseId, userId)`. Timestamps `createdAt` / `updatedAt`.
 
 ### Evento (events)
 

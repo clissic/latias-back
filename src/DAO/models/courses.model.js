@@ -19,6 +19,8 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
+        rating: true,
+        ratingCount: true,
         certificate: true,
         instructor: true,
         modules: true,
@@ -50,6 +52,8 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
+        rating: true,
+        ratingCount: true,
         certificate: true,
         instructor: true,
         modules: true,
@@ -76,6 +80,8 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
+        rating: true,
+        ratingCount: true,
         certificate: true,
         instructor: true,
         modules: true,
@@ -196,6 +202,14 @@ class CoursesModel {
     return courseUpdated;
   }
 
+  /** Actualiza promedio y cantidad de valoraciones del curso. */
+  async updateRatingMetrics(courseMongoId, rating, ratingCount) {
+    return CoursesMongoose.updateOne(
+      { _id: courseMongoId },
+      { $set: { rating, ratingCount } }
+    );
+  }
+
   async findByCategory(category) {
     const courses = await CoursesMongoose.find(
       { category: category },
@@ -214,6 +228,8 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
+        rating: true,
+        ratingCount: true,
         certificate: true,
         instructor: true,
         modules: true,
@@ -240,6 +256,8 @@ class CoursesModel {
         price: true,
         difficulty: true,
         category: true,
+        rating: true,
+        ratingCount: true,
         certificate: true,
         instructor: true,
         modules: true,

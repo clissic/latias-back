@@ -516,6 +516,73 @@ class UsersModel {
     )
       .lean();
   }
+
+  /**
+   * Conteos para métricas de instructor: compras, finalizados y aprobados (certificado emitido).
+   * `approved` coincide con quienes recibieron certificado (misma regla que en updateFinalTestResult).
+   */
+  async countCoursePurchaseMetrics(courseId) {
+    const cid = String(courseId);
+    const [purchased, finished, approved] = await Promise.all([
+      UserMongoose.countDocuments({
+        purchasedCourses: { $elemMatch: { courseId: cid } },
+      }),
+      UserMongoose.countDocuments({
+        purchasedCourses: { $elemMatch: { courseId: cid, isFinished: true } },
+      }),
+      UserMongoose.countDocuments({
+        purchasedCourses: {
+          $elemMatch: {
+            courseId: cid,
+            certificate: { $exists: true, $nin: [null, ""] },
+          },
+        },
+      }),
+    ]);
+    return { purchased, finished, approved };
+  }
+
+  /**
+   * Usuarios que tienen el curso en purchasedCourses (solo datos listados para instructor/admin).
+   */
+  async findUsersWhoPurchasedCourse(courseId) {
+    const cid = String(courseId);
+    return UserMongoose.find(
+      { purchasedCourses: { $elemMatch: { courseId: cid } } },
+      { _id: true, firstName: true, lastName: true, ci: true }
+    )
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+  }
+
+  /** Cadetes con el curso marcado como finalizado (isFinished en purchasedCourses). Incluye purchasedCourses para métricas en instructor. */
+  async findUsersWhoFinishedCourse(courseId) {
+    const cid = String(courseId);
+    return UserMongoose.find(
+      { purchasedCourses: { $elemMatch: { courseId: cid, isFinished: true } } },
+      { _id: true, firstName: true, lastName: true, ci: true, purchasedCourses: true }
+    )
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+  }
+
+  /** Cadetes con certificado emitido para ese curso (misma regla que métrica approved). */
+  async findUsersWhoApprovedCourse(courseId) {
+    const cid = String(courseId);
+    return UserMongoose.find(
+      {
+        purchasedCourses: {
+          $elemMatch: {
+            courseId: cid,
+            certificate: { $exists: true, $nin: [null, ""] },
+          },
+        },
+      },
+      { _id: true, firstName: true, lastName: true, ci: true }
+    )
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+  }
 }
 
 export const usersModel = new UsersModel();

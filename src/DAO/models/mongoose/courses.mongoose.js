@@ -14,6 +14,10 @@ const schema = new Schema({
   price: { type: Number, required: true, min: 0 },
   difficulty: { type: String },
   category: { type: String, required: true },
+  /** Promedio de valoraciones (1–5). Por defecto 0 al crear el curso. */
+  rating: { type: Number, default: 0, min: 0, max: 5 },
+  /** Cantidad de valoraciones recibidas. */
+  ratingCount: { type: Number, default: 0, min: 0 },
   certificate: {
     certificateId: { type: String, default: null },
     certificateUrl: { type: String, default: null },

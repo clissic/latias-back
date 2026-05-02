@@ -46,6 +46,56 @@ coursesRouter.get(
   coursesController.getCourseForEditor
 );
 
+// Métricas del curso (compras, finalizados, aprobados; mismo alcance que manage/course)
+coursesRouter.get(
+  "/instructor/metrics/:courseId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getInstructorCourseMetrics
+);
+
+coursesRouter.get(
+  "/instructor/purchasers/:courseId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getInstructorCoursePurchasers
+);
+
+coursesRouter.get(
+  "/instructor/finished/:courseId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getInstructorCourseFinished
+);
+
+coursesRouter.get(
+  "/instructor/approved/:courseId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getInstructorCourseApproved
+);
+
+coursesRouter.get(
+  "/instructor/purchaser-progress/:courseId/:userId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getInstructorPurchaserProgress
+);
+
+coursesRouter.get(
+  "/instructor/ratings/:courseId",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.getInstructorCourseRatings
+);
+
+coursesRouter.patch(
+  "/instructor/ratings/:courseId/:userId/featured",
+  authenticateToken,
+  authorizeByCategory(["Administrador", "Instructor"]),
+  coursesController.patchInstructorCourseRatingFeatured
+);
+
 // Listar todos los certificados de curso (course-certificates)
 coursesRouter.get("/admin/certificates", authenticateToken, authorizeByCategory(['Administrador']), coursesController.getAllCourseCertificates);
 
@@ -85,6 +135,12 @@ coursesRouter.get(
 
 // Obtener certificado de curso del usuario (award)
 coursesRouter.get("/user/:userId/course/:courseId/certificate", authenticateToken, validateUserOwnership(), coursesController.getCourseCertificate);
+
+// Mi valoración para este curso (stars + comment o null)
+coursesRouter.get("/user/:userId/course/:courseId/my-rating", authenticateToken, validateUserOwnership(), coursesController.getMyCourseRating);
+
+// Valorar curso (1–5), solo usuarios con certificado
+coursesRouter.post("/user/:userId/course/:courseId/rate", authenticateToken, validateUserOwnership(), coursesController.rateCourse);
 
 // Agregar intento de examen al curso del usuario (valida que el usuario solo agregue intentos a sus propios cursos, a menos que sea admin)
 coursesRouter.put("/user/:userId/course/:courseId/attempt", authenticateToken, validateUserOwnership(), coursesController.addUserCourseAttempt);
